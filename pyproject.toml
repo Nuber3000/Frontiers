@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frontiers"
+version = "0.1.0"
+description = "Учебная браузерная карточная игра для двух игроков"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.34,<1.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
