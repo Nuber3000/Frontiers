@@ -1,0 +1,26 @@
+name: frontiers
+
+services:
+  app:
+    image: ghcr.io/nuber3000/frontiers:sha-aa278e0894fa40e722a0e3ff0f80b049585c62e2
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2).close()"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
