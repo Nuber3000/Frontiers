@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="520" viewBox="0 0 520 520">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency=".009 .48" numOctaves="3" seed="12" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope=".24"/></feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="soft-light"/>
+    </filter>
+    <pattern id="carving" width="130" height="130" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#d4a66a" stroke-width=".6" opacity=".065">
+        <path d="M65 10 120 65 65 120 10 65Z M65 20 110 65 65 110 20 65Z"/>
+        <circle cx="65" cy="65" r="30"/><circle cx="65" cy="65" r="23"/>
+        <path d="M65 35c24 13 24 47 0 60-24-13-24-47 0-60ZM35 65c13-24 47-24 60 0-13 24-47 24-60 0Z"/>
+      </g>
+    </pattern>
+  </defs>
+  <path fill="#624127" filter="url(#grain)" d="M0 0h520v520H0z"/>
+  <path fill="url(#carving)" d="M0 0h520v520H0z"/>
+</svg>

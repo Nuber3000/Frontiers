@@ -1,0 +1,74 @@
+/* Общая рамка карт. Индивидуальные рисунки отрядов подключает artwork.css. */
+:root { --gold: #c6a15f; --muted: #a99a80; --ink: #e8deca; --border: #51402b; }
+.icon { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.fullscreen-button { display: inline-grid; place-items: center; flex-shrink: 0; width: 32px; height: 30px; padding: 4px; border-radius: 2px; color: var(--gold); background: #17140d66; }
+.fullscreen-button .icon { width: 20px; height: 20px; }
+.bow-icon path:first-of-type { stroke-width: 1.8; }
+.bow-icon path:nth-of-type(2) { stroke-width: .85; }
+.bear-icon path { fill: currentColor; fill-rule: evenodd; stroke: none; }
+.agile-icon path:first-of-type, .agile-icon path:nth-of-type(4) { fill: currentColor; stroke: none; }
+.agile-icon path:nth-of-type(2) { stroke-width: .9; }
+.agile-icon path:last-of-type { stroke-width: 1.7; }
+.ghost-icon path:first-of-type { stroke-width: 1.7; }
+.ghost-icon path:last-of-type { fill: currentColor; stroke: none; }
+.card-art, .discard-preview { background-image: url('/static/card-art.png'); background-size: 400% 300%; background-repeat: no-repeat; }
+.art-knight { background-position: 0 0; }
+.art-archer { background-position: 33.333333% 0; }
+.art-siege { background-position: 66.666667% 0; }
+.art-king { background-position: 100% 0; }
+.art-spy { background-position: 0 50%; }
+.art-medic { background-position: 33.333333% 50%; }
+.art-berserker { background-position: 66.666667% 50%; }
+.art-bear { background-position: 100% 50%; }
+.art-frost { background-position: 0 100%; }
+.art-fog { background-position: 33.333333% 100%; }
+.art-storm { background-position: 66.666667% 100%; }
+.art-clear { background-position: 100% 100%; }
+.art-decoy { background-image: url('/static/decoy.png'); }
+.art-rain { background-image: url('/static/rain.png'); }
+.art-scorch { background-image: url('/static/scorch.png'); }
+.art-horn { background-image: url('/static/horn.png'); }
+.art-mushroom { background-image: url('/static/mushroom.png'); }
+.art-decoy, .art-rain, .art-scorch, .art-horn, .art-mushroom { background-size: cover; background-position: center; }
+.leader-art { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
+.card, .card.small, .collection-item .card {
+  container-type: inline-size;
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 132px;
+  height: 210px;
+  padding: 0;
+  border: 1px solid #b59a68;
+  border-radius: 7px 7px 10px 10px;
+  overflow: hidden;
+  background: #d8cbaa;
+  color: #2d2a22;
+  box-shadow: 0 3px 9px #0009, inset 0 0 0 2px #e8d9b6;
+  text-align: center;
+  transition: border-color .15s, filter .15s;
+}
+.card:hover:not(:disabled), .card.small:hover:not(:disabled) { background: #e3d6b5; border-color: #f5d78e; transform: none; filter: brightness(1.12); }
+.card.hero { border: 2px solid #d4ac4b; background: #e5d095; }
+.card .card-art { position: absolute; inset: 0 0 24%; box-shadow: inset 0 0 22px #0005; }
+.card .card-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #15120d66, transparent 40%); }
+.card .card-ribbon { position: absolute; top: 0; bottom: 12%; left: 7%; width: 9%; background: repeating-linear-gradient(100deg, #153859 0 2px, #224d70 3px 4px); border-inline: 1px solid #b4b5a4; box-shadow: 1px 0 2px #0008; clip-path: polygon(0 0,100% 0,100% 100%,50% 95%,0 100%); color: #e0d4ac; font: 13px Georgia,serif; display: flex; align-items: end; justify-content: center; padding-bottom: 12%; z-index: 2; }
+.card.hero .card-ribbon { background: repeating-linear-gradient(100deg, #9c7023 0 2px, #c59639 3px 4px); }
+.card .card-top { position: absolute; inset: 3% auto auto 3%; width: auto; z-index: 3; }
+.card .card-top > span:last-child { display: none; }
+.card .card-power { display: grid; place-items: center; width: clamp(22px, 25cqw, 43px); height: clamp(22px, 25cqw, 43px); border: 2px solid #a66e29; outline: 1px solid #e3cc8c; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffef2, #d6cfb7); color: #242d30; box-shadow: 0 2px 4px #0008, inset 0 0 0 1px #fff9; font: 600 clamp(15px, 17cqw, 31px)/1 Georgia,serif; }
+.card .card-power .icon { width: 65%; height: 65%; stroke-width: 1.7; }
+.card.hero .card-power { color: #ffe6a3; background: radial-gradient(circle at 30% 20%, #584323, #171510); border-color: #d9a542; }
+.card .card-power.changed { color: #9f251e; }
+.card .card-name { position: absolute; bottom: 0; inset-inline: 0; display: flex; justify-content: center; align-items: center; min-height: 24%; height: 24%; max-height: none; padding: 3% 5% 3% 18%; border-top: 2px solid #b39453; background: radial-gradient(ellipse at 0 0, #b9a87e55, transparent 70%), repeating-linear-gradient(15deg, #fff2 0 1px, transparent 1px 4px), #e3d8bd; font: 700 clamp(9px, 9cqw, 16px)/1.12 Georgia,'Times New Roman',serif; overflow-wrap: normal; }
+.card.hero .card-name { background-color: #e4d095; }
+.card .card-seals { position: absolute; right: 4%; bottom: 27%; display: flex; gap: 3px; align-items: center; }
+.card .ability-seal, .card .combat-seal { display: grid; place-items: center; width: clamp(14px, 17cqw, 28px); height: clamp(14px, 17cqw, 28px); border-radius: 50%; background: #e2d9bd; border: 1px solid #6c5433; color: #302e25; box-shadow: 0 1px 3px #0009; }
+.card .ability-seal .icon { width: 75%; height: 75%; }
+.card .combat-seal { padding: 3px; background: #c59a45; color: #312915; }
+.card .card-abilities, .card .card-row { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.card.selected { outline: 2px solid #ffe19c; outline-offset: 2px; transform: none; box-shadow: 0 0 20px #dfb66577; }
+.card.targetable { outline: 2px solid #9cc6a1; outline-offset: 1px; }
+.card-details { min-height: 250px; }
+.card-details > .card { float: left; margin: 0 24px 20px 0; width: 155px; height: 245px; }
+.choice-cards .card { width: 120px; height: 190px; }

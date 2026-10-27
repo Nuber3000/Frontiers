@@ -1,0 +1,41 @@
+/* Индивидуальные иллюстрации: одна сцена на уникальный отряд или героя. */
+.art-blue_guard { background-image: url('/static/blue_guard.png'); background-size: cover; background-position: center; }
+.art-crossbow { background-image: url('/static/crossbow.png'); background-size: cover; background-position: center; }
+.art-catapult { background-image: url('/static/catapult.png'); background-size: cover; background-position: center; }
+.art-siege_expert { background-image: url('/static/siege_expert.png'); background-size: cover; background-position: center; }
+.art-spy_scribe { background-image: url('/static/spy_scribe.png'); background-size: cover; background-position: center; }
+.art-spy_port { background-image: url('/static/spy_port.png'); background-size: cover; background-position: center; }
+.art-spy_cartographer { background-image: url('/static/spy_cartographer.png'); background-size: cover; background-position: center; }
+.art-field_medic { background-image: url('/static/field_medic.png'); background-size: cover; background-position: center; }
+.art-trebuchet { background-image: url('/static/trebuchet.png'); background-size: cover; background-position: center; }
+.art-ballista { background-image: url('/static/ballista.png'); background-size: cover; background-position: center; }
+.art-siege_tower { background-image: url('/static/siege_tower.png'); background-size: cover; background-position: center; }
+.art-knight { background-image: url('/static/knight.png'); background-size: cover; background-position: center; }
+.art-veteran { background-image: url('/static/veteran.png'); background-size: cover; background-position: center; }
+.art-infantry { background-image: url('/static/infantry.png'); background-size: cover; background-position: center; }
+.art-scout { background-image: url('/static/scout.png'); background-size: cover; background-position: center; }
+.art-ranger { background-image: url('/static/ranger.png'); background-size: cover; background-position: center; }
+.art-regent { background-image: url('/static/regent.png'); background-size: cover; background-position: center; }
+.art-champion { background-image: url('/static/champion.png'); background-size: cover; background-position: center; }
+.art-archivist { background-image: url('/static/archivist.png'); background-size: cover; background-position: center; }
+.art-healer_hero { background-image: url('/static/healer_hero.png'); background-size: cover; background-position: center; }
+.art-spy_hero { background-image: url('/static/spy_hero.png'); background-size: cover; background-position: center; }
+.art-banner_bearer { background-image: url('/static/banner_bearer.png'); background-size: cover; background-position: center; }
+.art-herald { background-image: url('/static/herald.png'); background-size: cover; background-position: center; }
+.art-fire_walker { background-image: url('/static/fire_walker.png'); background-size: cover; background-position: center; }
+.art-fire_hunter { background-image: url('/static/fire_hunter.png'); background-size: cover; background-position: center; }
+.art-demolitionist { background-image: url('/static/demolitionist.png'); background-size: cover; background-position: center; }
+.art-road_company { background-image: url('/static/road_company.png'); background-size: cover; background-position: center; }
+.art-company_captain { background-image: url('/static/company_captain.png'); background-size: cover; background-position: center; }
+.art-berserker { background-image: url('/static/berserker.png'); background-size: cover; background-position: center; }
+.art-young_berserker { background-image: url('/static/young_berserker.png'); background-size: cover; background-position: center; }
+.art-war_bear { background-image: url('/static/war_bear.png'); background-size: cover; background-position: center; }
+.art-young_bear { background-image: url('/static/young_bear.png'); background-size: cover; background-position: center; }
+.art-druid { background-image: url('/static/druid.png'); background-size: cover; background-position: center; }
+.art-watchman { background-image: url('/static/watchman.png'); background-size: cover; background-position: center; }
+.art-avenger { background-image: url('/static/avenger.png'); background-size: cover; background-position: center; }
+
+/* Верх портрета сохраняется и в короткой иллюстрации карты с подписью. */
+.art-fire_walker, .art-regent, .art-field_medic,
+.art-champion, .art-spy_hero, .art-veteran, .art-company_captain { background-position: center top; }
+

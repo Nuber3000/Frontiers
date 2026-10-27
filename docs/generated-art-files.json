@@ -1,0 +1,207 @@
+{
+  "generator": "Built-in image_gen",
+  "units": [
+    {
+      "key": "blue_guard",
+      "name": "Лазурная стража",
+      "path": "src/frontiers/static/blue_guard.png"
+    },
+    {
+      "key": "crossbow",
+      "name": "Пограничные арбалетчики",
+      "path": "src/frontiers/static/crossbow.png"
+    },
+    {
+      "key": "catapult",
+      "name": "Королевская баллиста",
+      "path": "src/frontiers/static/catapult.png"
+    },
+    {
+      "key": "siege_expert",
+      "name": "Мастер орудий",
+      "path": "src/frontiers/static/siege_expert.png"
+    },
+    {
+      "key": "spy_scribe",
+      "name": "Королевский писарь",
+      "path": "src/frontiers/static/spy_scribe.png"
+    },
+    {
+      "key": "spy_port",
+      "name": "Портовый осведомитель",
+      "path": "src/frontiers/static/spy_port.png"
+    },
+    {
+      "key": "spy_cartographer",
+      "name": "Седой картограф",
+      "path": "src/frontiers/static/spy_cartographer.png"
+    },
+    {
+      "key": "field_medic",
+      "name": "Полковой хирург",
+      "path": "src/frontiers/static/field_medic.png"
+    },
+    {
+      "key": "trebuchet",
+      "name": "Требушет",
+      "path": "src/frontiers/static/trebuchet.png"
+    },
+    {
+      "key": "ballista",
+      "name": "Полевое орудие",
+      "path": "src/frontiers/static/ballista.png"
+    },
+    {
+      "key": "siege_tower",
+      "name": "Осадная башня",
+      "path": "src/frontiers/static/siege_tower.png"
+    },
+    {
+      "key": "knight",
+      "name": "Бургундский рыцарь",
+      "path": "src/frontiers/static/knight.png"
+    },
+    {
+      "key": "veteran",
+      "name": "Ветеран королевской гвардии",
+      "path": "src/frontiers/static/veteran.png"
+    },
+    {
+      "key": "infantry",
+      "name": "Городской ополченец",
+      "path": "src/frontiers/static/infantry.png"
+    },
+    {
+      "key": "scout",
+      "name": "Дозорный",
+      "path": "src/frontiers/static/scout.png"
+    },
+    {
+      "key": "ranger",
+      "name": "Лесной стрелок",
+      "path": "src/frontiers/static/ranger.png"
+    },
+    {
+      "key": "regent",
+      "name": "Аделина, щит короны",
+      "path": "src/frontiers/static/regent.png"
+    },
+    {
+      "key": "champion",
+      "name": "Ориан, клинок рубежей",
+      "path": "src/frontiers/static/champion.png"
+    },
+    {
+      "key": "archivist",
+      "name": "Этьен, хранитель клятв",
+      "path": "src/frontiers/static/archivist.png"
+    },
+    {
+      "key": "healer_hero",
+      "name": "Мирель, хранительница жизни",
+      "path": "src/frontiers/static/healer_hero.png"
+    },
+    {
+      "key": "spy_hero",
+      "name": "Безымянный посол",
+      "path": "src/frontiers/static/spy_hero.png"
+    },
+    {
+      "key": "banner_bearer",
+      "name": "Знаменосец Франциска",
+      "path": "src/frontiers/static/banner_bearer.png"
+    },
+    {
+      "key": "herald",
+      "name": "Габриэль фон Ард",
+      "path": "src/frontiers/static/herald.png"
+    },
+    {
+      "key": "fire_walker",
+      "name": "Пламенный странник",
+      "path": "src/frontiers/static/fire_walker.png"
+    },
+    {
+      "key": "fire_hunter",
+      "name": "Огненный ловчий",
+      "path": "src/frontiers/static/fire_hunter.png"
+    },
+    {
+      "key": "demolitionist",
+      "name": "Королевский подрывник",
+      "path": "src/frontiers/static/demolitionist.png"
+    },
+    {
+      "key": "road_company",
+      "name": "Дорожная дружина",
+      "path": "src/frontiers/static/road_company.png"
+    },
+    {
+      "key": "company_captain",
+      "name": "Капитан дорожной дружины",
+      "path": "src/frontiers/static/company_captain.png"
+    },
+    {
+      "key": "berserker",
+      "name": "Бешеный ратник",
+      "path": "src/frontiers/static/berserker.png"
+    },
+    {
+      "key": "young_berserker",
+      "name": "Лесной берсерк",
+      "path": "src/frontiers/static/young_berserker.png"
+    },
+    {
+      "key": "war_bear",
+      "name": "Великий медведь",
+      "path": "src/frontiers/static/war_bear.png"
+    },
+    {
+      "key": "young_bear",
+      "name": "Лесной медведь",
+      "path": "src/frontiers/static/young_bear.png"
+    },
+    {
+      "key": "druid",
+      "name": "Альбан, лесной мудрец",
+      "path": "src/frontiers/static/druid.png"
+    },
+    {
+      "key": "watchman",
+      "name": "Последний дозорный",
+      "path": "src/frontiers/static/watchman.png"
+    },
+    {
+      "key": "avenger",
+      "name": "Клятва дозора",
+      "path": "src/frontiers/static/avenger.png"
+    }
+  ],
+  "leaders": [
+    {
+      "key": "leader_sun",
+      "name": "Франциск — Солнцеликий",
+      "path": "src/frontiers/static/leader_sun.png"
+    },
+    {
+      "key": "leader_mortar",
+      "name": "Франциск — Королевская мортира",
+      "path": "src/frontiers/static/leader_mortar.png"
+    },
+    {
+      "key": "leader_war",
+      "name": "Франциск — Бог войны",
+      "path": "src/frontiers/static/leader_war.png"
+    },
+    {
+      "key": "leader_academy",
+      "name": "Франциск — Военная академия",
+      "path": "src/frontiers/static/leader_academy.png"
+    },
+    {
+      "key": "leader_fog",
+      "name": "Франциск — Туман войны",
+      "path": "src/frontiers/static/leader_fog.png"
+    }
+  ]
+}

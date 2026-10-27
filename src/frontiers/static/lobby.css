@@ -1,0 +1,146 @@
+body.in-room { background: radial-gradient(ellipse at 50% 15%, #20201988, transparent 65%), #0e0f0c; }
+.in-room .topbar, .in-room footer { display: none; }
+.in-room main { width: 100%; max-width: 1920px; padding: 14px 3% 18px; }
+.in-room .room-toolbar { height: 32px; margin-bottom: 10px; gap: 8px; }
+.in-room .room-toolbar > div:first-child { display: flex; align-items: center; gap: 14px; }
+.in-room .room-toolbar .eyebrow { margin: 0; font: 13px Georgia,serif; letter-spacing: 3px; }
+.room-brand { padding: 0; border: 0; background: transparent; color: var(--gold); font: 13px Georgia,serif; letter-spacing: 3px; text-transform: uppercase; border-radius: 0; }
+.room-brand:hover:not(:disabled) { background: transparent; color: #f3d28b; }
+.in-room .room-toolbar h2 { margin: 0; font: 11px 'Segoe UI',sans-serif; color: #8c826e; }
+.in-room .room-toolbar h2 span { font-size: 11px; letter-spacing: 2px; }
+.in-room .toolbar-actions { display: flex; flex-direction: row; gap: 8px; }
+.in-room #room-status { margin-left: auto; }
+.in-room #room-status .connection { font-size: 10px; }
+.in-room .toolbar-actions button { padding: 5px 10px; font-size: 11px; border-radius: 0; }
+.in-room .toolbar-actions button.fullscreen-button { padding: 4px; }
+.in-room button.primary { border-radius: 0; color: #f0deac; background: linear-gradient(#584529, #302519); border: 1px solid #a18147; box-shadow: inset 0 0 0 2px #211c15; font-weight: 500; }
+.in-room button.primary:hover:not(:disabled) { background: #6c5331; border-color: #e1bc71; }
+body.in-lobby { height: 100dvh; min-height: 0; overflow: hidden; }
+.in-lobby main { height: 100%; display: flex; flex-direction: column; }
+.in-lobby #room { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.in-lobby .lobby { display: grid; flex: 1; min-height: 0; grid-template-columns: minmax(0, 1fr) clamp(185px, 18vw, 290px) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); column-gap: clamp(20px, 3vw, 65px); row-gap: 15px; }
+.faction-heading { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; text-align: center; gap: 18px; padding: 2px 0 12px; }
+.faction-heading h1 { margin: 1px 0 7px; font: clamp(24px, 2.3vw, 38px)/1.15 Georgia,serif; letter-spacing: 0; }
+.faction-heading .eyebrow { font-size: 9px; margin-bottom: 5px; letter-spacing: 4px; }
+.faction-heading p:last-child { margin: 0; font: 13px Georgia,serif; color: #a79775; }
+.faction-crest { display: grid; place-items: center; width: 53px; height: 65px; font: 37px Georgia,serif; color: #e9d4a3; border: 1px solid #b18d50; border-radius: 3px 3px 45% 45%; background: repeating-linear-gradient(45deg, #2a466555 0 2px, transparent 2px 5px), #142e48; box-shadow: 0 0 0 4px #0c1011, 0 0 0 5px #53452e; }
+.in-lobby .result-panel { grid-column: 1 / -1; padding: 12px 22px; margin: 0; border-radius: 0; background: #292315; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.in-lobby .result-panel > * { margin: 0; }
+.in-lobby .result-panel h2 { font-size: 24px; }
+.in-lobby .result-panel > .muted { display: none; }
+.in-lobby .card-library { grid-row: 3; display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0; background: none; border: 0; }
+.in-lobby .collection-panel { grid-column: 1; }
+.in-lobby .deck-panel { grid-column: 3; }
+.library-heading { display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+.library-heading h2 { font-size: clamp(20px, 1.8vw, 28px); margin: 0 0 4px; color: #d3cebd; }
+.library-heading p { color: #8e8775; font-size: 10px; margin: 0; }
+.library-heading select { width: auto; max-width: 47%; padding: 5px 7px; font-size: 11px; background: #151610; border-color: #3e3a2a; border-radius: 0; }
+.filter-tabs { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 12px 5px 9px; border-bottom: 1px solid #5c4b2b; margin-bottom: 12px; }
+.filter-tabs button { background: transparent; color: #75664d; padding: 5px 8px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; }
+.filter-tabs .icon { width: 26px; height: 26px; stroke-width: 1.4; }
+.filter-tabs button:hover:not(:disabled) { color: #d1b173; background: transparent; }
+.filter-tabs button.active { color: #ecddb5; border-bottom-color: #bd9a57; filter: drop-shadow(0 0 6px #e4c47b66); }
+.in-lobby .collection { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; flex: 1; min-height: 0; max-height: none; gap: 18px 14px; overflow-y: auto; padding: 4px 10px 12px 4px; scrollbar-width: thin; scrollbar-color: #625033 #141510; }
+.in-lobby .collection-item { position: relative; min-width: 0; }
+.in-lobby .collection-item .card { width: 100%; height: auto; aspect-ratio: .61; }
+.in-lobby .card-adjust { position: absolute; bottom: 5px; left: 21%; right: 5px; margin: 0; display: flex; align-items: center; justify-content: space-between; height: 24px; z-index: 4; pointer-events: none; }
+.in-lobby .card-adjust span { min-width: 0; font: 12px Georgia,serif; color: #645735; text-shadow: 0 1px #fff8; }
+.in-lobby .card-adjust button { display: grid; place-items: center; width: 23px; height: 23px; padding: 0; background: #332c20; color: #f1ddb0; border: 1px solid #a28a57; border-radius: 2px; font: 18px/1 Georgia,serif; pointer-events: auto; }
+.in-lobby .collection-item .card-name { padding-bottom: 17%; height: 26%; min-height: 26%; }
+.in-lobby .collection-item .card-art { bottom: 26%; }
+.in-lobby .collection-item .card-seals { bottom: 29%; }
+.library-footnote { margin: 8px 0 0; font-size: 10px; color: #7e7766; }
+.library-footnote span { display: block; color: #ae9565; }
+.empty-collection { grid-column: 1 / -1; padding: 25px 10px; text-align: center; color: #9f9277; font: 15px/1.7 Georgia,serif; }
+.in-lobby .commander-panel { grid-column: 2; grid-row: 3; display: flex; flex-direction: column; align-items: center; position: static; min-height: 0; align-self: stretch; padding: 0; text-align: center; border: 0; background: none; }
+.commander-panel > .eyebrow { margin: 0 0 10px; font: 14px Georgia,serif; letter-spacing: 1px; text-transform: none; }
+.leader-portrait { position: relative; flex-shrink: 0; width: clamp(92px, 9vw, 148px); height: clamp(130px, 18dvh, 220px); border: 1px solid #aa8951; box-shadow: 0 0 0 3px #151511, 0 0 0 4px #453c27, 0 5px 20px #000a; border-radius: 35px 35px 3px 3px; overflow: hidden; }
+.leader-portrait .card-art { position: absolute; inset: 0; }
+.leader-portrait > div { position: absolute; bottom: 0; inset-inline: 0; padding: 8px 3px; background: #ddd1b1; color: #332c22; font: 700 12px/1.15 Georgia,serif; border-top: 2px solid #ac8947; }
+.leader-portrait > div span { display: block; font-weight: 400; margin-top: 3px; }
+.portrait-crown { position: absolute; top: 7px; left: 7px; color: #efcb77; font-size: 18px; text-shadow: 0 1px 4px black; }
+.in-lobby #leader-select { width: 100%; max-width: 240px; margin-top: 16px; padding: 7px 5px; border: 1px solid #675131; border-radius: 0; background: #1b1a12; color: #cfaf70; font: 13px Georgia,serif; }
+.in-lobby .leader-description { flex-shrink: 0; min-height: 0; height: 3.9em; overflow-y: auto; margin: 9px 0 14px; font: 11px/1.3 'Segoe UI',sans-serif; color: #9f9279; }
+.deck-stats { width: 100%; margin: 0 0 14px; display: grid; gap: 7px; }
+.deck-stats > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding-bottom: 4px; border-bottom: 1px solid #4b41252e; }
+.deck-stats dt { color: #a39475; font: 12px Georgia,serif; text-align: left; }
+.deck-stats dd { margin: 0; font: 18px Georgia,serif; color: #d3b36c; white-space: nowrap; }
+.deck-stats .invalid dd { color: #df8271; }
+.in-lobby .seat-list { display: grid; width: 100%; gap: 5px; margin: auto 0 9px; }
+.in-lobby .seat { display: flex; padding: 5px 0; gap: 7px; background: transparent; border: 0; border-radius: 0; text-align: left; }
+.in-lobby .seat-avatar { width: 22px; height: 22px; flex-shrink: 0; font: 13px Georgia,serif; border: 1px solid #6e6248; background: #2c2a1e; color: #baa273; }
+.in-lobby .seat strong { font-size: 11px; }
+.in-lobby .seat small { font-size: 9px; }
+.in-lobby #ready-button { padding: 10px 8px; font: 16px Georgia,serif; }
+.in-lobby #ready-hint { margin: 7px 0 0; font-size: 9px; }
+@media (max-height: 800px) and (min-width: 801px) {
+  .in-lobby main { padding-block: 8px; }
+  .in-lobby .lobby { row-gap: 8px; }
+  .faction-heading { padding-bottom: 0; }
+  .faction-heading .eyebrow { display: none; }
+  .faction-heading h1 { font-size: 26px; }
+  .faction-heading p:last-child { font-size: 11px; }
+  .faction-crest { width: 38px; height: 45px; font-size: 27px; }
+  .in-lobby .leader-description { font-size: 10px; margin-block: 7px; }
+  .deck-stats { gap: 4px; margin-bottom: 7px; }
+  .deck-stats dt { font-size: 11px; }
+  .deck-stats dd { font-size: 16px; }
+  .in-lobby .leader-portrait { height: 130px; width: 95px; }
+  .in-lobby #leader-select { margin-top: 10px; }
+  .library-heading h2 { font-size: 21px; }
+  .in-lobby .card-adjust { bottom: 3px; }
+}
+@media (max-width: 1100px) and (min-width: 801px) {
+  .in-lobby .lobby { column-gap: 20px; grid-template-columns: minmax(0, 1fr) 185px minmax(0, 1fr); }
+  .in-lobby .collection { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .library-heading { flex-wrap: wrap; gap: 5px; }
+  .library-heading select { max-width: 100%; }
+  .filter-tabs { gap: 0; padding-inline: 0; }
+  .filter-tabs button { padding: 4px; }
+  .filter-tabs .icon { width: 22px; height: 22px; }
+}
+@media (max-width: 800px) {
+  body.in-lobby { height: auto; min-height: 100dvh; overflow: auto; }
+  .in-lobby main { height: auto; padding: 10px 12px; }
+  .in-lobby .lobby { grid-template-columns: 1fr 1fr; column-gap: 12px; grid-template-rows: auto auto auto minmax(0, 1fr); }
+  .in-room .room-toolbar .eyebrow { display: none; }
+  .in-room .toolbar-actions { gap: 0; }
+  .in-room #room-status .connection { font-size: 0; }
+  .in-room #room-status .connection::before { content: '●'; font-size: 9px; }
+  .in-room .toolbar-actions button { padding: 5px; font-size: 10px; }
+  .faction-heading { gap: 10px; }
+  .faction-heading h1 { font-size: 22px; }
+  .faction-heading p:last-child { font-size: 11px; }
+  .faction-heading .eyebrow { display: none; }
+  .faction-crest { width: 34px; height: 44px; flex-shrink: 0; font-size: 25px; }
+  .in-lobby .commander-panel { grid-row: 3; grid-column: 1 / -1; display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 5px 15px; align-items: center; text-align: left; padding-block: 8px 15px; border-bottom: 1px solid #4c412b; }
+  .commander-panel > .eyebrow { display: none; }
+  .in-lobby .leader-portrait { grid-area: 1 / 1 / 4 / 2; width: 78px; height: 120px; }
+  .leader-portrait > div { font-size: 10px; }
+  .in-lobby #leader-select { grid-column: 2; margin: 0; max-width: none; }
+  .in-lobby .leader-description { grid-column: 2; margin: 0; font-size: 10px; height: auto; }
+  .deck-stats { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0; }
+  .deck-stats > div { display: block; }
+  .deck-stats dt { font-size: 10px; }
+  .deck-stats dd { font-size: 16px; }
+  .in-lobby .seat-list { grid-column: 1 / -1; display: flex; margin: 0; }
+  .in-lobby #ready-button, .in-lobby #ready-hint { grid-column: 1 / -1; }
+  .in-lobby .card-library { grid-row: 4; }
+  .in-lobby .collection-panel { grid-column: 1; }
+  .in-lobby .deck-panel { grid-column: 2; }
+  .library-heading { display: block; min-height: 89px; }
+  .library-heading h2 { font-size: 20px; }
+  .library-heading p { font-size: 9px; min-height: 27px; }
+  .library-heading select { max-width: 100%; width: 100%; }
+  .filter-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 5px 0; margin-bottom: 8px; }
+  .filter-tabs button { padding: 5px 0; }
+  .filter-tabs .icon { width: 20px; height: 20px; }
+  .in-lobby .collection { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 7px; max-height: 630px; padding: 3px; }
+  .in-lobby .collection-item .card-name { font-size: 8px; padding-bottom: 22%; height: 32%; }
+  .in-lobby .collection-item .card-art { bottom: 32%; }
+  .in-lobby .collection-item .card-seals { bottom: 34%; }
+  .in-lobby .card-adjust { height: 17px; bottom: 2px; }
+  .in-lobby .card-adjust button { width: 17px; height: 17px; font-size: 15px; }
+  .in-lobby .card-adjust span { font-size: 10px; }
+  .library-footnote { font-size: 9px; }
+}
