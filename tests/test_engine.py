@@ -217,6 +217,60 @@ class EffectTests(unittest.TestCase):
         with self.assertRaises(RuleError):
             play(game, 0, "horn", Row.MELEE)
 
+    def test_scorch_reports_only_public_victims_and_resets_next_action(self):
+        game = fixture(["scorch"], ["knight"])
+        hero = put(game, 0, "regent")
+        own = put(game, 0, "trebuchet")
+        enemy = put(game, 1, "ballista")
+        survivor = put(game, 1, "knight")
+        burned = play(game, 0, "scorch")
+        self.assertEqual(set(burned.scorched), {own.id, enemy.id})
+        self.assertNotIn(hero.id, burned.scorched)
+        self.assertNotIn(survivor.id, burned.scorched)
+        self.assertEqual(game.scorched, [])
+        for side in (0, 1):
+            view = burned.view(side)
+            self.assertEqual(set(view["scorched"]), {own.id, enemy.id})
+            view["scorched"].clear()
+            self.assertEqual(len(burned.scorched), 2)
+        following = play(burned, 1, "knight")
+        self.assertEqual(following.scorched, [])
+        self.assertEqual(len(burned.scorched), 2)
+        with self.assertRaises(StaleState):
+            burned.act(1, {"type": "pass"}, 0)
+        self.assertEqual(len(burned.scorched), 2)
+
+    def test_decoy_and_round_cleanup_do_not_report_scorch(self):
+        game = fixture(["decoy"], [])
+        target = put(game, 0, "knight")
+        game = play(game, 0, "decoy", target=target)
+        self.assertEqual(game.scorched, [])
+        game = game.act(1, {"type": "pass"}, game.version)
+        game = game.act(0, {"type": "pass"}, game.version)
+        self.assertEqual(game.scorched, [])
+
+    def test_consecutive_scorches_report_only_the_latest_victims(self):
+        game = fixture(["scorch"], ["scorch"])
+        own = put(game, 0, "knight")
+        enemies = [put(game, 1, "crossbow") for _ in range(2)]
+        game = play(game, 0, "scorch")
+        self.assertEqual(set(game.scorched), {card.id for card in enemies})
+        game = play(game, 1, "scorch")
+        self.assertEqual(game.scorched, [own.id])
+
+    def test_unit_scorch_reports_its_victims(self):
+        game = fixture(["fire_walker"], [])
+        targets = [put(game, 1, "knight") for _ in range(2)]
+        game = play(game, 0, "fire_walker")
+        self.assertEqual(set(game.scorched), {card.id for card in targets})
+
+    def test_empty_scorch_and_unmet_leader_threshold_report_no_victims(self):
+        self.assertEqual(play(fixture(["scorch"], []), 0, "scorch").scorched, [])
+        game = fixture([], [], leader0="mortar")
+        put(game, 1, "scout")
+        game = game.act(0, {"type": "leader"}, game.version)
+        self.assertEqual(game.scorched, [])
+
     def test_unit_horn_does_not_boost_itself(self):
         game = fixture(["banner_bearer", "horn"], [])
         put(game, 0, "knight")

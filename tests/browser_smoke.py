@@ -105,7 +105,9 @@ def assert_game_fits(page):
           const boardStyle = getComputedStyle(onBoard), handStyle = getComputedStyle(inHand);
           const boardFraction = onBoard.getBoundingClientRect().width / contentWidth(boardCard);
           const handFraction = inHand.getBoundingClientRect().width / contentWidth(handCard);
-          if (Math.abs(boardFraction - handFraction) > .02 ||
+          // На миниатюрах учитываем округление рамок и размеров до одного CSS-пикселя.
+          const tolerance = Math.max(.02, 1 / contentWidth(boardCard), 1 / contentWidth(handCard));
+          if (Math.abs(boardFraction - handFraction) > tolerance ||
               (selector === '.card-power' && Math.abs(parseFloat(boardStyle.fontSize) / contentWidth(boardCard) -
                 parseFloat(handStyle.fontSize) / contentWidth(handCard)) > .02))
             failures.push({selector: 'different badge proportions in hand and on board', badge: selector,
@@ -131,24 +133,107 @@ def assert_game_fits(page):
     assert not metrics["failures"], metrics
 
 
-def click_move(page, move):
+def click_move(page, move, output=None):
     kind = move["type"]
     if kind == "play":
-        page.locator(f'#hand [data-card-id="{move["card_id"]}"]').click()
+        card = page.locator(f'#hand [data-card-id="{move["card_id"]}"]')
+        standard = card.get_attribute('data-card-key') == 'horn'
+        card.click()
         if "target_id" in move:
             page.locator(f'#own-rows [data-card-id="{move["target_id"]}"]').click()
         elif "row" in move:
-            page.locator(f'.combat-row.droppable[data-row="{move["row"]}"]').click(position={"x": 10, "y": 15})
+            if standard:
+                current = snapshot(page, page.locator('#room-label').inner_text())['game']
+                options = [item for item in current['moves'] if item['type'] == 'play' and item.get('card_id') == move['card_id']]
+                assert page.locator('.combat-row.droppable').count() == 0
+                assert page.locator('.row-special.slot-droppable').count() == len(options)
+                assert page.locator('#enemy-rows .slot-droppable').count() == 0
+                page.locator(f'#own-rows .combat-row[data-row="{move["row"]}"] .row-cards').click(position={'x': 1, 'y': 1})
+                assert snapshot(page, page.locator('#room-label').inner_text())['game']['version'] == current['version']
+                if output:
+                    page.screenshot(path=str(output / 'standard-slots.png'))
+                slot = page.locator(f'#own-rows .combat-row[data-row="{move["row"]}"] .slot-droppable')
+                slot.focus()
+                page.keyboard.press('Enter')
+            else:
+                page.locator(f'.combat-row.droppable[data-row="{move["row"]}"]').click(position={"x": 10, "y": 15})
         else:
             page.locator("#selection-info .primary").click()
     elif kind == "choose":
         page.locator(f'#choice-cards [data-choice-id="{move["card_id"]}"][data-choice-row="{move["row"]}"]').click()
     elif kind == "leader":
         page.locator("#leader-button").click()
+        page.locator('#leader-apply').click()
     elif kind == "pass":
         page.locator("#pass-button").click()
     else:
         raise AssertionError(f"Unexpected browser move: {move}")
+
+
+def check_leader_confirmation(page, code, output):
+    before = snapshot(page, code)['game']
+    me = snapshot(page, code)['me']
+    key = before['players'][me]['leader']
+    viewport = page.viewport_size
+    page.locator('#leader-button').click()
+    page.locator('#leader-dialog').wait_for(state='visible')
+    assert snapshot(page, code)['game']['version'] == before['version']
+    assert page.locator('#leader-preview .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+    assert page.locator('#leader-rule').inner_text()
+    page.wait_for_function("() => document.querySelector('#leader-preview').getAnimations().every(animation => animation.playState === 'finished')")
+    for width, height in [(1440, 900), (1366, 768), (390, 844), (844, 390)]:
+        page.set_viewport_size({'width': width, 'height': height})
+        bounds = page.evaluate('''() => ['#leader-preview', '.leader-confirmation-copy'].map(selector => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return {selector, top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right,
+            width: innerWidth, height: innerHeight};
+        })''')
+        assert all(item['top'] >= -1 and item['left'] >= -1 and item['bottom'] <= item['height'] + 1 and item['right'] <= item['width'] + 1 for item in bounds), bounds
+        page.screenshot(path=str(output / f'leader-{key}-{width}x{height}.png'))
+    page.set_viewport_size(viewport)
+    page.locator('#leader-cancel').click()
+    assert page.locator('#leader-dialog').is_hidden()
+    assert snapshot(page, code)['game']['version'] == before['version']
+    assert not snapshot(page, code)['game']['players'][me]['leader_used']
+    page.locator('#leader-button').click()
+    page.keyboard.press('Escape')
+    assert page.locator('#leader-dialog').is_hidden()
+    assert snapshot(page, code)['game']['version'] == before['version']
+
+
+def assert_presentation_fits(page, result=False):
+    selectors = ['#result-title', '#result-table', '.result-actions'] if result else [
+        '.mulligan-heading', '#mulligan-cards .card.focused', '.mulligan-details', '.mulligan-actions']
+    failures = page.evaluate('''selectors => selectors.flatMap(selector => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return rect.width <= 0 || rect.height <= 0 || rect.top < -1 || rect.bottom > innerHeight + 1 ||
+        rect.left < -1 || rect.right > innerWidth + 1 ? [{selector, top: rect.top, bottom: rect.bottom,
+          left: rect.left, right: rect.right, height: innerHeight, width: innerWidth}] : [];
+    })''', selectors)
+    assert not failures, failures
+
+
+def observe_announcements(page):
+    page.evaluate('''() => {
+      window.presentationNotices = [];
+      const layer = document.querySelector('#match-announcement');
+      let sequence = null;
+      new MutationObserver(() => {
+        if (layer.hidden || sequence === layer.dataset.sequence) return;
+        sequence = layer.dataset.sequence;
+        window.presentationNotices.push({kind: layer.dataset.kind,
+          title: document.querySelector('#announcement-title').textContent,
+          detail: document.querySelector('#announcement-detail').textContent});
+      }).observe(layer, {attributes: true, attributeFilter: ['hidden', 'data-sequence']});
+    }''')
+
+
+def save_announcement(page, output, name, kind):
+    page.wait_for_function('''kind => {
+      const layer = document.querySelector('#match-announcement');
+      return !layer.hidden && layer.dataset.kind === kind && Number(getComputedStyle(layer).opacity) > .95;
+    }''', arg=kind)
+    page.screenshot(path=str(output / name))
 
 
 def check_fullscreen(page, code, output):
@@ -329,6 +414,8 @@ def run(browser_channel, output):
                     page.on("pageerror", lambda error: errors.append(str(error)))
                     page.set_default_timeout(12000)
                 first, second = pages
+                notices = [[], []]
+                captured_pass = captured_round = False
                 try:
                     first.goto(url)
                     first.locator("#player-name").fill("Алиса")
@@ -402,27 +489,57 @@ def run(browser_channel, output):
                     first.locator("#collection .card").first.click()
                     first.locator("#close-info").click()
                     first.locator("#ready-button").click()
+                    for page in pages:
+                        observe_announcements(page)
                     second.locator("#ready-button").click()
                     for page in pages:
                         page.locator("#mulligan-button").wait_for(state="visible")
                         assert_game_fits(page)
+                    for width, height in [(1920, 1080), (1366, 768), (1280, 720), (390, 844), (844, 390)]:
+                        first.set_viewport_size({'width': width, 'height': height})
+                        assert_presentation_fits(first)
+                        first.screenshot(path=str(output / f'mulligan-{width}x{height}.png'))
+                    first.set_viewport_size({'width': 1440, 'height': 1100})
+                    first.locator('#mulligan-home').click()
+                    first.locator('#landing').wait_for(state='visible')
+                    first.goto(f'{url}/?room={code}')
+                    first.wait_for_selector('#connection.online')
+                    first.locator('#mulligan-dialog').wait_for(state='visible')
+                    observe_announcements(first)
                     before = snapshot(first, code)
-                    for card in before["game"]["players"][0]["hand"][:2]:
-                        first.locator(f'#hand [data-card-id="{card["id"]}"]').click()
+                    first.locator('#mulligan-cards .card.focused').focus()
+                    first.keyboard.press('Enter')
+                    first.keyboard.press('ArrowRight')
+                    first.keyboard.press('Enter')
+                    assert first.locator('#mulligan-count').inner_text() == '2/2'
+                    first.locator('#mulligan-next').click()
+                    assert first.locator('#mulligan-select').is_disabled()
                     first.locator("#mulligan-button").click()
                     wait_version(second, 0)
+                    wait_version(first, 0)
+                    swapped_hand = snapshot(first, code)['game']['players'][0]['hand']
+                    assert len(swapped_hand) == 10
+                    assert not {card['id'] for card in before['game']['players'][0]['hand'][:2]} & {card['id'] for card in swapped_hand}
+                    assert first.locator('#mulligan-dialog').is_visible()
+                    assert 'Ждём соперника' in first.locator('#mulligan-title').inner_text()
                     second.locator("#mulligan-button").click()
                     wait_version(first, 1)
                     wait_version(second, 1)
+                    for side, page in enumerate(pages):
+                        kind = 'your-turn' if snapshot(page, code)['game']['turn'] == side else 'enemy-turn'
+                        save_announcement(page, output, f'announcement-{kind}.png', kind)
+                    notice_sequence = first.locator('#match-announcement').get_attribute('data-sequence')
                     check_fullscreen(first, code, output)
                     first.locator('#journal-button').click()
                     first.locator('#event-log').wait_for(state='visible')
                     first.locator('#close-info').click()
+                    assert first.locator('#match-announcement').get_attribute('data-sequence') == notice_sequence
                     first.locator('#own-discard').click()
                     first.locator('#info-dialog').wait_for(state='visible')
                     first.locator('#close-info').click()
                     rng = random.Random(14)
                     moves_used = set()
+                    standard_slots = 0
                     steps = 0
                     while steps < 150:
                         current = snapshot(first, code)
@@ -440,16 +557,31 @@ def run(browser_channel, output):
                         candidates = choices or leaders or (playable if steps < 40 else passes) or passes
                         move = rng.choice(candidates)
                         version = current["game"]["version"]
-                        click_move(page, move)
+                        if move['type'] == 'leader':
+                            check_leader_confirmation(page, code, output)
+                        if move['type'] == 'play' and any(card['id'] == move['card_id'] and card['key'] == 'horn' for card in current['game']['players'][actor]['hand']):
+                            standard_slots += 1
+                        click_move(page, move, output)
                         for peer in pages:
                             wait_version(peer, version)
                         moves_used.add(move["type"])
                         steps += 1
+                        after = snapshot(first, code)['game']
+                        if move['type'] == 'pass' and not captured_pass:
+                            save_announcement(pages[1 - actor], output, 'announcement-pass.png', 'pass')
+                            captured_pass = True
+                        if len(after['history']) > len(game['history']) and not captured_round:
+                            round_result = after['history'][-1]
+                            for side, peer in enumerate(pages):
+                                kind = 'round-draw' if round_result['winner'] is None else 'round-win' if round_result['winner'] == side else 'round-loss'
+                                save_announcement(peer, output, f'announcement-{kind}.png', kind)
+                            captured_round = True
                         if move['type'] == 'leader' and actor == 0:
                             marker = first.locator('.combat-row.own[data-row="siege"] .leader-standard')
                             marker.wait_for(state='visible')
-                            assert marker.locator('svg[data-icon="banner"]').count() == 1
-                            assert marker.inner_text() == ''
+                            assert marker.locator('.card-art.art-horn').count() == 1
+                            assert marker.get_attribute('data-source') == 'leader'
+                            assert marker.evaluate("card => getComputedStyle(card.querySelector('.card-art')).backgroundImage.includes('/horn.png')")
                             second.locator('.combat-row.enemy[data-row="siege"] .leader-standard').wait_for(state='visible')
                             marker.click()
                             first.locator('#info-dialog').wait_for(state='visible')
@@ -459,11 +591,14 @@ def run(browser_channel, output):
                             first.screenshot(path=str(output / "match.png"), full_page=True)
                             first.locator('#leave-view').click()
                             first.locator('#landing').wait_for(state='visible')
+                            notices[0].extend(first.evaluate('window.presentationNotices'))
                             assert first.locator('#leave-view').inner_text() == 'Frontiers'
                             first.goto(f"{url}/?room={code}")
                             first.wait_for_selector("#connection.online")
                             assert snapshot(first, code)["me"] == 0
                             first.wait_for_function("version => Number(document.body.dataset.gameVersion) === version", arg=version + 1)
+                            assert first.locator('#match-announcement').is_hidden(), 'Reconnect replayed old announcements'
+                            observe_announcements(first)
                             for width, height in [(1920, 1080), (1907, 936), (1600, 900), (1366, 768),
                                                   (1280, 720), (1024, 768), (390, 844), (844, 390)]:
                                 first.set_viewport_size({"width": width, "height": height})
@@ -472,7 +607,24 @@ def run(browser_channel, output):
                             first.set_viewport_size({"width": 1440, "height": 1100})
                     final = snapshot(first, code)
                     assert final["game"]["phase"] == "finished", "Match did not finish"
-                    for page in pages:
+                    for side, page in enumerate(pages):
+                        page.locator('#result-dialog').wait_for(state='visible', timeout=45000)
+                        notices[side].extend(page.evaluate('window.presentationNotices'))
+                        round_notices = [item for item in notices[side] if item['kind'].startswith('round-')]
+                        assert len(round_notices) == len(final['game']['history']), notices[side]
+                        for item in notices[side]:
+                            if item['kind'] == 'pass':
+                                assert item['title'] == ('Вы спасовали' if item['detail'] == final['game']['players'][side]['name'] else 'Противник спасовал'), item
+                        expected = 'draw' if final['game']['winner'] is None else 'victory' if final['game']['winner'] == side else 'defeat'
+                        assert page.locator('#result-dialog').get_attribute('data-outcome') == expected
+                        page.wait_for_function('''() => document.querySelector('#result-dialog').getAnimations().every(animation => animation.playState === 'finished')''')
+                        assert_presentation_fits(page, result=True)
+                        page.screenshot(path=str(output / f'result-{expected}.png'))
+                        for width, height in [(1366, 768), (390, 844), (844, 390)]:
+                            page.set_viewport_size({'width': width, 'height': height})
+                            assert_presentation_fits(page, result=True)
+                        page.set_viewport_size({'width': 1440, 'height': 1100})
+                        page.locator('#result-continue').click()
                         page.locator("#match-result").wait_for(state="visible")
                     first.screenshot(path=str(output / "result.png"), full_page=True)
                     for page in pages:
@@ -495,8 +647,26 @@ def run(browser_channel, output):
                         for page in pages:
                             wait_version(page, current["version"])
                         pass_count += 1
+                        if not captured_pass:
+                            save_announcement(first, output, 'announcement-pass.png', 'pass')
+                            captured_pass = True
                         assert pass_count <= 4
                     assert snapshot(first, code)["game"]["winner"] is None
+                    for page in pages:
+                        page.locator('#result-dialog').wait_for(state='visible', timeout=45000)
+                        assert page.locator('#result-title').inner_text() == 'Ничья'
+                    first.screenshot(path=str(output / 'result-draw.png'))
+                    # Сдача до первого хода тоже открывает правильные итоги на обеих сторонах.
+                    for page in pages:
+                        page.locator('#result-continue').click()
+                        page.locator('#ready-button').click()
+                    first.locator('#mulligan-dialog').wait_for(state='visible')
+                    first.once('dialog', lambda dialog: dialog.accept())
+                    first.locator('#mulligan-concede').click()
+                    for side, page in enumerate(pages):
+                        page.locator('#result-dialog').wait_for(state='visible')
+                        assert page.locator('#result-dialog').get_attribute('data-outcome') == ('defeat' if side == 0 else 'victory')
+                        assert page.locator('#mulligan-dialog').is_hidden()
                     moves_used.add("pass")
                     mobile = browser.new_context(viewport={"width": 390, "height": 844})
                     mobile_page = mobile.new_page()
@@ -509,7 +679,9 @@ def run(browser_channel, output):
                                       "actions": sorted(moves_used), "js_errors": errors,
                                       "reconnect": "ok", "rematch": "ok", "mobile": "ok",
                                       "fullscreen": "ok", "ability_icons": len(ability_icons),
-                                      "academy_standard": "ok"}, ensure_ascii=False))
+                                      "academy_standard": "ok", "mulligan_carousel": "ok",
+                                      "announcements": "ok", "result_screens": "ok",
+                                      "leader_confirmation": "ok", "standard_slot_placements": standard_slots}, ensure_ascii=False))
                 except Exception:
                     for index, page in enumerate(pages):
                         with suppress(Exception):

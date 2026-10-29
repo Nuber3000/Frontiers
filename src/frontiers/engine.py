@@ -45,6 +45,7 @@ class Game:
     pending: list[str] = field(default_factory=list)
     history: list[dict] = field(default_factory=list)
     events: list[str] = field(default_factory=list)
+    scorched: list[str] = field(default_factory=list)
     winner: int | None = None
 
     @classmethod
@@ -88,6 +89,7 @@ class Game:
         if self.phase == "finished":
             raise RuleError("Матч уже завершён.")
         candidate = deepcopy(self)
+        candidate.scorched = []
         candidate._act(actor, action)
         candidate.version += 1
         return candidate
@@ -317,6 +319,7 @@ class Game:
                     survivors.append(item)
                     continue
                 player.discard.append(item.card)
+                self.scorched.append(item.card.id)
                 definition = CATALOG[item.card.key]
                 self._log(f"Казнь: «{definition.name}» отправляется в сброс.")
                 if definition.summon_to:
@@ -489,5 +492,6 @@ class Game:
                         for effect in self.weather],
             "pending": {"actor": self.turn, "source": self.pending[0]} if self.pending else None,
             "history": deepcopy(self.history), "events": list(self.events),
+            "scorched": list(self.scorched),
             "moves": self.legal_moves(viewer),
         }

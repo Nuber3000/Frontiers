@@ -12,7 +12,7 @@
     bond: "Базовая сила умножается на число одинаковых отрядов в вашем ряду.",
     morale: "Добавляет 1 к силе других ваших отрядов в ряду, кроме героев.",
     muster: "Призывает связанные отряды из вашей руки и колоды.",
-    horn: "Удваивает силу других ваших отрядов в ряду. Эффекты рогов не складываются.",
+    horn: "Удваивает силу других ваших отрядов в ряду. Эффекты штандартов не складываются.",
     mushroom: "Обращает Берсерков своего ряда во вторую форму.",
     berserker: "Мухомор обращает отряд во вторую форму. Превращение сохраняется.",
     avenger: "При уходе в сброс призывает новый отряд. В конце раунда — к следующему раунду.",
@@ -26,6 +26,12 @@
   let retryTimer = null, heartbeat = null, toastTimer = null;
   let deckFilter = "all";
   let changingFullscreen = false;
+  let mulliganIndex = 0, resultDismissed = false, resultSignature = "";
+  let noticeQueue = [], currentNotice = null, noticeAnimation = null, noticeSerial = 0;
+  let leaderPreview = null, leaderPreviewAnimation = null;
+  const burningCards = new Map();
+  const scorchFire = new window.FrontiersFire();
+  let scorchFrame = null, scorchTick = null;
   const FILTERS = [["all", "cards", "Все карты"], ["melee", "melee", "Ближний бой"],
     ["ranged", "ranged", "Дальний бой"], ["siege", "siege", "Осада"],
     ["hero", "crown", "Герои"], ["weather", "sun", "Погода"], ["special", "banner", "Особые"]];
@@ -55,6 +61,7 @@
     scorch: ["M8 20v-3c-7-4-5-15 4-15s11 11 4 15v3H8Z", "M7 9h3v3H7ZM14 9h3v3h-3ZM12 12l-1 3h2l-1-3ZM10 17v3m4-3v3"],
     mushroom: ["M2 12a10 10 0 0 1 20 0H2ZM9 12v8h6v-8M7 21h10", "M7 8h.1M14 5h.1M17 9h.1"],
     decoy: ["M5 4h14M12 4v18M3 10l9-2 9 2M8 10l-1 9h10l-1-9", "M15 4a3 3 0 1 0-6 0"],
+    opponent: ["M6 9V7a6 6 0 0 1 12 0v2l-2 6-4 3-4-3-2-6Z", "m8 9 3 1m2 0 3-1M2 23v-3l6-4m8 0 6 4v3M12 18v5"],
   };
   const ABILITY_ICONS = {
     spy: "spy", medic: "medic", bond: "bond", morale: "morale", muster: "muster",
@@ -171,6 +178,7 @@
   function receive(next) {
     const freshRoom = !state || state.code !== next.code;
     if (!freshRoom && next.revision < state.revision) return;
+    const previous = state;
     const oldPhase = state?.game?.phase;
     if (freshRoom || (!dirtyDeck && !next.game)) {
       deck = [...next.my_deck];
@@ -182,14 +190,21 @@
     if (next.game && next.game.phase !== "finished") dirtyDeck = false;
     if (freshRoom || (oldPhase === "finished" && next.game?.phase === "mulligan")) {
       selected = null; swaps.clear(); pendingVersion = null;
+      mulliganIndex = 0; resultDismissed = false; resultSignature = "";
+      clearScorchAnimations();
+      clearAnnouncements();
+      if ($("result-dialog").open) $("result-dialog").close();
     }
     if (pendingVersion !== null && next.game?.version > pendingVersion) pendingVersion = null;
+    if (!freshRoom) collectScorchedCards(previous, next);
     state = next;
     document.body.dataset.revision = String(next.revision);
     document.body.dataset.gameVersion = String(next.game?.version ?? -1);
     if (state.game && !state.game.players[state.me].hand.some((card) => card.id === selected)) selected = null;
+    if (state.game?.players[state.me].mulligan_done) swaps.clear();
     writeStorage("frontiers.room", state.code);
     history.replaceState(null, "", `/?room=${encodeURIComponent(state.code)}`);
+    announceChanges(freshRoom ? null : previous, next);
     render();
   }
 
@@ -325,7 +340,7 @@
   }
 
   function render() {
-    const active = !!(state?.game && state.game.phase !== "finished");
+    const active = !!(state?.game && (state.game.phase !== "finished" || !resultDismissed));
     const wasActive = document.body.classList.contains("in-match");
     document.body.classList.toggle("in-match", active);
     document.body.classList.toggle("in-room", !!state);
@@ -335,12 +350,16 @@
     if (active && !wasActive) window.scrollTo(0, 0);
     $("landing").hidden = !!state;
     $("room").hidden = !state;
-    if (!state) return;
+    if (!state) {
+      closePresentation();
+      return;
+    }
     $("room-label").textContent = state.code;
     $("copy-invite").hidden = active;
     $("lobby").hidden = !!active;
     $("arena").hidden = !active;
-    if (active) renderGame(); else { closeChoice(); renderLobby(); }
+    if (active) renderGame(); else { closeChoice(); closeMulligan(); closeLeaderPreview(); renderLobby(); }
+    renderResult();
   }
   function renderLobby() {
     const mine = state.seats[state.me];
@@ -450,7 +469,8 @@
     $("round-label").textContent = game.round;
     $("history").replaceChildren(...game.history.map((round) => node("span", "", `${round.round}: ${round.scores[me]} : ${round.scores[1 - me]}`)));
     let banner;
-    if (game.phase === "mulligan") banner = mine.mulligan_done ? "Ждём подтверждения руки соперника" : "Выберите до двух карт для замены";
+    if (game.phase === "finished") banner = "Матч завершён";
+    else if (game.phase === "mulligan") banner = mine.mulligan_done ? "Ждём подтверждения руки соперника" : "Выберите до двух карт для замены";
     else if (game.pending) banner = game.pending.actor === me ? "Лекарь: выберите отряд из сброса" : "Соперник выбирает цель Лекаря";
     else banner = game.turn === me ? (game.players[1 - me].passed ? "Соперник спасовал. Вы можете продолжать ходить" : "Ваш ход") : "Ход соперника";
     if (pendingVersion !== null) banner = "Сервер проверяет ход…";
@@ -503,13 +523,357 @@
     const moves = selectedMoves();
     const info = [];
     if (chosen) {
-      info.push(node("span", "", moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : chosen.name));
-      if (moves.length === 1 && !moves[0].target_id) info.push(button("Сыграть", () => send(moves[0]), "primary"));
+      info.push(node("span", "", chosen.key === "horn" ? "Выберите подсвеченное место для штандарта слева" : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : chosen.name));
+      if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button("Сыграть", () => send(moves[0]), "primary"));
       info.push(button("О карте", () => showCard(chosen), "text-button"));
     } else if (!canSwap) info.push(node("span", "", "Нажмите на карту в руке, чтобы выбрать действие"));
     $("selection-info").replaceChildren(...info);
     syncTableCardProportions();
     renderChoices();
+    renderMulligan();
+    renderLeaderPreview();
+    startScorchAnimations();
+  }
+  function collectScorchedCards(previous, next) {
+    const before = previous?.game, game = next.game;
+    if (!before || !game || game.version <= before.version) return;
+    const ids = new Set(game.scorched || []);
+    for (let side = 0; side < 2; side++) {
+      const board = before.players[side].board;
+      for (const card of board) {
+        const key = `${game.version}:${card.id}`;
+        if (!ids.has(card.id) || burningCards.has(key)) continue;
+        const source = document.querySelector(`.row-cards [data-card-id="${CSS.escape(card.id)}"]`);
+        if (!source) continue;
+        const bounds = source.getBoundingClientRect();
+        if (!bounds.width || !bounds.height) continue;
+        const image = source.cloneNode(true), element = node("div", "scorch-burn");
+        image.removeAttribute("data-card-id"); image.removeAttribute("title");
+        image.classList.remove("selected", "targetable"); image.tabIndex = -1;
+        element.dataset.burnId = card.id; element.setAttribute("aria-hidden", "true"); element.inert = true;
+        element.append(image);
+        const order = board.filter(item => item.row === card.row).map(item => item.id);
+        const burn = {element, image, side, row: card.row, elapsed: 0,
+          following: order.slice(order.indexOf(card.id) + 1), animations: [], started: false};
+        scorchFire.prepare(burn, key); burningCards.set(key, burn);
+      }
+    }
+    if (burningCards.size && currentNotice?.type === "turn") {
+      noticeAnimation?.cancel(); noticeAnimation = null; currentNotice = null;
+      $("match-announcement").hidden = true;
+    }
+  }
+  function clearScorchAnimations() {
+    for (const burn of burningCards.values()) {
+      for (const animation of burn.animations) animation.cancel();
+      burn.element.remove();
+    }
+    burningCards.clear();
+    cancelAnimationFrame(scorchFrame); scorchFrame = null; scorchTick = null;
+    scorchFire.clear();
+  }
+  function startScorchAnimations() {
+    for (const [id, burn] of burningCards) {
+      if (burn.started || !burn.element.isConnected) continue;
+      burn.started = true;
+      const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      burn.reduced = reduced;
+      burn.element.classList.toggle("reduced-motion", reduced);
+      const frames = reduced ? [{opacity: 1}, {opacity: 0}] : [
+        {offset: 0, opacity: 1, filter: "brightness(1) sepia(0) saturate(1)", clipPath: scorchFire.clip(burn, 0)},
+        {offset: .18, opacity: 1, filter: "brightness(1.1) sepia(.75) saturate(1.3)", clipPath: scorchFire.clip(burn, .18)},
+        {offset: .6, opacity: 1, filter: "brightness(.4) sepia(.5) saturate(.2)", clipPath: scorchFire.clip(burn, .6)},
+        {offset: 1, opacity: 0, filter: "brightness(.1) sepia(.5) saturate(0)", clipPath: scorchFire.clip(burn, 1)},
+      ];
+      burn.duration = reduced ? 220 : 2400;
+      const animation = burn.image.animate(frames, {duration: burn.duration, easing: "linear", fill: "both"});
+      animation.pause(); animation.currentTime = 0;
+      animation.finished.catch(() => {});
+      burn.animations.push(animation);
+    }
+    scheduleScorchFrame();
+  }
+  function scheduleScorchFrame() {
+    if (scorchFrame === null && burningCards.size && document.visibilityState === "visible") scorchFrame = requestAnimationFrame(advanceScorchFrame);
+  }
+  function advanceScorchFrame(time) {
+    scorchFrame = null;
+    if (document.visibilityState !== "visible") { scorchTick = null; return scorchFire.clear(); }
+    // Считаем показанные кадры: фоновая вкладка не пропускает весь эффект за один скачок часов.
+    const delta = scorchTick === null ? 16 : Math.max(0, Math.min(50, time - scorchTick));
+    scorchTick = time;
+    for (const [id, burn] of burningCards) {
+      if (!burn.started) continue;
+      burn.elapsed = Math.min(burn.duration, burn.elapsed + delta);
+      burn.animations[0].currentTime = burn.elapsed;
+      if (burn.elapsed >= burn.duration) {
+        burningCards.delete(id); burn.element.remove();
+        for (const animation of burn.animations) animation.cancel();
+      }
+    }
+    scorchFire.draw(burningCards, delta);
+    if (burningCards.size) scheduleScorchFrame();
+    else { scorchTick = null; playAnnouncement(); }
+  }
+  function closeLeaderPreview() {
+    leaderPreviewAnimation?.cancel(); leaderPreviewAnimation = null; leaderPreview = null;
+    if ($("leader-dialog").open) $("leader-dialog").close();
+  }
+  function renderLeaderPreview() {
+    if (!leaderPreview) return;
+    const game = state?.game;
+    if (state?.code !== leaderPreview.code || game?.phase !== "playing" || game.version !== leaderPreview.version ||
+        game.players[state.me].leader !== leaderPreview.key || game.players[state.me].leader_used) return closeLeaderPreview();
+    $("leader-apply").disabled = !usableMoves().some(move => move.type === "leader");
+    $("leader-confirmation-status").textContent = connected ? "Один раз за матч. Применение завершит ваш ход." : "Соединение потеряно. Дождитесь восстановления связи или отмените выбор.";
+  }
+  function openLeaderPreview() {
+    if (!usableMoves().some(move => move.type === "leader")) return;
+    selected = null; renderGame();
+    const game = state.game, key = game.players[state.me].leader;
+    leaderPreview = {code: state.code, version: game.version, key};
+    const preview = $("leader-preview"), caption = node("div", "leader-preview-caption");
+    caption.append(node("strong", "", "Франциск II Мудрый"), node("span", "", catalog.leaders[key].name));
+    preview.replaceChildren(leaderPortrait(key), caption);
+    $("leader-title").textContent = catalog.leaders[key].name;
+    $("leader-rule").textContent = catalog.leaders[key].description;
+    renderLeaderPreview();
+    $("leader-dialog").showModal();
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const source = $("leader-button").getBoundingClientRect(), target = preview.getBoundingClientRect();
+      const x = source.left + source.width / 2 - target.left - target.width / 2;
+      const y = source.top + source.height / 2 - target.top - target.height / 2;
+      const scale = Math.min(source.width / target.width, source.height / target.height);
+      leaderPreviewAnimation = preview.animate([
+        {transform: `translate(${x}px, ${y}px) scale(${scale})`, opacity: .65},
+        {transform: "none", opacity: 1},
+      ], {duration: 480, easing: "cubic-bezier(.2,.7,.2,1)"});
+    }
+  }
+  function closeMulligan() { if ($("mulligan-dialog").open) $("mulligan-dialog").close(); }
+  function focusMulligan(index, keyboard = false) {
+    const hand = state?.game?.players[state.me].hand;
+    if (!hand?.length) return;
+    mulliganIndex = Math.max(0, Math.min(hand.length - 1, index));
+    renderMulligan();
+    if (keyboard) $("mulligan-cards").children[mulliganIndex]?.focus({preventScroll: true});
+  }
+  function toggleMulligan(index) {
+    const game = state?.game;
+    if (!game || game.phase !== "mulligan" || game.players[state.me].mulligan_done || !connected || pendingVersion !== null) return;
+    const card = game.players[state.me].hand[index];
+    if (!card) return;
+    if (swaps.has(card.id)) swaps.delete(card.id);
+    else if (swaps.size < 2) swaps.add(card.id);
+    else return toast("Можно заменить только две карты. Снимите отметку с одной из выбранных.");
+    renderMulligan();
+  }
+  function renderMulligan() {
+    const game = state?.game;
+    if (!game || game.phase !== "mulligan") return closeMulligan();
+    const mine = game.players[state.me], hand = mine.hand;
+    mulliganIndex = Math.max(0, Math.min(hand.length - 1, mulliganIndex));
+    const waiting = mine.mulligan_done;
+    const blocked = waiting || !connected || pendingVersion !== null;
+    const signature = hand.map(card => card.id).join(",");
+    for (const [id, thumbnail] of [["mulligan-cards", false], ["mulligan-thumbnails", true]]) {
+      const track = $(id);
+      // Сохраняем элементы при навигации: CSS плавно перемещает соседние карты.
+      if (track.dataset.hand !== signature) {
+        track.replaceChildren(...hand.map((card, index) => cardNode(card, {onClick: () => {
+          if (thumbnail || index !== mulliganIndex) focusMulligan(index);
+          else toggleMulligan(index);
+        }})));
+        track.dataset.hand = signature;
+      }
+      [...track.children].forEach((element, index) => {
+        const distance = index - mulliganIndex, chosen = swaps.has(hand[index].id);
+        element.classList.toggle("focused", distance === 0);
+        element.classList.toggle("selected", chosen);
+        element.setAttribute("aria-pressed", String(chosen));
+        element.tabIndex = thumbnail || distance === 0 ? 0 : -1;
+        if (!thumbnail) {
+          element.style.setProperty("--offset", String(distance));
+          element.style.setProperty("--scale", String(Math.max(.6, 1 - Math.abs(distance) * .14)));
+          element.style.setProperty("--opacity", Math.abs(distance) > 2 ? "0" : "1");
+          element.style.setProperty("--layer", String(10 - Math.abs(distance)));
+          element.hidden = Math.abs(distance) > 2;
+          element.setAttribute("aria-label", `${element.title}${chosen ? " Выбрана для замены." : ""}`);
+        }
+      });
+    }
+    $("mulligan-dialog").classList.toggle("waiting", waiting);
+    $("mulligan-title").firstChild.textContent = waiting ? "Рука готова. Ждём соперника " : "Выберите карты для замены ";
+    $("mulligan-count").textContent = waiting ? "✓" : `${swaps.size}/2`;
+    $("mulligan-prev").disabled = mulliganIndex === 0;
+    $("mulligan-next").disabled = mulliganIndex === hand.length - 1;
+    const focused = hand[mulliganIndex];
+    $("mulligan-card-name").textContent = focused?.name || "Начальная рука";
+    $("mulligan-card-description").textContent = focused ? description(focused) : "";
+    $("mulligan-select").disabled = blocked || (!swaps.has(focused?.id) && swaps.size === 2);
+    $("mulligan-select").textContent = swaps.has(focused?.id) ? "Оставить эту карту" : "Выбрать для замены";
+    $("mulligan-select").hidden = waiting;
+    $("mulligan-button").disabled = blocked;
+    $("mulligan-button").hidden = waiting;
+    $("mulligan-button").textContent = swaps.size ? `Заменить ${swaps.size === 1 ? "1 карту" : "2 карты"}` : "Оставить руку";
+    $("mulligan-concede").disabled = !usableMoves().some(move => move.type === "concede");
+    $("mulligan-hint").textContent = !connected ? "Соединение потеряно. Выбранные карты сохранятся до восстановления связи."
+      : pendingVersion !== null ? "Сервер подтверждает выбор…"
+      : waiting ? "Ваш выбор подтверждён. Матч начнётся, когда соперник оставит свою руку."
+      : "← → — просмотр · Enter — выбор карты · можно заменить до двух карт";
+    if (!$("mulligan-dialog").open) $("mulligan-dialog").showModal();
+  }
+  function ceremonyEmblem(kind) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 120 120"); svg.setAttribute("class", "ceremony-emblem");
+    svg.setAttribute("aria-hidden", "true");
+    let ink = "currentColor";
+    function shape(d, fill = "none", width = "2", parent = svg, stroke = ink) {
+      const path = document.createElementNS(svg.namespaceURI, "path");
+      for (const [key, value] of Object.entries({d, fill, stroke, "stroke-width": width, "stroke-linejoin": "round"})) path.setAttribute(key, value);
+      parent.append(path);
+      return path;
+    }
+    if (kind === "pass") {
+      const flag = icon("banner"); flag.setAttribute("x", "16"); flag.setAttribute("y", "8"); flag.setAttribute("width", "92"); flag.setAttribute("height", "104"); svg.append(flag);
+      return svg;
+    }
+    if (kind === "enemy-turn") {
+      const opponent = icon("opponent"); opponent.setAttribute("x", "16"); opponent.setAttribute("y", "6"); opponent.setAttribute("width", "88"); opponent.setAttribute("height", "108"); svg.append(opponent);
+      return svg;
+    }
+    const broken = kind === "defeat" || kind === "round-loss";
+    ink = broken ? "#bd9278" : "#c99e4c";
+    const highlight = broken ? ink : "#d7b365";
+    svg.setAttribute("viewBox", "0 0 180 180");
+    for (const angle of [-45, 45]) {
+      const sword = document.createElementNS(svg.namespaceURI, "g");
+      sword.setAttribute("transform", `translate(90 98) rotate(${angle})`);
+      svg.append(sword);
+      shape("M0-101 8-84V53H-8V-84Z", ink, "1", sword).setAttribute("stroke-linejoin", "miter");
+      shape("M0-88V50", "none", "1.4", sword, broken ? "#493126" : "#372a16").setAttribute("opacity", ".8");
+      shape("M-19 50H19V57H-19Z", highlight, "0", sword);
+      shape("M-4 56H4V79H-4Z", ink, "0", sword);
+      const pommel = document.createElementNS(svg.namespaceURI, "circle");
+      for (const [key, value] of Object.entries({cy: "83", r: "6.5", fill: highlight})) pommel.setAttribute(key, value);
+      sword.append(pommel);
+    }
+    shape("M48 49 90 38l42 11v43c0 28-19 47-42 60-23-13-42-32-42-60Z", "#15140e", "4");
+    shape("M56 55 90 46l34 9v37c0 23-15 39-34 51-19-12-34-28-34-51Z", "none", "1.5");
+    shape("m58 29-7-23 23 14L90 4l16 16 23-14-7 23Z", ink, "0");
+    if (kind === "draw" || kind === "round-draw") {
+      shape("M90 69v46.5M64.5 79.5h51M64.5 79.5 51 105h27Zm51 0L102 105h27ZM73.5 123h33", "none", "3")
+        .setAttribute("transform", "translate(90 96) scale(.68) translate(-90 -96)");
+    } else if (broken) {
+      shape("M94 54 82 84 101 92 77 131", "none", "4.5");
+    }
+    return svg;
+  }
+  function clearAnnouncements() {
+    noticeQueue = []; currentNotice = null;
+    noticeAnimation?.cancel(); noticeAnimation = null;
+    $("match-announcement").hidden = true;
+  }
+  function closePresentation() {
+    closeMulligan(); closeLeaderPreview(); clearScorchAnimations(); clearAnnouncements();
+    if ($("result-dialog").open) $("result-dialog").close();
+  }
+  function playAnnouncement() {
+    if (currentNotice || burningCards.size) return;
+    const next = noticeQueue.shift();
+    if (!next) return renderResult();
+    if (!state?.game || resultDismissed) return clearAnnouncements();
+    currentNotice = next;
+    const layer = $("match-announcement");
+    layer.dataset.kind = next.kind; layer.dataset.sequence = String(++noticeSerial);
+    $("announcement-emblem").replaceChildren(ceremonyEmblem(next.kind));
+    $("announcement-title").textContent = next.title;
+    $("announcement-detail").textContent = next.detail || "";
+    layer.hidden = false;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const animation = layer.animate([
+      {opacity: 0, transform: reduced ? "none" : "translateY(8px)", offset: 0},
+      {opacity: 1, transform: "none", offset: .16},
+      {opacity: 1, transform: "none", offset: .78},
+      {opacity: 0, transform: reduced ? "none" : "translateY(-4px)", offset: 1},
+    ], {duration: next.type === "round" ? 2600 : 1900, easing: "ease-in-out", fill: "both"});
+    noticeAnimation = animation;
+    animation.finished.then(() => {
+      if (noticeAnimation !== animation) return;
+      layer.hidden = true; currentNotice = null; noticeAnimation = null;
+      animation.cancel(); playAnnouncement();
+    }, () => {});
+  }
+  function announceChanges(previous, next) {
+    const before = previous?.game, game = next.game;
+    // Снимок при входе и повторная доставка той же версии не повторяют старые события.
+    if (!before || !game || game.version <= before.version || before.phase === "finished") return;
+    const notices = [], me = next.me;
+    const rounds = game.history.slice(before.history.length);
+    if (before.phase === "playing") {
+      for (const side of [before.turn, 1 - before.turn]) {
+        if (!before.players[side].passed && (game.players[side].passed || rounds.length)) {
+          notices.push({type: "pass", kind: "pass", title: side === me ? "Вы спасовали" : "Противник спасовал", detail: game.players[side].name});
+        }
+      }
+    }
+    for (const round of rounds) {
+      const kind = round.winner === null ? "round-draw" : round.winner === me ? "round-win" : "round-loss";
+      notices.push({type: "round", kind, title: round.winner === null ? "Ничья в раунде" : round.winner === me ? "Вы выиграли раунд!" : "Вы проиграли раунд",
+        detail: `Раунд ${round.round} · ${round.scores[me]} : ${round.scores[1 - me]}`});
+    }
+    if (game.phase === "playing" && (before.phase === "mulligan" || game.turn !== before.turn || rounds.length)) {
+      notices.push({type: "turn", kind: game.turn === me ? "your-turn" : "enemy-turn", title: game.turn === me ? "Ваш ход!" : "Ход противника", detail: `Раунд ${game.round}`});
+    }
+    if (!notices.length && game.phase !== "finished") return;
+    // Устаревшее объявление хода уступает новому действию; результаты и пас сохраняют порядок.
+    noticeQueue = noticeQueue.filter(notice => notice.type !== "turn");
+    if (currentNotice?.type === "turn") {
+      noticeAnimation?.cancel(); noticeAnimation = null; currentNotice = null;
+      $("match-announcement").hidden = true;
+    }
+    noticeQueue.push(...notices);
+    playAnnouncement();
+  }
+  function dismissResult() {
+    resultDismissed = true;
+    clearAnnouncements();
+    if ($("result-dialog").open) $("result-dialog").close();
+    render();
+  }
+  function renderResult() {
+    const game = state?.game;
+    if (!game || game.phase !== "finished" || resultDismissed || currentNotice || noticeQueue.length || burningCards.size) return;
+    const dialog = $("result-dialog"), me = state.me;
+    const signature = `${state.code}:${game.version}:${me}`;
+    if (resultSignature !== signature) {
+      const outcome = game.winner === null ? "draw" : game.winner === me ? "victory" : "defeat";
+      dialog.dataset.outcome = outcome;
+      $("result-emblem").replaceChildren(ceremonyEmblem(outcome));
+      $("result-title").textContent = {victory: "Победа!", defeat: "Поражение", draw: "Ничья"}[outcome];
+      const conceded = game.players.every(player => player.lives > 0);
+      $("result-subtitle").textContent = conceded ? game.winner === me ? "Соперник сдался." : "Вы сдались." : "Королевство Бургундия · Итоги раундов";
+      const table = node("table", "match-score-table"), head = node("thead"), body = node("tbody"), headers = node("tr");
+      table.append(node("caption", "", "Счёт игроков по раундам"));
+      for (const title of ["Игрок", "Раунд 1", "Раунд 2", "Раунд 3"]) {
+        const cell = node("th", "", title); cell.scope = "col"; headers.append(cell);
+      }
+      head.append(headers);
+      for (const side of [me, 1 - me]) {
+        const row = node("tr"), name = node("th", "", `${game.players[side].name}${side === me ? " · вы" : ""}`);
+        name.scope = "row"; row.append(name);
+        for (let number = 1; number <= 3; number++) {
+          const round = game.history.find(item => item.round === number);
+          row.append(node("td", round?.winner === side ? "round-winner" : "", round ? String(round.scores[side]) : "—"));
+        }
+        body.append(row);
+      }
+      table.append(head, body); $("result-table").replaceChildren(table);
+      resultSignature = signature;
+    }
+    closeMulligan(); closeChoice(); closeLeaderPreview();
+    if ($("info-dialog").open) $("info-dialog").close();
+    if (!dialog.open) dialog.showModal();
   }
   function syncTableCardProportions() {
     const reference = $("hand").querySelector(".card.unit:not(.hero), .card:not(.hero)") || $("hand").querySelector(".card");
@@ -543,7 +907,8 @@
     const chosen = game.players[state.me].hand.find((card) => card.id === selected);
     const targetSide = chosen?.abilities?.includes("spy") ? 1 - state.me : state.me;
     const rowMove = selectedMoves().find((move) => move.row === row && !move.target_id);
-    const droppable = side === targetSide && !!rowMove;
+    const slotMove = own && chosen?.key === "horn" && rowMove;
+    const droppable = side === targetSide && !!rowMove && chosen?.key !== "horn";
     const weathered = game.weather.some((effect) => WEATHER[effect.key]?.includes(row));
     const result = node("div", `combat-row ${own ? "own" : "enemy"} ${droppable ? "droppable" : ""} ${weathered ? "weathered" : ""}`);
     result.dataset.side = own ? "own" : "enemy";
@@ -564,27 +929,42 @@
       label.append(marker);
     }
     if (player.leader_horn.includes(row)) label.append(node("span", "mobile-row-effect", "×2"));
-    const cards = node("div", "row-cards");
+    const cards = node("div", "row-cards"), liveCards = new Map();
     for (const card of player.board.filter((item) => item.row === row)) {
       const move = own ? selectedMoves().find((option) => option.target_id === card.id) : null;
-      cards.append(cardNode(card, {small: true, targetable: !!move, onClick: () => move ? send(move) : showCard(card)}));
+      const element = cardNode(card, {small: true, targetable: !!move, onClick: () => move ? send(move) : showCard(card)});
+      liveCards.set(card.id, element); cards.append(element);
+    }
+    // Занимаем прежние места сгорающих карт, чтобы оставшиеся отряды не прыгали под огонь.
+    for (const burn of burningCards.values()) {
+      if (burn.side !== side || burn.row !== row) continue;
+      const following = burn.following.find(id => liveCards.has(id));
+      cards.insertBefore(burn.element, following ? liveCards.get(following) : null);
     }
     const medallion = node("span", "row-medallion");
     medallion.append(icon(row, "row-watermark"));
     cards.append(medallion);
     if (cards.children.length === 1) cards.append(node("span", "empty-row", droppable ? "Выложить сюда" : ROW_NAMES[row]));
-    const special = node("div", "row-special");
+    const special = node("div", `row-special ${slotMove ? "slot-droppable" : ""}`);
+    if (slotMove) {
+      special.tabIndex = 0; special.setAttribute("role", "button");
+      special.setAttribute("aria-label", `Установить штандарт: ${ROW_NAMES[row]}`);
+      special.addEventListener("click", event => { event.stopPropagation(); send(slotMove); });
+      special.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); send(slotMove); }
+      });
+    }
     for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true}));
     if (player.leader_horn.includes(row) && !special.children.length) {
-      const standard = button("", (event) => {
-        event.stopPropagation();
+      const standard = cardNode(definitions.get("horn"), {small: true, onClick: () => {
         const content = node("div");
         content.append(node("p", "eyebrow", "Способность Франциска"), node("h2", "", "Военная академия"), node("p", "", catalog.leaders.academy.description));
         showInfo(content);
-      }, "leader-standard");
+      }});
+      standard.classList.add("leader-standard"); standard.dataset.source = "leader";
       standard.title = `Военная академия: ${catalog.leaders.academy.description}`;
       standard.setAttribute("aria-label", standard.title);
-      standard.append(icon("banner")); special.append(standard);
+      special.append(standard);
     }
     if (!special.children.length) special.append(icon("banner", "empty-slot"));
     result.append(label, special, cards);
@@ -628,6 +1008,13 @@
   $("join-room").addEventListener("click", () => enterRoom(true));
   $("fullscreen-button").addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", syncFullscreen);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") scheduleScorchFrame();
+    else {
+      cancelAnimationFrame(scorchFrame); scorchFrame = null; scorchTick = null;
+      scorchFire.clear();
+    }
+  });
   $("room-code").addEventListener("input", () => { $("room-code").value = $("room-code").value.toUpperCase().replace(/[^A-Z2-9]/g, ""); });
   $("leader-select").addEventListener("change", () => { leader = $("leader-select").value; dirtyDeck = true; renderLobby(); });
   $("deck-preset").addEventListener("change", () => {
@@ -643,7 +1030,29 @@
     finally { busy = false; render(); }
   });
   $("mulligan-button").addEventListener("click", () => send({type: "mulligan", card_ids: [...swaps]}));
-  $("leader-button").addEventListener("click", () => send({type: "leader"}));
+  $("mulligan-select").addEventListener("click", () => toggleMulligan(mulliganIndex));
+  $("mulligan-prev").addEventListener("click", () => focusMulligan(mulliganIndex - 1));
+  $("mulligan-next").addEventListener("click", () => focusMulligan(mulliganIndex + 1));
+  $("mulligan-concede").addEventListener("click", () => $("concede-button").click());
+  $("mulligan-home").addEventListener("click", () => $("leave-view").click());
+  $("mulligan-dialog").addEventListener("cancel", event => event.preventDefault());
+  $("result-dialog").addEventListener("cancel", event => { event.preventDefault(); dismissResult(); });
+  $("result-continue").addEventListener("click", dismissResult);
+  $("result-home").addEventListener("click", () => $("leave-view").click());
+  document.addEventListener("keydown", event => {
+    if (!$("mulligan-dialog").open) return;
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      focusMulligan(mulliganIndex + (event.key === "ArrowLeft" ? -1 : 1), true);
+    }
+  });
+  $("leader-button").addEventListener("click", openLeaderPreview);
+  $("leader-cancel").addEventListener("click", closeLeaderPreview);
+  $("leader-dialog").addEventListener("cancel", event => { event.preventDefault(); closeLeaderPreview(); });
+  $("leader-apply").addEventListener("click", () => {
+    if (!leaderPreview || !usableMoves().some(move => move.type === "leader")) return;
+    closeLeaderPreview(); send({type: "leader"});
+  });
   $("pass-button").addEventListener("click", () => send({type: "pass"}));
   $("concede-button").addEventListener("click", () => { if (confirm("Сдаться в этом матче?")) send({type: "concede"}); });
   $("copy-invite").addEventListener("click", async () => {

@@ -1,0 +1,154 @@
+/* Выбор стартовой руки и церемония завершения дуэли. */
+dialog.mulligan-dialog, dialog.result-dialog {
+  position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; border-radius: 0; color: #d5b56d;
+  background: transparent; box-shadow: none; overflow: hidden;
+}
+.mulligan-dialog::backdrop { background: #070603b0; backdrop-filter: none; }
+.mulligan-dialog[open] {
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto auto auto;
+  gap: clamp(5px, 1.1dvh, 12px); padding: clamp(14px, 4dvh, 44px) 0 12px;
+  text-align: center;
+}
+.mulligan-heading { padding: 12px 20px; background: #080907f5; border-block: 1px solid #7e603a55; }
+.mulligan-heading .eyebrow { margin: 0 0 3px; font-size: 10px; letter-spacing: .24em; }
+.mulligan-heading h2 { margin: 0; font: 400 clamp(19px, 2.8dvh, 31px)/1.3 Georgia,serif; }
+#mulligan-count { color: #f3d99b; white-space: nowrap; margin-left: 12px; }
+.mulligan-stage { display: flex; min-height: 0; position: relative; align-items: center; justify-content: center; }
+.mulligan-cards { --card-step: min(27vw, 290px); position: relative; height: 100%; width: min(1120px, 90vw); isolation: isolate; }
+.mulligan-cards .card {
+  position: absolute; left: 50%; top: 50%; width: auto; height: 96%; max-height: 570px;
+  aspect-ratio: 3 / 4.65; margin: 0; border-width: 2px; border-radius: 10px;
+  transform: translate(calc(-50% + var(--offset) * var(--card-step)), -50%) scale(var(--scale));
+  filter: brightness(.65); opacity: var(--opacity); z-index: var(--layer);
+  transition: transform .32s ease, opacity .32s ease, filter .25s ease, box-shadow .25s;
+}
+.mulligan-cards .card:hover:not(:disabled), .mulligan-cards .card:active:not(:disabled) {
+  transform: translate(calc(-50% + var(--offset) * var(--card-step)), -50%) scale(var(--scale));
+}
+.mulligan-cards .card.focused { filter: brightness(1); border-color: #efbd62; box-shadow: 0 0 0 3px #7d5224, 0 0 35px #d6973544; }
+.mulligan-cards .card.selected { outline: 3px solid #f5cf80; outline-offset: 3px; }
+.mulligan-cards .card-power { width: 27cqw; height: 27cqw; font-size: 19cqw; }
+.mulligan-cards .card :is(.ability-seal, .combat-seal) { width: 19cqw; height: 19cqw; }
+.mulligan-cards .card-name { font-size: clamp(13px, 7cqw, 24px); }
+.mulligan-cards .card.selected::after, .mulligan-thumbnails .card.selected::after {
+  content: 'На замену'; position: absolute; inset: auto 0 24%; z-index: 5; background: #352714ed;
+  border-block: 1px solid #d8b365; color: #ffe2a3; padding: 5px 2px; font: 600 14px Georgia,serif;
+}
+.carousel-arrow { position: absolute; top: 50%; z-index: 20; transform: translateY(-50%); width: 46px; height: 64px; padding: 0; border: 1px solid #ad894e55; background: #080907ab; color: #e7c581; font: 48px/1 Georgia,serif; }
+.carousel-arrow:hover:not(:disabled), .carousel-arrow:active:not(:disabled) { transform: translateY(-50%); background: #302213; }
+#mulligan-prev { left: max(12px, 6vw); }
+#mulligan-next { right: max(12px, 6vw); }
+.mulligan-details { width: min(760px, 88vw); margin: auto; min-height: 76px; padding: 10px 22px; background: #080a08ed; border: 1px solid #7d633955; }
+.mulligan-details h3 { font: 600 clamp(15px, 2dvh, 21px) Georgia,serif; margin: 0 0 5px; color: #e9ca8a; }
+.mulligan-details p { margin: 0; color: #bfae89; font-size: clamp(11px, 1.5dvh, 15px); line-height: 1.4; }
+.mulligan-thumbnails { display: flex; justify-content: safe center; align-items: center; gap: 7px; width: min(900px, 90vw); min-height: 0; margin: auto; padding: 5px; overflow-x: auto; }
+.mulligan-thumbnails .card { width: auto; height: clamp(52px, 10dvh, 105px); aspect-ratio: 3 / 4; flex-shrink: 0; border-radius: 3px; }
+.mulligan-thumbnails .card .card-art { inset: 0; }
+.mulligan-thumbnails .card :is(.card-name, .card-seals, .card-abilities, .card-row) { display: none; }
+.mulligan-thumbnails .card .card-power { width: 20px; height: 20px; font-size: 14px; border-width: 1px; }
+.mulligan-thumbnails .card.selected::after { bottom: 0; font-size: 8px; padding: 2px 0; }
+.mulligan-thumbnails .card.focused { border-color: #f2d08d; box-shadow: 0 0 0 1px #f2d08d; }
+.mulligan-actions, .result-actions { display: flex; justify-content: center; align-items: center; gap: 12px; padding-inline: 12px; }
+.mulligan-actions { flex-wrap: wrap; }
+.mulligan-actions button { border-radius: 1px; font-size: 13px; padding: 8px 16px; }
+.mulligan-actions .primary, .result-actions .primary { background: linear-gradient(#654b27, #332715); color: #f0d49b; border: 1px solid #c09b52; box-shadow: inset 0 0 0 2px #20180f; }
+.mulligan-hint { margin: 0; min-height: 16px; width: 100%; padding-inline: 12px; color: #b5a27b; font-size: 11px; overflow-wrap: anywhere; }
+.mulligan-dialog.waiting .mulligan-cards { filter: saturate(.5); }
+.match-announcement {
+  position: fixed; inset: 43% 0 auto; z-index: 30; min-height: clamp(78px, 13dvh, 140px);
+  display: flex; align-items: center; justify-content: center; gap: clamp(18px, 3vw, 55px);
+  padding: 10px 6vw; pointer-events: none; background: linear-gradient(90deg, #050604ee, #050604fa 50%, #050604ee);
+  border-block: 1px solid #9f79352e; box-shadow: 0 15px 60px #0004; color: #d9b566;
+}
+.announcement-emblem { width: clamp(82px, 14dvh, 165px); flex-shrink: 0; margin-block: -32px; filter: drop-shadow(0 2px 2px #000); }
+.ceremony-emblem { width: 100%; height: auto; display: block; color: inherit; }
+.ceremony-emblem .icon { width: 88px; height: 104px; }
+.announcement-copy { min-width: 180px; max-width: 65vw; }
+#announcement-title { margin: 0; font: 600 clamp(19px, 3dvh, 32px)/1.25 Georgia,serif; text-shadow: 0 2px 5px #000; }
+#announcement-detail { display: block; color: #b19c72; font-size: clamp(11px, 1.6dvh, 16px); margin-top: 5px; }
+.match-announcement[data-kind="round-loss"] { color: #bd8e70; }
+.result-dialog::backdrop { background: #020302e8; backdrop-filter: none; }
+.result-dialog[open] { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; background: radial-gradient(ellipse at 50% 35%, #5a361026, transparent 60%); animation: result-reveal .6s ease both; }
+.result-emblem { width: min(47vw, 410px, 35dvh); color: #c69b4e; margin-bottom: -8px; filter: drop-shadow(0 0 40px #b57d2222); }
+.result-dialog > .eyebrow { margin: 8px 0 0; letter-spacing: .25em; font-size: 11px; }
+#result-title { margin: 4px 0 0; padding: 7px 42px 12px; border-block: 3px double #b58e4d; min-width: min(340px, 84vw); font: 500 clamp(32px, 5.4dvh, 58px)/1.2 Georgia,serif; letter-spacing: .04em; color: #e5c27b; }
+#result-subtitle { margin: 12px 0 22px; color: #b4a17b; font-size: 13px; }
+.result-dialog[data-outcome="defeat"] { color: #bb8b70; }
+.result-dialog[data-outcome="defeat"] :is(#result-title, .result-emblem) { color: #bd9278; border-color: #9d755d; }
+#result-table { width: min(720px, 94vw); margin-bottom: clamp(20px, 4dvh, 44px); }
+.match-score-table { width: 100%; table-layout: fixed; border-collapse: collapse; font: 16px Georgia,serif; }
+.match-score-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.match-score-table th { color: #9d8c6b; font: 12px 'Segoe UI',sans-serif; padding: 12px 5px; font-weight: 400; }
+.match-score-table td { padding: 13px 5px; border-top: 1px solid #9c78392b; color: #baac8a; font-size: 23px; }
+.match-score-table tbody th { text-align: left; color: #d7bf8c; font-size: 14px; overflow-wrap: anywhere; }
+.match-score-table td.round-winner { color: #f4d58d; }
+.result-actions button { min-width: 145px; border-radius: 1px; }
+@keyframes result-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Исчезновение подтверждённых жертв Казни: обугливание, фронт огня и искры. */
+.scorch-burn { position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; pointer-events: none; isolation: isolate; }
+.in-match .scorch-burn > .card.small { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; will-change: clip-path, filter, opacity; }
+.scorch-effects { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 28; }
+dialog.leader-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 22px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: auto; }
+.leader-dialog::backdrop { background: #050604c9; backdrop-filter: none; animation: result-reveal .25s ease both; }
+.leader-dialog[open] { display: grid; place-items: center; }
+.leader-confirmation { display: grid; grid-template-columns: auto minmax(0, 360px); align-items: center; gap: clamp(22px, 4vw, 64px); max-width: 900px; }
+.leader-preview { position: relative; height: min(65dvh, 480px); aspect-ratio: 3 / 4; border: 4px double #ceab61; background: #241b11; box-shadow: 0 0 0 4px #281d14, 0 0 0 5px #98773a88, 0 10px 60px #000a; transform-origin: center; }
+.leader-preview-caption { position: absolute; inset: auto 0 0; padding: 30px 12px 18px; display: grid; gap: 6px; text-align: center; color: #f0d59b; background: linear-gradient(transparent, #100e0bf2 30%); font: 16px Georgia,serif; }
+.leader-preview-caption strong { font-size: clamp(16px, 2.5dvh, 26px); font-weight: 500; }
+.leader-confirmation-copy { padding: 22px; background: #0c0d09e8; border-block: 1px solid #9c793e88; animation: result-reveal .4s ease both; }
+.leader-confirmation-copy .eyebrow { margin: 0 0 8px; }
+#leader-title { margin: 0 0 16px; font: 400 clamp(23px, 3.6dvh, 34px)/1.2 Georgia,serif; color: #e8c77f; }
+#leader-rule { color: #dfd0ae; font-size: 16px; line-height: 1.65; margin: 0 0 16px; }
+#leader-confirmation-status { min-height: 36px; }
+.leader-confirmation-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.leader-confirmation-actions button { min-width: 105px; border-radius: 1px; }
+@media (max-width: 600px) {
+  .leader-dialog[open] { padding: 16px; }
+  .leader-confirmation { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 18px; width: 100%; }
+  .leader-preview { height: min(40dvh, 320px); }
+  .leader-confirmation-copy { width: 100%; padding: 15px; }
+  #leader-title { font-size: 23px; margin-bottom: 10px; }
+  #leader-rule { font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+  .leader-confirmation-actions { margin-top: 12px; }
+  .mulligan-dialog[open] { padding-top: 10px; gap: 6px; }
+  .mulligan-heading { padding: 10px 12px; }
+  .mulligan-heading h2 { font-size: 18px; }
+  .mulligan-cards { --card-step: 51vw; }
+  .carousel-arrow { width: 32px; height: 48px; font-size: 36px; }
+  #mulligan-prev { left: 6px; } #mulligan-next { right: 6px; }
+  .mulligan-details { width: 94vw; padding: 8px 12px; }
+  .mulligan-details p { font-size: 11px; }
+  .mulligan-actions { gap: 5px; padding-inline: 5px; }
+  .mulligan-actions button { padding: 8px; font-size: 11px; }
+  .mulligan-hint { font-size: 10px; padding-inline: 12px; }
+  .announcement-emblem { width: 76px; margin-block: -12px; }
+  .announcement-copy { min-width: 0; }
+  #announcement-title { font-size: 20px; }
+  .result-emblem { width: min(60vw, 28dvh); }
+  .result-actions { gap: 5px; padding: 0; }
+  .result-actions button { min-width: 0; padding: 10px 14px; font-size: 12px; }
+}
+@media (max-height: 520px) {
+  .mulligan-dialog[open] { padding-top: 4px; padding-bottom: 4px; gap: 3px; }
+  .mulligan-heading { padding: 4px 12px; }
+  .mulligan-heading .eyebrow, .mulligan-hint { display: none; }
+  .mulligan-heading h2 { font-size: 17px; }
+  .mulligan-details { min-height: 0; padding: 4px 12px; }
+  .mulligan-details h3 { font-size: 13px; margin-bottom: 2px; }
+  .mulligan-details p { font-size: 10px; }
+  .mulligan-thumbnails .card { height: 43px; }
+  .mulligan-actions button { padding: 5px 12px; }
+  .result-dialog[open] { padding: 8px; }
+  .result-emblem { width: 20dvh; }
+  .result-dialog > .eyebrow { display: none; }
+  #result-title { font-size: 28px; padding: 2px 30px; }
+  #result-subtitle { margin: 6px 0; }
+  #result-table { margin-bottom: 10px; }
+  .match-score-table :is(th, td) { padding: 5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .leader-dialog::backdrop, .leader-confirmation-copy { animation: none; }
+  .mulligan-cards .card { transition: none; }
+  .result-dialog[open] { animation: none; }
+}

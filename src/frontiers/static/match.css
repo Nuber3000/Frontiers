@@ -81,8 +81,9 @@ body.in-match {
 .in-match .row-cards { display: flex; gap: 5px; align-items: center; justify-content: safe center; overflow-x: auto; overflow-y: hidden; padding: 2px; scrollbar-width: thin; scrollbar-color: #a88444 #37261a; }
 .in-match .row-special { display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 2px; }
 .in-match .row-special > .empty-slot { width: 36px; height: 36px; opacity: .18; color: #bd9e67; }
-.in-match .leader-standard { display: grid; place-items: center; width: min(82%, 58px); height: min(76%, 70px); padding: 8%; border: 1px solid #d7b86e; border-radius: 2px; color: #e5c77e; background: linear-gradient(140deg, #aa823633, #3b2a1233); box-shadow: inset 0 0 12px #ba8f4222, 0 0 8px #c89e4033; }
-.in-match .leader-standard .icon { width: 100%; height: 100%; }
+.in-match .row-special.slot-droppable { border-color: #edc877; box-shadow: inset 0 0 20px #efca5433, 0 0 10px #d5aa3e55; cursor: pointer; }
+.in-match .row-special.slot-droppable:hover { background-color: #b5842333; }
+.in-match .row-special.slot-droppable > .empty-slot { opacity: .85; color: #f0cc7d; }
 .row-medallion { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(82px, 87cqh); height: min(82px, 87cqh); display: grid; place-items: center; border: 1px solid #28180b99; border-radius: 50%; background: radial-gradient(circle at 40% 30%, #c6a05a0a, #160d0522); box-shadow: inset 0 1px #cb9c5733, 0 1px #c0955130; pointer-events: none; }
 .row-watermark { width: 72%; height: 72%; color: #291a0d; opacity: .78; stroke-width: 1.3; filter: drop-shadow(0 1px 0 #c0965855); }
 .row-cards:has(.card) .row-medallion { opacity: .22; }

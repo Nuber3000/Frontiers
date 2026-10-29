@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="/static/artwork.css">
   <link rel="stylesheet" href="/static/lobby.css">
   <link rel="stylesheet" href="/static/match.css">
+  <link rel="stylesheet" href="/static/presentation.css">
+  <script src="/static/scorch.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -72,12 +74,25 @@
           <div class="battlefield"><div id="enemy-rows"></div><div class="frontier-line"><span>FRONTIERS</span></div><div id="own-rows"></div></div>
           <aside class="table-piles"><div class="player-piles"><div id="enemy-deck" class="deck-pile enemy-pile" aria-label="Колода соперника"></div><button id="enemy-discard" class="discard-pile" type="button">Сброс соперника</button></div><button id="journal-button" class="journal-toggle" type="button">Хроника</button><div class="player-piles"><button id="own-discard" class="discard-pile" type="button">Ваш сброс</button><div id="own-deck" class="deck-pile" aria-label="Ваша колода"></div></div></aside>
         </div>
-        <div class="hand-panel"><div class="hand-header"><div><span class="eyebrow">Ваши карты</span><span id="hand-count" class="muted small"></span></div><div id="selection-info" class="selection-info"></div><button id="mulligan-button" class="primary" type="button" hidden>Оставить руку</button></div><div id="hand" class="hand"></div></div>
+        <div class="hand-panel"><div class="hand-header"><div><span class="eyebrow">Ваши карты</span><span id="hand-count" class="muted small"></span></div><div id="selection-info" class="selection-info"></div></div><div id="hand" class="hand"></div></div>
       </section>
     </section>
   </main>
   <footer>Frontiers <span>·</span> Собственные знамёна. Ваша стратегия.</footer>
   <div id="toast" class="toast" role="alert" hidden></div>
+  <dialog id="mulligan-dialog" class="mulligan-dialog" aria-labelledby="mulligan-title">
+    <header class="mulligan-heading"><p class="eyebrow">Начальная рука</p><h2 id="mulligan-title">Выберите карты для замены <span id="mulligan-count">0/2</span></h2></header>
+    <div class="mulligan-stage"><button id="mulligan-prev" class="carousel-arrow" type="button" aria-label="Предыдущая карта">‹</button><div id="mulligan-cards" class="mulligan-cards" aria-label="Карты начальной руки"></div><button id="mulligan-next" class="carousel-arrow" type="button" aria-label="Следующая карта">›</button></div>
+    <section class="mulligan-details" aria-live="polite"><h3 id="mulligan-card-name"></h3><p id="mulligan-card-description"></p></section>
+    <div id="mulligan-thumbnails" class="mulligan-thumbnails" role="group" aria-label="Просмотр начальной руки"></div>
+    <div class="mulligan-actions"><button id="mulligan-home" class="text-button" type="button">На главную</button><button id="mulligan-concede" class="text-button" type="button">Сдаться</button><button id="mulligan-select" type="button">Выбрать для замены</button><button id="mulligan-button" class="primary" type="button">Оставить руку</button></div>
+    <p id="mulligan-hint" class="mulligan-hint">Можно заменить до двух карт. Остальные останутся в руке.</p>
+  </dialog>
+  <div id="match-announcement" class="match-announcement" role="status" aria-live="polite" aria-atomic="true" hidden><div id="announcement-emblem" class="announcement-emblem" aria-hidden="true"></div><div class="announcement-copy"><p id="announcement-title"></p><span id="announcement-detail"></span></div></div>
+  <dialog id="result-dialog" class="result-dialog" aria-labelledby="result-title"><div id="result-emblem" class="result-emblem" aria-hidden="true"></div><p class="eyebrow">Дуэль завершена</p><h1 id="result-title"></h1><p id="result-subtitle"></p><div id="result-table"></div><div class="result-actions"><button id="result-home" class="text-button" type="button">На главную</button><button id="result-continue" class="primary" type="button">К выбору колоды</button></div></dialog>
+  <dialog id="leader-dialog" class="leader-dialog" aria-labelledby="leader-title" aria-describedby="leader-rule">
+    <div class="leader-confirmation"><div id="leader-preview" class="leader-preview"></div><section class="leader-confirmation-copy"><p class="eyebrow">Лидер Бургундии</p><h2 id="leader-title"></h2><p id="leader-rule"></p><p id="leader-confirmation-status" class="muted small" aria-live="polite"></p><div class="leader-confirmation-actions"><button id="leader-cancel" type="button" autofocus>Отмена</button><button id="leader-apply" class="primary" type="button">Применить</button></div></section></div>
+  </dialog>
   <dialog id="choice-dialog"><div class="dialog-heading"><p class="eyebrow">Способность Лекаря</p><h2>Вернуть отряд на поле</h2><p class="muted">Выберите отряд из сброса. Для подвижного отряда также выберите линию.</p></div><div id="choice-cards" class="choice-cards"></div></dialog>
   <dialog id="info-dialog"><button id="close-info" class="dialog-close" type="button" aria-label="Закрыть">×</button><div id="info-content"></div></dialog>
 </body>
