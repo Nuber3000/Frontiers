@@ -45,7 +45,7 @@ class APITests(unittest.TestCase):
 
     def test_health_static_and_catalog(self):
         self.assertEqual(self.client.get("/healthz").json()["status"], "ok")
-        for path in ("/", "/static/app.js", "/static/scorch.js", "/static/presentation.css", "/static/styles.css", "/static/match.css",
+        for path in ("/", "/static/app.js", "/static/scorch.js", "/static/opponent-play.js", "/static/presentation.css", "/static/shiron.css", "/static/styles.css", "/static/match.css",
                      "/static/cards.css", "/static/lobby.css", "/static/artwork.css", "/static/card-art.png", "/static/wood.svg",
                      "/static/decoy.png", "/static/rain.png", "/static/scorch.png",
                      "/static/horn.png", "/static/mushroom.png"):
@@ -73,7 +73,7 @@ class APITests(unittest.TestCase):
             if card["key"] in SKONE_CARDS:
                 self.assertEqual(card["faction"], "skone")
                 self.assertFalse(card["available"])
-        self.assertEqual(sum(card["available"] for card in catalog["cards"]), 35)
+        self.assertEqual(sum(card["available"] and card["faction"] in {"burgundy", "neutral"} for card in catalog["cards"]), 35)
         herald = next(card for card in catalog["cards"] if card["key"] == "herald")
         self.assertEqual(herald["name"], "Габриэль фон Ард")
         self.assertEqual(herald["rows"], ["melee", "ranged"])

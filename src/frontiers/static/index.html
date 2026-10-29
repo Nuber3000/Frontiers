@@ -4,19 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#241719">
-  <title>Frontiers — Королевство Бургундия</title>
+  <title>Frontiers — карточные дуэли</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/cards.css">
   <link rel="stylesheet" href="/static/artwork.css">
   <link rel="stylesheet" href="/static/lobby.css">
   <link rel="stylesheet" href="/static/match.css">
   <link rel="stylesheet" href="/static/presentation.css">
+  <link rel="stylesheet" href="/static/shiron.css">
   <script src="/static/scorch.js" defer></script>
+  <script src="/static/opponent-play.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Frontiers — главная"><span class="brand-mark">F</span><span>FRONTIERS<small>Королевство Бургундия</small></span></a>
+    <a class="brand" href="/" aria-label="Frontiers — главная"><span class="brand-mark">F</span><span>FRONTIERS<small>Карточные дуэли</small></span></a>
     <span id="connection" class="connection">Карточная дуэль для двоих</span>
     <button id="fullscreen-button" class="fullscreen-button" type="button" aria-label="На весь экран" aria-pressed="false" title="На весь экран" hidden></button>
   </header>
@@ -25,7 +27,7 @@
       <div class="introduction">
         <p class="eyebrow">Тактика · блеф · королевские знамёна</p>
         <h1>Победа начинается<br>до последней карты.</h1>
-        <p class="intro-copy">Собери войско Бургундии, пригласи друга и выбери, за какой раунд стоит сражаться. Одна рука — на весь матч.</p>
+        <p class="intro-copy">Собери войско Бургундии или Широна, пригласи друга и выбери, за какой раунд стоит сражаться. Одна рука — на весь матч.</p>
         <div class="hero-cards" aria-hidden="true"><div class="hero-card back-one">♜<span>СИЛА</span></div><div class="hero-card back-two">⚜<span>ВОЛЯ</span></div><div class="hero-card back-three">♞<span>ТАКТИКА</span></div></div>
         <div class="feature-line"><span>2 игрока</span><span>3 боевые линии</span><span>До 3 раундов</span></div>
       </div>
@@ -44,7 +46,7 @@
     <section id="room" hidden>
       <div class="room-toolbar"><div><button id="leave-view" class="room-brand" type="button" aria-label="Frontiers — на главную">Frontiers</button><h2>Комната <span id="room-label"></span></h2></div><span id="room-status"></span><div class="toolbar-actions"><button id="copy-invite" type="button">Скопировать приглашение</button></div></div>
       <section id="lobby" class="lobby">
-        <header class="faction-heading"><span class="faction-crest" aria-hidden="true">⚜</span><div><p class="eyebrow">Выбор войска</p><h1>Королевство Бургундия</h1><p>После каждого выигранного раунда возьмите карту из своей колоды.</p></div></header>
+        <header class="faction-heading"><span class="faction-crest" aria-hidden="true">⚜</span><div><label class="sr-only" for="faction-select">Фракция</label><select id="faction-select" aria-label="Фракция"></select><h1 id="faction-name">Королевство Бургундия</h1><p id="faction-description">После каждого выигранного раунда возьмите карту из своей колоды.</p></div></header>
         <div id="match-result" class="result-panel" hidden></div>
         <section class="card-library collection-panel" aria-labelledby="collection-title">
           <div class="library-heading"><div><h2 id="collection-title">Коллекция карт</h2><p>Добавьте карты в своё войско</p></div><label class="sr-only" for="collection-filter">Фильтр коллекции</label><select id="collection-filter"><option value="all">Все карты</option><option value="unit">Отряды</option><option value="melee">Ближний бой</option><option value="ranged">Дальний бой</option><option value="siege">Осада</option><option value="hero">Герои</option><option value="weather">Погода</option><option value="special">Особые</option></select></div>
@@ -55,7 +57,7 @@
         <aside class="commander-panel">
           <p class="eyebrow">Лидер фракции</p>
           <div class="leader-portrait"><span class="card-art art-king"></span><span class="portrait-crown" aria-hidden="true">♛</span><div>Франциск II<span>Мудрый</span></div></div>
-          <label class="sr-only" for="leader-select">Способность Франциска</label><select id="leader-select"></select>
+          <label class="sr-only" for="leader-select">Способность лидера</label><select id="leader-select"></select>
           <p id="leader-description" class="leader-description"></p>
           <dl id="deck-stats" class="deck-stats"></dl><span id="deck-count" class="count-badge sr-only"></span>
           <div id="seats" class="seat-list"></div>

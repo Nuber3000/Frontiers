@@ -41,6 +41,10 @@ def assert_game_fits(page):
       const selectors = ['#arena', '.battlefield', '.hand-panel', '#hand',
         '#leader-button', '#pass-button', '#concede-button', '#fullscreen-button', '.combat-row'];
       const failures = [];
+      const frontier = document.querySelector('.frontier-line > span').getBoundingClientRect();
+      const medallion = document.querySelector('.row-medallion').getBoundingClientRect();
+      if (Math.abs(frontier.left + frontier.width/2 - medallion.left - medallion.width/2) > 2)
+        failures.push({selector:'frontier text is not centered on row icons'});
       for (const selector of selectors) {
         for (const element of document.querySelectorAll(selector)) {
           const rect = element.getBoundingClientRect();
@@ -280,12 +284,13 @@ def save_artwork_gallery(browser, url, catalog, output):
                      f'<p>{html.escape(card["name"])}</p></article>')
     for key, leader in catalog['leaders'].items():
         tiles.append(f'<article><img src="{url}/static/leader_{key}.png">'
-                     f'<p>Франциск · {html.escape(leader["name"])}</p></article>')
+                     f'<p>{html.escape(catalog["factions"][leader["faction"]]["leader"])} · {html.escape(leader["name"])}</p></article>')
     gallery = browser.new_page(viewport={'width': 1540, 'height': 1200})
     try:
         gallery.set_content(f'''<!doctype html><html lang="ru"><meta charset="utf-8">
           <link rel="stylesheet" href="{url}/static/cards.css">
           <link rel="stylesheet" href="{url}/static/artwork.css">
+          <link rel="stylesheet" href="{url}/static/shiron.css">
           <style>*{{box-sizing:border-box}}body{{margin:0;padding:20px;background:#15140f;color:#e8d8b6;font:14px Georgia}}
           header{{display:flex;align-items:center;gap:22px;margin-bottom:18px}}h1{{font-weight:400;margin:0}}
           main{{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}}
@@ -308,7 +313,8 @@ def save_artwork_gallery(browser, url, catalog, output):
           }
           return result;
         }''')
-        assert len(signatures) == 49 and len(set(signatures)) == 49, signatures
+        expected = len(catalog['cards']) + len(catalog['leaders'])
+        assert len(signatures) == expected and len(set(signatures)) == expected, signatures
         gallery.screenshot(path=str(output / 'card-gallery.png'), full_page=True)
     finally:
         gallery.close()
@@ -433,9 +439,24 @@ def run(browser_channel, output):
                     save_artwork_gallery(browser, url, catalog, output)
                     save_portrait_review(browser, first, url, output)
                     save_icon_review(browser, first, url, output)
-                    for key in catalog['leaders']:
-                        first.locator('#leader-select').select_option(key)
-                        assert first.locator('.leader-portrait .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+                    for faction, definition in catalog['factions'].items():
+                        if not definition['playable']:
+                            continue
+                        first.locator('#faction-select').select_option(faction)
+                        for key, item in catalog['leaders'].items():
+                            if item['faction'] != faction:
+                                continue
+                            first.locator('#leader-select').select_option(key)
+                            assert first.locator('.leader-portrait .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+                        if faction == 'shiron':
+                            assert first.locator('#collection .card[data-faction="burgundy"]').count() == 0
+                            assert first.locator('#deck-cards .card[data-faction="shiron"]').count() > 0
+                            for width, height in [(1440, 1000), (1366, 768), (1280, 720)]:
+                                first.set_viewport_size({'width': width, 'height': height})
+                                assert_lobby_fits(first)
+                                first.screenshot(path=str(output / f'shiron-lobby-{width}x{height}.png'))
+                            first.set_viewport_size({'width':1440, 'height':1100})
+                    first.locator('#faction-select').select_option('burgundy')
                     first.locator('#leader-select').select_option('sun')
                     ability_icons = first.evaluate("""async () => {
                       const catalog = await (await fetch('/api/catalog')).json();

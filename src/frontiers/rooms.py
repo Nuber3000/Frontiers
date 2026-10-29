@@ -7,7 +7,7 @@ import hmac
 import secrets
 import time
 
-from frontiers.catalog import STARTER_DECK, validate_deck
+from frontiers.catalog import LEADERS, STARTER_DECK, validate_deck
 from frontiers.engine import Game
 
 
@@ -87,7 +87,7 @@ class Room:
     def view(self, side: int) -> dict:
         return {
             "code": self.code, "me": side, "revision": self.revision,
-            "seats": [{"name": seat.name, "leader": seat.leader, "ready": seat.ready,
+            "seats": [{"name": seat.name, "leader": seat.leader, "faction": LEADERS[seat.leader]["faction"], "ready": seat.ready,
                        "online": bool(self.connections[index])}
                       for index, seat in enumerate(self.seats)],
             "my_deck": list(self.seats[side].deck),

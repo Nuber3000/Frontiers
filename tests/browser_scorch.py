@@ -188,7 +188,8 @@ def run(channel, output):
                 for page in pages:
                     wait_version(page, 1)
                 for page in pages:
-                    assert set(page.locator('.scorch-burn').evaluate_all('items => items.map(item => item.dataset.burnId)')) == {own.id, *(card.id for card in enemies)}
+                    assert set(page.evaluate('window.burnObservations.map(item => item.id)')) == {own.id, *(card.id for card in enemies)}
+                    assert page.locator(f'.scorch-burn[data-burn-id="{own.id}"]').count() == 1
                 for page in pages:
                     page.wait_for_selector('.scorch-burn', state='detached', timeout=5000)
                     assert len(page.evaluate('window.burnObservations')) == 3
@@ -229,16 +230,19 @@ def run(channel, output):
                   document.dispatchEvent(new Event('visibilitychange'));
                 }''')
                 click_move(first, {'type': 'play', 'card_id': game.players[0].hand[0].id})
-                for page in pages:
-                    wait_version(page, 0)
+                wait_version(first, 0)
+                second.wait_for_selector('#opponent-play', state='attached')
                 first.wait_for_selector('.scorch-burn', state='detached', timeout=5000)
-                assert second.locator(f'.scorch-burn[data-burn-id="{victim.id}"]').count() == 1
+                assert second.locator('body').get_attribute('data-game-version') == '0'
+                assert second.locator('#opponent-play').get_attribute('data-stage') == 'reveal'
                 assert second.locator('#scorch-effects').is_hidden()
-                assert second.locator('.scorch-burn > .card').evaluate('card => card.getAnimations()[0].currentTime') < 100
                 second.evaluate('''() => {
                   delete document.visibilityState;
                   document.dispatchEvent(new Event('visibilitychange'));
                 }''')
+                wait_version(second, 0)
+                second.wait_for_selector('#opponent-play', state='detached')
+                assert second.locator(f'.scorch-burn[data-burn-id="{victim.id}"]').count() == 1
                 second.locator('#scorch-effects').wait_for(state='visible')
                 second.wait_for_function("() => document.querySelector('.scorch-burn > .card').getAnimations()[0].currentTime > 800")
                 second.screenshot(path=str(output / 'scorch-returned-tab.png'))

@@ -3,9 +3,9 @@
 /* Общий холст над столом: мягкие частицы огня, дым и тлеющий край карты. */
 (() => {
   class FrontiersFire {
-    constructor() {
+    constructor(id = "scorch-effects") {
       this.canvas = document.createElement("canvas");
-      this.canvas.id = "scorch-effects"; this.canvas.className = "scorch-effects";
+      this.canvas.id = id; this.canvas.className = "scorch-effects";
       this.canvas.setAttribute("aria-hidden", "true"); this.canvas.hidden = true;
       document.body.append(this.canvas);
       this.context = this.canvas.getContext("2d");

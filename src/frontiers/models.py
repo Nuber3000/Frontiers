@@ -20,6 +20,7 @@ class CardDefinition:
     copies: int = 1
     collectible: bool = True
     description: str = ""
+    faction: str = "burgundy"
 
 
 @dataclass
@@ -48,3 +49,5 @@ class MatchPlayer:
     mulligan_done: bool = False
     leader_used: bool = False
     leader_horn: set[CombatRow] = field(default_factory=set)
+    leader_blocked: bool = False
+    revealed: list[CardInstance] = field(default_factory=list)

@@ -4,12 +4,13 @@ from collections import Counter
 
 from frontiers.cards import CombatRow as Row
 from frontiers.models import CardDefinition
+from frontiers.shiron import SHIRON_CARDS, SHIRON_DECK
 
 
 ROWS = tuple(Row)
 ABILITY_NAMES = {
     "spy": "Шпион", "medic": "Лекарь", "bond": "Сплочённость",
-    "morale": "Прилив сил", "muster": "Призыв", "horn": "Знаменосец",
+    "morale": "Прилив сил", "muster": "Призыв", "horn": "Штандарт",
     "mushroom": "Мухомор", "berserker": "Берсерк", "avenger": "Наследие",
     "scorch_melee": "Казнь: ближний бой", "scorch_ranged": "Казнь: дальний бой",
     "scorch_siege": "Казнь: осада",
@@ -96,7 +97,9 @@ for key, name, description in [
 ]:
     kind = "weather" if key in {"frost", "fog", "rain", "storm", "clear"} else "special"
     _CARDS.append(CardDefinition(key, name, kind=kind, copies=3,
-                                 description=description))
+                                 description=description, faction="skone" if key in {"storm", "mushroom"} else "neutral"))
+
+_CARDS.extend(SHIRON_CARDS)
 
 CATALOG = {card.key: card for card in _CARDS}
 
@@ -112,6 +115,13 @@ FACTIONS = {
     },
 }
 
+FACTIONS["burgundy"].update(ability="После каждого выигранного раунда возьмите карту из своей колоды.", emblem="⚜", default_leader="sun")
+FACTIONS["shiron"] = {
+    "name": "Империя Широн", "leader": "Император Альбрехт Тироль", "playable": True,
+    "ability": "При равной силе побеждает в раунде. Если оба игрока выбрали Широн, раунд заканчивается ничьей.",
+    "emblem": "✹", "default_leader": "shiron_hand",
+}
+
 LEADERS = {
     "sun": {"name": "Солнцеликий", "description": "Отменяет Мороз, Ливень, Туман и Шторм."},
     "mortar": {"name": "Королевская мортира", "description": "Казнит сильнейшие дальнобойные отряды противника, если сила ряда не меньше 10."},
@@ -119,6 +129,19 @@ LEADERS = {
     "academy": {"name": "Военная академия", "description": "Удваивает силу ваших осадных отрядов, кроме героев. Не складывается со штандартом."},
     "fog": {"name": "Туман войны", "description": "Накладывает Туман на дальний бой обеих сторон."},
 }
+
+for _leader in LEADERS.values():
+    _leader["faction"] = "burgundy"
+LEADERS.update({
+    "shiron_hand": {"name": "Божья Длань", "description": "Воскрешает случайный обычный отряд из своего отбоя на его линию. Способность отряда срабатывает повторно."},
+    "shiron_rain": {"name": "Торжество стихии", "description": "Накладывает Ливень на осадные линии обоих игроков."},
+    "shiron_spy": {"name": "Шпионские игры", "description": "Показывает вам три случайные карты из руки противника или всю руку, если карт меньше трёх."},
+    "shiron_nullify": {"name": "Натиск Империи", "description": "Пассивно запрещает использование способности вражеского лидера с начала матча.", "passive": True},
+    "shiron_levy": {"name": "Посмертная повинность", "description": "Позволяет выбрать обычный отряд из отбоя соперника и взять его в руку. Герои недоступны."},
+})
+for _key, _leader in LEADERS.items():
+    if _key.startswith("shiron_"):
+        _leader.update(faction="shiron", portrait=f"leader_{_key}.png")
 
 STARTER_DECK = (
     ["blue_guard"] * 3 + ["crossbow"] * 3 + ["catapult"] * 2
@@ -129,13 +152,14 @@ STARTER_DECK = (
     + ["horn"] * 2 + ["decoy"] * 2 + ["clear", "scorch"]
 )
 DECKS = {
-    "guard": {"name": "Королевская гвардия", "cards": STARTER_DECK},
+    "guard": {"name": "Королевская гвардия", "cards": STARTER_DECK, "faction": "burgundy"},
+    "imperial": {"name": "Императорский легион", "cards": SHIRON_DECK, "faction": "shiron"},
 }
 
 
 def validate_deck(keys: list[str], leader: str) -> None:
     if leader not in LEADERS:
-        raise ValueError("Неизвестная способность Франциска.")
+        raise ValueError("Неизвестная способность лидера.")
     if not isinstance(keys, list) or not 22 <= len(keys) <= 60:
         raise ValueError("Колода должна содержать от 22 до 60 карт.")
     counts = Counter(keys)
@@ -144,7 +168,9 @@ def validate_deck(keys: list[str], leader: str) -> None:
         if card is None or not card.collectible:
             raise ValueError("Колода содержит недоступную карту.")
         if key in SKONE_CARDS:
-            raise ValueError(f"Карта «{card.name}» относится к Сконе и недоступна Бургундии.")
+            raise ValueError(f"Карта «{card.name}» сохранена для будущей фракции Сконе.")
+        if card.faction not in {"neutral", LEADERS[leader]["faction"]}:
+            raise ValueError(f"Карта «{card.name}» недоступна выбранной фракции.")
         if count > card.copies:
             raise ValueError(f"Слишком много копий карты «{card.name}».")
     units = sum(CATALOG[key].kind == "unit" for key in keys)
@@ -160,7 +186,7 @@ def card_definition_view(card: CardDefinition) -> dict:
         "base_strength": card.strength, "rows": [row.value for row in card.rows],
         "abilities": list(card.abilities), "hero": card.hero,
         "copies": card.copies, "collectible": card.collectible,
-        "faction": "skone" if card.key in SKONE_CARDS else "burgundy",
+        "faction": "skone" if card.key in SKONE_CARDS else card.faction,
         "available": card.collectible and card.key not in SKONE_CARDS,
         "description": card.description,
         "transform_to": card.transform_to, "summon_to": card.summon_to,

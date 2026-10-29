@@ -43,9 +43,11 @@ class Game:
     version: int = 0
     weather: list[WeatherEffect] = field(default_factory=list)
     pending: list[str] = field(default_factory=list)
+    pending_levy: bool = False
     history: list[dict] = field(default_factory=list)
     events: list[str] = field(default_factory=list)
     scorched: list[str] = field(default_factory=list)
+    played: dict | None = None
     winner: int | None = None
 
     @classmethod
@@ -57,6 +59,10 @@ class Game:
             validate_deck(deck, leader)
         rng = random.Random(seed if seed is not None else secrets.randbits(256))
         game = cls([MatchPlayer(names[i], leaders[i]) for i in range(2)], rng)
+        for side, player in enumerate(game.players):
+            if player.leader == "shiron_nullify":
+                player.leader_used = True
+                game.players[1 - side].leader_blocked = True
         for player, keys in zip(game.players, decks):
             player.deck = [game._new_card(key) for key in keys]
             rng.shuffle(player.deck)
@@ -90,6 +96,7 @@ class Game:
             raise RuleError("Матч уже завершён.")
         candidate = deepcopy(self)
         candidate.scorched = []
+        candidate.played = None
         candidate._act(actor, action)
         candidate.version += 1
         return candidate
@@ -99,6 +106,7 @@ class Game:
         if kind == "concede":
             self.phase, self.winner = "finished", 1 - actor
             self.pending.clear()
+            self.pending_levy = False
             self._log(f"{self.players[actor].name} сдаётся.")
             return
         if self.phase == "mulligan":
@@ -108,7 +116,15 @@ class Game:
             return
         if actor != self.turn or self.players[actor].passed:
             raise RuleError("Сейчас ход другого игрока.")
-        if self.pending:
+        if self.pending_levy:
+            if kind != "choose":
+                raise RuleError("Выберите отряд из отбоя соперника.")
+            card = self._find(self._medic_targets(1 - actor), action.get("card_id"))
+            self.players[1 - actor].discard.remove(card)
+            self.players[actor].hand.append(card)
+            self.pending_levy = False
+            self._log(f"Посмертная повинность: {self.players[actor].name} забирает «{CATALOG[card.key].name}» в руку.")
+        elif self.pending:
             if kind != "choose":
                 raise RuleError("Выберите отряд для способности Лекаря.")
             self._choose(actor, action)
@@ -175,7 +191,7 @@ class Game:
             if not self._slot_free(actor, row):
                 raise RuleError("Место особой карты этого ряда уже занято.")
             if row in player.leader_horn:
-                raise RuleError("Этот ряд уже усилен способностью Франциска.")
+                raise RuleError("Этот ряд уже усилен способностью лидера.")
         elif card.key == "mushroom":
             row = self._row(action.get("row"))
         elif card.key == "decoy":
@@ -186,6 +202,10 @@ class Game:
             if target is None:
                 raise RuleError("Чучело заменяет только ваш отряд, кроме героя.")
 
+        destination_row = row or (target.row if target is not None else None)
+        self.played = {"actor": actor, "card": self._card_view(card),
+                       "side": 1 - actor if "spy" in definition.abilities else actor,
+                       "row": destination_row.value if destination_row is not None else None}
         player.hand.remove(card)
         self._log(f"{player.name} разыгрывает «{definition.name}».")
         if definition.kind == "unit":
@@ -342,8 +362,8 @@ class Game:
 
     def _leader(self, actor: int) -> None:
         player = self.players[actor]
-        if player.leader_used:
-            raise RuleError("Способность Франциска уже использована.")
+        if player.leader_used or player.leader_blocked:
+            raise RuleError("Способность лидера использована или заблокирована.")
         if player.leader == "academy":
             if Row.SIEGE in player.leader_horn or any(
                     item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials):
@@ -357,13 +377,31 @@ class Game:
                 self._scorch(1 - actor, row)
         elif player.leader == "fog":
             self.weather.append(WeatherEffect(actor, "fog"))
+        elif player.leader == "shiron_rain":
+            self.weather.append(WeatherEffect(actor, "rain"))
+        elif player.leader == "shiron_hand":
+            targets = self._medic_targets(actor)
+            if not targets:
+                raise RuleError("В вашем отбое нет обычных отрядов для воскрешения.")
+            card = self.rng.choice(targets)
+            player.discard.remove(card)
+            self._place_unit(actor, card, CATALOG[card.key].rows[0])
+        elif player.leader == "shiron_spy":
+            hand = self.players[1 - actor].hand
+            player.revealed = self.rng.sample(hand, min(3, len(hand)))
+        elif player.leader == "shiron_levy":
+            if not self._medic_targets(1 - actor):
+                raise RuleError("В отбое соперника нет обычных отрядов.")
+            self.pending_levy = True
+        elif player.leader == "shiron_nullify":
+            raise RuleError("Натиск Империи действует пассивно с начала матча.")
         player.leader_used = True
-        self._log(f"{player.name}: Франциск — {LEADERS[player.leader]['name']}.")
+        self._log(f"{player.name}: {LEADERS[player.leader]['name']}.")
 
     def _finish_action(self, actor: int) -> None:
         while self.pending and not self._medic_targets(actor):
             self.pending.pop(0)
-        if self.pending:
+        if self.pending or self.pending_levy:
             return
         self._auto_pass_empty()
         if all(player.passed for player in self.players):
@@ -374,23 +412,30 @@ class Game:
 
     def _auto_pass_empty(self) -> None:
         for index, player in enumerate(self.players):
-            if not player.passed and player.leader_used and not self._play_moves(index):
+            if not player.passed and (player.leader_used or player.leader_blocked) and not self._play_moves(index):
                 player.passed = True
                 self._log(f"{player.name}: доступные карты закончились, автоматический пас.")
 
     def _end_round(self) -> None:
         scores = [self.total(0), self.total(1)]
         winner = None if scores[0] == scores[1] else int(scores[1] > scores[0])
+        if winner is None:
+            empires = [side for side, player in enumerate(self.players)
+                       if LEADERS[player.leader]["faction"] == "shiron"]
+            if len(empires) == 1:
+                winner = empires[0]
+                self._log(f"Широн: {self.players[winner].name} выигрывает при равной силе.")
         self.history.append({"round": self.round_number, "scores": scores, "winner": winner})
         for index, player in enumerate(self.players):
             if winner is None or index != winner:
                 player.lives -= 1
         self._log(f"Раунд {self.round_number}: {scores[0]} : {scores[1]}.")
-        if winner is not None:
+        if winner is not None and LEADERS[self.players[winner].leader]["faction"] == "burgundy":
             drawn = self._draw(self.players[winner], 1)
             self._log(f"Бургундия: {self.players[winner].name} добирает карт: {drawn}.")
         summons = []
         for index, player in enumerate(self.players):
+            player.revealed.clear()
             for item in player.board:
                 definition = CATALOG[item.card.key]
                 if definition.summon_to:
@@ -450,13 +495,18 @@ class Game:
             return concede if player.mulligan_done else [{"type": "mulligan", "card_ids": []}, *concede]
         if actor != self.turn or player.passed:
             return concede
+        if self.pending_levy:
+            return [{"type": "choose", "card_id": card.id}
+                    for card in self._medic_targets(1 - actor)] + concede
         if self.pending:
             return [{"type": "choose", "card_id": card.id, "row": row.value}
                     for card in self._medic_targets(actor) for row in CATALOG[card.key].rows] + concede
         moves = self._play_moves(actor)
         blocked_horn = player.leader == "academy" and (Row.SIEGE in player.leader_horn or any(
             item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials))
-        if not player.leader_used and not blocked_horn:
+        no_target = (player.leader == "shiron_hand" and not self._medic_targets(actor)) or (
+            player.leader == "shiron_levy" and not self._medic_targets(1 - actor))
+        if not player.leader_used and not player.leader_blocked and not blocked_horn and not no_target and player.leader != "shiron_nullify":
             moves.append({"type": "leader"})
         return moves + [{"type": "pass"}, *concede]
 
@@ -470,7 +520,9 @@ class Game:
             powers = self.strengths(side)
             data = {
                 "name": player.name, "leader": player.leader,
+                "faction": LEADERS[player.leader]["faction"],
                 "leader_used": player.leader_used, "lives": player.lives,
+                "leader_blocked": player.leader_blocked,
                 "passed": player.passed, "mulligan_done": player.mulligan_done,
                 "deck_count": len(player.deck), "hand_count": len(player.hand),
                 "discard": [self._card_view(card) for card in player.discard],
@@ -484,14 +536,18 @@ class Game:
             }
             if side == viewer:
                 data["hand"] = [self._card_view(card) for card in player.hand]
+                data["revealed"] = [self._card_view(card) for card in player.revealed
+                                    if any(other.id == card.id for other in self.players[1 - side].hand)]
             players.append(data)
         return {
             "phase": self.phase, "version": self.version, "turn": self.turn,
             "round": self.round_number, "winner": self.winner, "players": players,
             "weather": [{"key": effect.key, "name": CATALOG[effect.key].name}
                         for effect in self.weather],
-            "pending": {"actor": self.turn, "source": self.pending[0]} if self.pending else None,
+            "pending": {"actor": self.turn, "source": "Посмертная повинность", "kind": "levy"} if self.pending_levy else (
+                {"actor": self.turn, "source": self.pending[0], "kind": "medic"} if self.pending else None),
             "history": deepcopy(self.history), "events": list(self.events),
             "scorched": list(self.scorched),
+            "played": deepcopy(self.played),
             "moves": self.legal_moves(viewer),
         }

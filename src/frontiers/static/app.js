@@ -32,6 +32,9 @@
   const burningCards = new Map();
   const scorchFire = new window.FrontiersFire();
   let scorchFrame = null, scorchTick = null;
+  const opponentPlayer = new window.FrontiersOpponentPlay();
+  let opponentPresentation = null, lastPresentedPlay = "";
+  const opponentStates = [];
   const FILTERS = [["all", "cards", "Все карты"], ["melee", "melee", "Ближний бой"],
     ["ranged", "ranged", "Дальний бой"], ["siege", "siege", "Осада"],
     ["hero", "crown", "Герои"], ["weather", "sun", "Погода"], ["special", "banner", "Особые"]];
@@ -97,8 +100,16 @@
     }
     return svg;
   }
-  function artClass(card) {
-    return `art-${card.key}`;
+  function artClass(card, faction = renderingFaction()) {
+    return card.key === "horn" && faction === "shiron" ? "art-shiron_horn" : `art-${card.key}`;
+  }
+  function factionInfo(key = leader) {
+    return catalog.factions[catalog.leaders[key]?.faction || "burgundy"];
+  }
+  function factionKey(key = leader) { return catalog.leaders[key]?.faction || "burgundy"; }
+  function renderingFaction() {
+    return state?.game && document.body.classList.contains("in-match")
+      ? factionKey(state.game.players[state.me].leader) : factionKey();
   }
   function leaderPortrait(key = "sun") {
     // Варианты одного лидера имеют разные иллюстрации без искажения пропорций.
@@ -108,7 +119,7 @@
     svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
     svg.setAttribute("aria-hidden", "true");
     const image = document.createElementNS(svg.namespaceURI, "image");
-    for (const [attribute, value] of Object.entries({href: `/static/leader_${key}.png`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: "xMidYMid slice"})) image.setAttribute(attribute, value);
+    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.png`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: "xMidYMid slice"})) image.setAttribute(attribute, value);
     svg.append(image); return svg;
   }
 
@@ -175,9 +186,71 @@
     $("connection").className = `connection ${mode}`;
   }
 
-  function receive(next) {
+  function cancelOpponentPlayback() {
+    opponentPresentation = null; opponentStates.length = 0; opponentPlayer.clear();
+  }
+  function drainOpponentStates() {
+    if (opponentPresentation || !opponentStates.length) return;
+    receive(opponentStates.shift());
+    if (!opponentPresentation) drainOpponentStates();
+  }
+  async function presentOpponentPlay(next) {
+    const played = next.game.played;
+    const presentation = {code: next.code, version: next.game.version};
+    opponentPresentation = presentation;
+    lastPresentedPlay = `${next.code}:${next.game.version}`;
+    if ($("info-dialog").open) $("info-dialog").close();
+    closeLeaderPreview();
+    if (currentNotice?.type === "turn") {
+      noticeAnimation?.cancel(); noticeAnimation = null; currentNotice = null;
+      $("match-announcement").hidden = true;
+    }
+    render();
+    let committed = false;
+    const commit = () => {
+      if (!committed) {
+        committed = true;
+        if (played.card.key !== "scorch") presentation.arrivingCard = played.card.id;
+        receive(next, true);
+      }
+    };
+    const card = cardNode(played.card, {faction: factionKey(next.game.players[played.actor].leader), onClick: () => {}});
+    try {
+      await opponentPlayer.play(card, {
+        scorch: played.card.key === "scorch", commit,
+        destination: () => document.querySelector(`#arena [data-card-id="${CSS.escape(played.card.id)}"]`)
+          || (played.row ? document.querySelector(`.combat-row[data-side="${played.side === next.me ? "own" : "enemy"}"][data-row="${played.row}"] ${played.card.key === "horn" ? ".row-special" : ".row-cards"}`) : null)
+          || (played.card.kind === "weather" && next.game.weather.length ? $("weather-strip") : $("enemy-discard")),
+      });
+      if (opponentPresentation === presentation) commit();
+    } catch {
+      if (opponentPresentation === presentation) commit();
+    } finally {
+      if (opponentPresentation === presentation) {
+        opponentPresentation = null;
+        render(); playAnnouncement(); drainOpponentStates();
+      }
+    }
+  }
+  function receive(next, skipPresentation = false) {
     const freshRoom = !state || state.code !== next.code;
     if (!freshRoom && next.revision < state.revision) return;
+    if (opponentPresentation && !skipPresentation) {
+      if (freshRoom || next.game?.phase === "mulligan" || !next.game) cancelOpponentPlayback();
+      else {
+        const last = opponentStates.at(-1);
+        if (last && next.revision <= last.revision) return;
+        if (last && last.game?.version === next.game?.version) opponentStates[opponentStates.length - 1] = next;
+        else opponentStates.push(next);
+        return;
+      }
+    }
+    const played = next.game?.played;
+    if (!skipPresentation && !freshRoom && state.game?.phase === "playing" && played?.actor !== next.me && played?.card
+        && next.game.version === state.game.version + 1 && lastPresentedPlay !== `${next.code}:${next.game.version}`
+        && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      presentOpponentPlay(next); return;
+    }
     const previous = state;
     const oldPhase = state?.game?.phase;
     if (freshRoom || (!dirtyDeck && !next.game)) {
@@ -189,6 +262,7 @@
     }
     if (next.game && next.game.phase !== "finished") dirtyDeck = false;
     if (freshRoom || (oldPhase === "finished" && next.game?.phase === "mulligan")) {
+      lastPresentedPlay = "";
       selected = null; swaps.clear(); pendingVersion = null;
       mulliganIndex = 0; resultDismissed = false; resultSignature = "";
       clearScorchAnimations();
@@ -206,9 +280,13 @@
     history.replaceState(null, "", `/?room=${encodeURIComponent(state.code)}`);
     announceChanges(freshRoom ? null : previous, next);
     render();
+    const mine = next.game?.players[next.me];
+    if (!freshRoom && mine?.leader === "shiron_spy" && mine.leader_used && !mine.leader_blocked &&
+        previous?.game && !previous.game.players[next.me].leader_used) showIntel(mine.revealed || []);
   }
 
   function disconnect() {
+    cancelOpponentPlayback();
     clearTimeout(retryTimer); clearInterval(heartbeat);
     const previous = socket; socket = null;
     if (previous) previous.close();
@@ -255,14 +333,14 @@
 
   function send(action) {
     if (!connected || !socket || socket.readyState !== WebSocket.OPEN) return toast("Дождитесь восстановления соединения.");
-    if (pendingVersion !== null || !state?.game) return;
+    if (pendingVersion !== null || !state?.game || opponentPresentation) return;
     pendingVersion = state.game.version;
     socket.send(JSON.stringify({...action, version: pendingVersion}));
     selected = null;
     render();
   }
   function usableMoves() {
-    return connected && pendingVersion === null ? state?.game?.moves || [] : [];
+    return connected && pendingVersion === null && !opponentPresentation ? state?.game?.moves || [] : [];
   }
   function selectedMoves() {
     return usableMoves().filter((move) => move.type === "play" && move.card_id === selected);
@@ -278,7 +356,7 @@
     return parts.join(" ");
   }
   function glyph(card) {
-    if (card.hero) return "⚜";
+    if (card.hero) return catalog.factions[card.faction]?.emblem || "♛";
     if (card.kind === "weather") return {frost: "❄", fog: "≋", rain: "☂", storm: "ϟ", clear: "☀"}[card.key] || "☁";
     if (card.kind === "special") return {horn: "⚑", decoy: "♟", scorch: "♨", mushroom: "♧"}[card.key] || "◇";
     if (card.abilities?.includes("spy")) return "◈";
@@ -289,13 +367,17 @@
   function cardNode(card, options = {}) {
     const result = button("", (event) => {
       event.stopPropagation();
-      if (options.onClick) options.onClick(); else showCard(card);
+      if (options.onClick) options.onClick(); else showCard(card, options.faction);
     }, `card ${card.kind} ${card.hero ? "hero" : ""} ${options.small ? "small" : ""} ${options.selected ? "selected" : ""} ${options.targetable ? "targetable" : ""}`);
     if (card.id) result.dataset.cardId = card.id;
+    result.disabled = !!options.disabled;
     result.dataset.cardKey = card.key;
+    if (options.small && card.id && opponentPresentation?.arrivingCard === card.id) result.classList.add("opponent-arrival");
+    const faction = options.faction || renderingFaction();
+    result.dataset.faction = card.faction === "neutral" ? faction : card.faction || "burgundy";
     result.title = `${card.name}. ${description(card)}`;
     result.setAttribute("aria-label", result.title);
-    result.append(node("span", `card-art ${artClass(card)}`), node("span", "card-ribbon", "⚜"));
+    result.append(node("span", `card-art ${artClass(card, faction)}`), node("span", "card-ribbon", (catalog.factions[card.faction] || catalog.factions[faction]).emblem || "⚜"));
     const power = card.strength ?? card.base_strength;
     const top = node("div", "card-top");
     const badge = node("span", `card-power ${power !== card.base_strength ? "changed" : ""}`);
@@ -326,17 +408,27 @@
       node("span", "card-row", (card.rows || []).map((row) => ROW_NAMES[row]).join(" / ")));
     return result;
   }
-  function showInfo(content) {
+  function showInfo(content, kind = "") {
+    $("info-dialog").classList.toggle("intel-dialog", kind === "intel");
     $("info-content").replaceChildren(content);
     if (!$("info-dialog").open) $("info-dialog").showModal();
   }
-  function showCard(card) {
+  function showCard(card, faction = renderingFaction()) {
     const content = node("div", "card-details");
-    content.append(cardNode(card, {onClick: () => {}}), node("p", "eyebrow", card.hero ? "Герой Бургундии" : "Коллекция Бургундии"),
+    const origin = catalog.factions[card.faction]?.name || "Общие карты";
+    content.append(cardNode(card, {faction, onClick: () => {}}), node("p", "eyebrow", `${card.hero ? "Герой" : "Коллекция"} · ${origin}`),
       node("h2", "", card.name), node("p", "", description(card)));
     if (card.transform_to) content.append(node("p", "muted", `Вторая форма: ${definitions.get(card.transform_to)?.name || card.transform_to}.`));
     if (card.summon_to) content.append(node("p", "muted", `Призывает: ${definitions.get(card.summon_to)?.name || card.summon_to}.`));
     showInfo(content);
+  }
+  function showIntel(cards) {
+    const content = node("div", "intel-details");
+    content.append(node("p", "eyebrow", "Шпионские игры"), node("h2", "", "Разведданные"),
+      node("p", "muted", cards.length ? "Открытые карты, которые ещё остаются в руке соперника." : "В руке соперника нет открытых карт."));
+    const list = node("div", "intel-cards");
+    list.append(...cards.map(card => cardNode(card, {faction: factionKey(state.game.players[1 - state.me].leader)})));
+    content.append(list); showInfo(content, "intel");
   }
 
   function render() {
@@ -364,6 +456,30 @@
   function renderLobby() {
     const mine = state.seats[state.me];
     const locked = mine.ready || busy;
+    const faction = factionKey(), info = factionInfo();
+    document.body.dataset.faction = faction;
+    $("faction-select").value = faction;
+    $("faction-select").disabled = locked;
+    $("faction-name").textContent = info.name;
+    $("faction-description").textContent = info.ability;
+    document.querySelector(".faction-crest").textContent = info.emblem;
+    const leaderSelect = $("leader-select");
+    const allowedLeaders = Object.entries(catalog.leaders).filter(([, item]) => item.faction === faction);
+    if (leaderSelect.dataset.faction !== faction) {
+      leaderSelect.replaceChildren(...allowedLeaders.map(([key, item]) => {
+        const option = node("option", "", item.name); option.value = key; return option;
+      }));
+      leaderSelect.dataset.faction = faction;
+    }
+    const presetSelect = $("deck-preset");
+    if (presetSelect.dataset.faction !== faction) {
+      presetSelect.replaceChildren(...Object.entries(catalog.decks).filter(([, item]) => item.faction === faction).map(([key, item]) => {
+        const option = node("option", "", item.name); option.value = key; return option;
+      }));
+      const custom = node("option", "", "Своя колода"); custom.value = "custom"; presetSelect.append(custom);
+      presetSelect.dataset.faction = faction;
+    }
+    document.querySelector(".leader-portrait > div").textContent = info.leader;
     const seats = [];
     for (let index = 0; index < 2; index++) {
       const seat = state.seats[index];
@@ -395,7 +511,7 @@
     renderFilterTabs("deck-tabs", deckFilter, (value) => { deckFilter = value; renderLobby(); });
     for (const [id, category, inDeck] of [["collection", filter, false], ["deck-cards", deckFilter, true]]) {
       const list = $(id), position = list.scrollTop;
-      const cards = catalog.cards.filter((card) => card.collectible && card.available !== false && matchesFilter(card, category)
+      const cards = catalog.cards.filter((card) => card.collectible && card.available !== false && [faction, "neutral"].includes(card.faction) && matchesFilter(card, category)
         && (inDeck ? counts.has(card.key) : (counts.get(card.key) || 0) < card.copies));
       cards.sort((a, b) => cardOrder(a) - cardOrder(b) || b.base_strength - a.base_strength);
       list.replaceChildren(...cards.map((card) => {
@@ -453,9 +569,11 @@
     const gems = node("div", "gems");
     gems.setAttribute("aria-label", `Жетонов раунда: ${player.lives}`);
     for (let index = 0; index < 2; index++) gems.append(node("span", index >= player.lives ? "lost" : "", "◆"));
-    const emblem = node("div", "player-emblem", "⚜");
+    const faction = factionInfo(player.leader);
+    const emblem = node("div", "player-emblem", faction.emblem);
+    emblem.dataset.faction = factionKey(player.leader);
     const details = node("div", "player-details");
-    details.append(heading, node("span", "player-faction", "Королевство Бургундия"),
+    details.append(heading, node("span", "player-faction", faction.name),
       node("div", "player-meta", `В руке: ${player.hand_count} · Колода: ${player.deck_count}`), gems);
     const parts = [emblem, details];
     if (player.passed) parts.push(node("div", "passed-tag", "Пас"));
@@ -471,7 +589,7 @@
     let banner;
     if (game.phase === "finished") banner = "Матч завершён";
     else if (game.phase === "mulligan") banner = mine.mulligan_done ? "Ждём подтверждения руки соперника" : "Выберите до двух карт для замены";
-    else if (game.pending) banner = game.pending.actor === me ? "Лекарь: выберите отряд из сброса" : "Соперник выбирает цель Лекаря";
+    else if (game.pending) banner = game.pending.actor === me ? (game.pending.kind === "levy" ? "Выберите отряд из отбоя соперника" : "Лекарь: выберите отряд из сброса") : "Соперник выбирает цель способности";
     else banner = game.turn === me ? (game.players[1 - me].passed ? "Соперник спасовал. Вы можете продолжать ходить" : "Ваш ход") : "Ход соперника";
     if (pendingVersion !== null) banner = "Сервер проверяет ход…";
     $("turn-banner").textContent = banner;
@@ -482,17 +600,18 @@
     $("weather-strip").replaceChildren(...game.weather.map((effect) => node("span", "weather-chip", effect.name)));
     for (const [id, player] of [["leader-button", mine], ["enemy-leader", game.players[1 - me]]]) {
       const text = node("span", "leader-caption");
-      text.append(node("strong", "", "Франциск II Мудрый"), node("small", "", catalog.leaders[player.leader].name));
-      $(id).replaceChildren(leaderPortrait(player.leader), text, node("span", "leader-availability", player.leader_used ? "Использован" : id === "leader-button" ? "Использовать лидера" : "Лидер соперника"));
-      $(id).classList.toggle("used", player.leader_used);
+      text.append(node("strong", "", factionInfo(player.leader).leader), node("small", "", catalog.leaders[player.leader].name));
+      $(id).replaceChildren(leaderPortrait(player.leader), text, node("span", "leader-availability", player.leader_blocked ? "Заблокирован" : catalog.leaders[player.leader].passive ? "Пассивная способность" : player.leader_used ? "Использован" : id === "leader-button" ? "Использовать лидера" : "Лидер соперника"));
+      $(id).classList.toggle("used", player.leader_used || player.leader_blocked);
       $(id).title = catalog.leaders[player.leader].description;
     }
     $("my-score").classList.toggle("active-player", game.turn === me && game.phase === "playing");
     $("opponent-score").classList.toggle("active-player", game.turn !== me && game.phase === "playing");
     for (const [prefix, player] of [["own", mine], ["enemy", game.players[1 - me]]]) {
-      $(prefix + "-deck").replaceChildren(node("span", "pile-crest", "⚜"), node("strong", "", String(player.deck_count)), node("small", "", "Колода"));
+      $(prefix + "-deck").dataset.faction = factionKey(player.leader);
+      $(prefix + "-deck").replaceChildren(node("span", "pile-crest", factionInfo(player.leader).emblem), node("strong", "", String(player.deck_count)), node("small", "", "Колода"));
       const discarded = player.discard.at(-1);
-      const preview = node("span", `discard-preview ${discarded ? artClass(discarded) : ""}`);
+      const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
       preview.append(node("span", "", discarded ? glyph(discarded) : "∅"));
       $(prefix + "-discard").replaceChildren(preview, node("small", "", `Сброс · ${player.discard.length}`));
     }
@@ -506,6 +625,7 @@
     $("mulligan-button").textContent = swaps.size ? `Заменить карт: ${swaps.size}` : "Оставить руку";
     $("hand-count").textContent = `В руке ${mine.hand.length} · В колоде ${mine.deck_count}`;
     $("hand").replaceChildren(...mine.hand.map((card) => cardNode(card, {
+      disabled: !!opponentPresentation,
       selected: canSwap ? swaps.has(card.id) : selected === card.id,
       onClick: () => {
         if (canSwap && pendingVersion === null) {
@@ -522,6 +642,7 @@
     const chosen = mine.hand.find((card) => card.id === selected);
     const moves = selectedMoves();
     const info = [];
+    if (mine.revealed?.length) info.push(button(`Разведданные · ${mine.revealed.length}`, () => showIntel(mine.revealed), "text-button"));
     if (chosen) {
       info.push(node("span", "", chosen.key === "horn" ? "Выберите подсвеченное место для штандарта слева" : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : chosen.name));
       if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button("Сыграть", () => send(moves[0]), "primary"));
@@ -573,6 +694,7 @@
     scorchFire.clear();
   }
   function startScorchAnimations() {
+    if (opponentPresentation) return;
     for (const [id, burn] of burningCards) {
       if (burn.started || !burn.element.isConnected) continue;
       burn.started = true;
@@ -633,10 +755,11 @@
     const game = state.game, key = game.players[state.me].leader;
     leaderPreview = {code: state.code, version: game.version, key};
     const preview = $("leader-preview"), caption = node("div", "leader-preview-caption");
-    caption.append(node("strong", "", "Франциск II Мудрый"), node("span", "", catalog.leaders[key].name));
+    caption.append(node("strong", "", factionInfo(key).leader), node("span", "", catalog.leaders[key].name));
     preview.replaceChildren(leaderPortrait(key), caption);
     $("leader-title").textContent = catalog.leaders[key].name;
     $("leader-rule").textContent = catalog.leaders[key].description;
+    document.querySelector(".leader-confirmation-copy .eyebrow").textContent = factionInfo(key).name;
     renderLeaderPreview();
     $("leader-dialog").showModal();
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -779,7 +902,7 @@
     if ($("result-dialog").open) $("result-dialog").close();
   }
   function playAnnouncement() {
-    if (currentNotice || burningCards.size) return;
+    if (currentNotice || burningCards.size || opponentPresentation) return;
     const next = noticeQueue.shift();
     if (!next) return renderResult();
     if (!state?.game || resultDismissed) return clearAnnouncements();
@@ -843,7 +966,7 @@
   }
   function renderResult() {
     const game = state?.game;
-    if (!game || game.phase !== "finished" || resultDismissed || currentNotice || noticeQueue.length || burningCards.size) return;
+    if (!game || game.phase !== "finished" || resultDismissed || currentNotice || noticeQueue.length || burningCards.size || opponentPresentation) return;
     const dialog = $("result-dialog"), me = state.me;
     const signature = `${state.code}:${game.version}:${me}`;
     if (resultSignature !== signature) {
@@ -852,7 +975,7 @@
       $("result-emblem").replaceChildren(ceremonyEmblem(outcome));
       $("result-title").textContent = {victory: "Победа!", defeat: "Поражение", draw: "Ничья"}[outcome];
       const conceded = game.players.every(player => player.lives > 0);
-      $("result-subtitle").textContent = conceded ? game.winner === me ? "Соперник сдался." : "Вы сдались." : "Королевство Бургундия · Итоги раундов";
+      $("result-subtitle").textContent = conceded ? game.winner === me ? "Соперник сдался." : "Вы сдались." : "Итоги раундов";
       const table = node("table", "match-score-table"), head = node("thead"), body = node("tbody"), headers = node("tr");
       table.append(node("caption", "", "Счёт игроков по раундам"));
       for (const title of ["Игрок", "Раунд 1", "Раунд 2", "Раунд 3"]) {
@@ -954,9 +1077,9 @@
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); send(slotMove); }
       });
     }
-    for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true}));
+    for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true, faction: factionKey(player.leader)}));
     if (player.leader_horn.includes(row) && !special.children.length) {
-      const standard = cardNode(definitions.get("horn"), {small: true, onClick: () => {
+      const standard = cardNode(definitions.get("horn"), {small: true, faction: factionKey(player.leader), onClick: () => {
         const content = node("div");
         content.append(node("p", "eyebrow", "Способность Франциска"), node("h2", "", "Военная академия"), node("p", "", catalog.leaders.academy.description));
         showInfo(content);
@@ -975,14 +1098,18 @@
     const game = state.game;
     if (!game.pending || game.pending.actor !== state.me) return closeChoice();
     const moves = usableMoves().filter((move) => move.type === "choose");
-    const ownDiscard = game.players[state.me].discard;
+    const levy = game.pending.kind === "levy";
+    const ownDiscard = game.players[levy ? 1 - state.me : state.me].discard;
+    document.querySelector("#choice-dialog .eyebrow").textContent = levy ? "Посмертная повинность" : "Способность Лекаря";
+    document.querySelector("#choice-dialog h2").textContent = levy ? "Забрать отряд в руку" : "Вернуть отряд на поле";
+    document.querySelector("#choice-dialog .muted").textContent = levy ? "Выберите обычный отряд из отбоя соперника." : "Выберите отряд из сброса. Для подвижного отряда также выберите линию.";
     const ids = [...new Set(moves.map((move) => move.card_id))];
     $("choice-cards").replaceChildren(...ids.map((id) => {
       const card = ownDiscard.find((item) => item.id === id), item = node("div", "choice-item");
       const choices = moves.filter((move) => move.card_id === id);
       item.append(cardNode(card, {onClick: () => { if (choices.length === 1) send(choices[0]); }}));
       for (const move of choices) {
-        const choose = button(`Вернуть: ${ROW_NAMES[move.row]}`, () => send(move), "primary");
+        const choose = button(levy ? "Забрать в руку" : `Вернуть: ${ROW_NAMES[move.row]}`, () => send(move), "primary");
         choose.dataset.choiceId = id; choose.dataset.choiceRow = move.row; item.append(choose);
       }
       return item;
@@ -1017,6 +1144,12 @@
   });
   $("room-code").addEventListener("input", () => { $("room-code").value = $("room-code").value.toUpperCase().replace(/[^A-Z2-9]/g, ""); });
   $("leader-select").addEventListener("change", () => { leader = $("leader-select").value; dirtyDeck = true; renderLobby(); });
+  $("faction-select").addEventListener("change", () => {
+    const faction = $("faction-select").value;
+    leader = catalog.factions[faction].default_leader;
+    deck = [...Object.values(catalog.decks).find(item => item.faction === faction).cards];
+    dirtyDeck = true; renderLobby();
+  });
   $("deck-preset").addEventListener("change", () => {
     const preset = catalog.decks[$("deck-preset").value];
     if (preset) { deck = [...preset.cards]; dirtyDeck = true; renderLobby(); }
@@ -1076,7 +1209,7 @@
       const cards = state.game.players[own ? state.me : 1 - state.me].discard;
       const content = node("div"); content.append(node("h2", "", own ? "Ваш сброс" : "Сброс соперника"));
       const list = node("div", "choice-cards");
-      list.append(...cards.map((card) => cardNode(card)));
+      list.append(...cards.map((card) => cardNode(card, {faction: factionKey(state.game.players[own ? state.me : 1 - state.me].leader)})));
       if (!cards.length) list.append(node("p", "muted", "В сбросе пока нет карт."));
       content.append(list); showInfo(content);
     });
@@ -1087,10 +1220,10 @@
   $("rules-button").addEventListener("click", () => {
     const content = node("div", "rules-copy"), list = node("ol");
     content.append(node("p", "eyebrow", "Перед первой дуэлью"), node("h2", "", "Как играть в Frontiers"));
-    for (const text of ["Выберите колоду и одну способность Франциска. Нажмите «Готов к матчу».",
+    for (const text of ["Выберите фракцию, колоду и одну способность лидера. Нажмите «Готов к матчу».",
       "Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты.",
       "Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют. Дополнительные карты дают способности.",
-      "Пас действует до конца раунда. Соперник может продолжать играть. Когда оба спасовали, побеждает большая суммарная сила.",
+      "Пас действует до конца раунда. Соперник может продолжать играть. Когда оба спасовали, побеждает большая суммарная сила. При равной силе побеждает Широн, если его выбрал только один игрок.",
       "Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче.",
       "Герои защищены от погоды, усилений и Казни. Погода действует на обе стороны, штандарт — только на вашу.",
       "После раунда поле очищается. Бургундия добирает карту за выигранный раунд; обычного добора между раундами нет.",
@@ -1110,6 +1243,9 @@
     try {
       catalog = await api("/api/catalog");
       definitions = new Map(catalog.cards.map((card) => [card.key, card]));
+      for (const [key, info] of Object.entries(catalog.factions).filter(([, info]) => info.playable)) {
+        const option = node("option", "", info.name); option.value = key; $("faction-select").append(option);
+      }
       for (const [key, item] of Object.entries(catalog.leaders)) { const option = node("option", "", item.name); option.value = key; $("leader-select").append(option); }
       for (const [key, item] of Object.entries(catalog.decks)) { const option = node("option", "", item.name); option.value = key; $("deck-preset").append(option); }
       const custom = node("option", "", "Своя колода"); custom.value = "custom"; $("deck-preset").append(custom);

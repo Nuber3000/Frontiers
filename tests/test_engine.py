@@ -5,7 +5,7 @@ import random
 import unittest
 
 from frontiers.cards import CombatRow as Row
-from frontiers.catalog import CATALOG, DECKS, STARTER_DECK, validate_deck
+from frontiers.catalog import CATALOG, DECKS, FACTIONS, STARTER_DECK, validate_deck
 from frontiers.engine import Game, RuleError, StaleState, WeatherEffect
 from frontiers.models import MatchPlayer, PlacedCard
 
@@ -36,11 +36,42 @@ def play(game, side, key, row=None, target=None):
 
 
 class PreparationTests(unittest.TestCase):
+    def test_played_metadata_is_public_only_after_a_valid_play(self):
+        game = fixture(["knight", "crossbow"], ["knight"])
+        played, secret = game.players[0].hand
+        self.assertIsNone(game.view(1)["played"])
+        game = game.act(0, {"type": "play", "card_id": played.id, "row": "melee"}, 0)
+        for viewer in (0, 1):
+            metadata = game.view(viewer)["played"]
+            self.assertEqual(metadata["actor"], 0)
+            self.assertEqual(metadata["row"], "melee")
+            self.assertEqual(metadata["side"], 0)
+            self.assertEqual(metadata["card"]["id"], played.id)
+        self.assertNotIn(secret.id, json.dumps(game.view(1)))
+        changed = game.view(1)["played"]
+        changed["card"]["name"] = "Changed"
+        self.assertNotEqual(game.played["card"]["name"], "Changed")
+        with self.assertRaises(RuleError):
+            game.act(0, {"type": "play", "card_id": secret.id}, game.version)
+        self.assertEqual(game.played["card"]["id"], played.id)
+        game = game.act(1, {"type": "pass"}, game.version)
+        self.assertIsNone(game.played)
+
+    def test_scorch_itself_is_reported_as_the_played_card(self):
+        game = fixture(["scorch"], ["knight"])
+        target = put(game, 1, "knight")
+        action_card = game.players[0].hand[0]
+        game = play(game, 0, "scorch")
+        self.assertEqual(game.played["card"]["id"], action_card.id)
+        self.assertEqual(game.played["card"]["key"], "scorch")
+        self.assertEqual(game.scorched, [target.id])
+
     def test_templates_are_valid_and_deal_ten(self):
         for template in DECKS.values():
             with self.subTest(template=template["name"]):
-                validate_deck(template["cards"], "sun")
-                game = Game.create(["A", "B"], [template["cards"], STARTER_DECK], ["sun", "fog"], seed=1)
+                leader = FACTIONS[template["faction"]]["default_leader"]
+                validate_deck(template["cards"], leader)
+                game = Game.create(["A", "B"], [template["cards"], STARTER_DECK], [leader, "fog"], seed=1)
                 self.assertEqual(len(game.players[0].hand), 10)
                 self.assertEqual(len(game.players[0].deck), len(template["cards"]) - 10)
 

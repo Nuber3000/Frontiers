@@ -1,0 +1,186 @@
+{
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "asset": "leader_shiron_hand.png",
+      "generated_file": "exec-1fe17e78-b657-4349-bd51-22bf10fdb926.png",
+      "prompt": "Use case: stylized-concept. Asset type: single original portrait illustration for a medieval fantasy card game Frontiers, portrait 3:4 full bleed. Subject: Emperor Albrecht Tirol, inspired by the user-provided 17th-century oil portrait: pale middle-aged male monarch with long dark wavy hair falling to shoulders, thin curled black moustache, prominent nose, small pointed beard, stern thoughtful expression. Gilded black plate armor, white lace collar, heavy ochre-gold mantle and black velvet, imperial palace with dark drapes. Original character, richly painted historical oil portrait, realistic anatomy, dramatic amber light and charcoal shadows, black and gold empire palette. Waist-up centered portrait, entire head and hair safely inside central 75%, generous space above head. No text, card frame, symbols, letters or watermark. Produce one finished character illustration."
+    },
+    {
+      "asset": "shiron_archer_medic.png",
+      "generated_file": "exec-defa869a-e371-43f6-9930-135069c51558.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A helmeted imperial archer with a white linen medical pouch and bow in hand, charcoal padded uniform with gold piping, fortification in background. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_siege_medic.png",
+      "generated_file": "exec-66beec3c-5efd-4aee-92cf-7b930088e90c.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A gaunt middle-aged male field surgeon in a brown hood and dark leather apron, arms folded holding a medical satchel, imperial siege camp and canvas tents. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_eck.png",
+      "generated_file": "exec-0ec24ed3-acbb-49f6-bb98-dcc2c1ff06be.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A weathered moustached male officer in black plate with gold edging, hands resting on longsword, leafless autumn trees and stone watchtower. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_riders.png",
+      "generated_file": "exec-cee3ff8b-f5b4-4b3c-9747-e7e371f1e705.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A threatening black-armored cavalryman on a gray warhorse, raven-feather crest, articulated metal face guard on horse, wet misty birch wood. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_viscount.png",
+      "generated_file": "exec-6fefbb2b-c974-4ecf-b53c-de3ed2f088e8.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A proud middle-aged nobleman with swept dark hair and waxed moustache, polished black cuirass, white cuffs, ceremonial sword, distant turreted castle. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_marksman.png",
+      "generated_file": "exec-9de813e8-d150-41f6-97f4-366ad99e3bcd.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A stocky balding scarred male marksman in a black gold-trimmed brigandine, carrying a heavy crossbow beside windswept imperial battlements. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_pyromancer.png",
+      "generated_file": "exec-08d9fa5b-f7c5-4376-8fe4-4ce8aa4deb2b.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A stern bald male battle mage in segmented black gold armor, a tiny amber flame hovering above his gloved palm, tall palace arches behind. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_guard.png",
+      "generated_file": "exec-cda8e052-f190-448c-ac82-dd03db828063.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A plumed imperial infantryman with broad black kite shield bearing an original golden four-pointed star, short sword drawn, regiment flags in a stone courtyard. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_mangonel.png",
+      "generated_file": "exec-de35450c-a56c-4f12-af13-72d90de316f4.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A battered timber mangonel siege engine with frayed rope, soldiers maintaining it in muddy ground, amber storm sunset. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_warden.png",
+      "generated_file": "exec-8874b62c-8988-4d8a-b373-8484befad826.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An ominous closed-helmet knight in dark blue-black plate, narrow eye slit, two-handed sword held vertically, moonlit tower gate, realistic steel. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_cadet.png",
+      "generated_file": "exec-a415b3fe-6a0b-4035-b8a2-bf4c1c1878b8.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A young clean-shaven recruit in a simple iron kettle helmet and black tunic, carrying a compact crossbow, training courtyard, nervous determined face. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_fire_advisor.png",
+      "generated_file": "exec-71a0ac9a-5cc5-4bea-b12d-718938357859.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A severe aging male court wizard in embroidered black and pale gold robes, singed gloved hand near glowing brazier, marble hall, receding hairline. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_spy.png",
+      "generated_file": "exec-64df9d2c-cb88-411f-b45e-262329e0b439.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A lean sharp-faced dark-haired male secret agent in fine black quilted doublet, leather belts, concealed dagger in hand, warm shadowed palace corridor. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_sorceress.png",
+      "generated_file": "exec-16f957c4-ce9a-443c-9ac9-c12b605627b6.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An intelligent pale woman in a hooded charcoal velvet gown with antique gold clasps, carrying a narrow engraved staff, pale light through palace arch. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_envoys.png",
+      "generated_file": "exec-ce2d6665-cb83-4531-bcf3-05c65ab33b57.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A slim young male imperial envoy in black velvet cap and pleated black court costume, adjusting his sword belt, formal white ruff, ornate courtyard. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_knight.png",
+      "generated_file": "exec-655224f3-0ee9-4bbd-93bf-18823c59878a.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An elite mounted knight in gilded black plate with two black feather plumes, horse wearing charcoal gold caparison, wintry woodland. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_captain.png",
+      "generated_file": "exec-151853af-34df-4ea4-a454-9af37935bc80.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A stern bald broad-shouldered infantry captain with a black rectangular shield decorated in original gold geometric heraldry, crossbow at hip, smoke behind. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_ruby.png",
+      "generated_file": "exec-e9492e3d-6770-452a-9f84-ecb7e3e1ea9e.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A confident short black-haired female court sorceress wearing a fitted deep charcoal and burgundy renaissance gown, small ruby necklace, palace garden. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_scorpion.png",
+      "generated_file": "exec-e84ebdbe-f3ad-481a-9702-799b3ae82b46.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A realistic low heavy wooden torsion bolt thrower launching one green-glowing alchemical bolt, two black-uniformed crew, overcast muddy battlefield. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_amber.png",
+      "generated_file": "exec-638e207f-c542-4046-a576-a2aa10bb1bf2.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A red-haired female imperial scholar mage in a russet velvet turban with round amber brooches and black dress, manuscripts and brass instruments. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_pioneer.png",
+      "generated_file": "exec-1258d9e7-b620-419a-a6b2-d6026800efa4.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A rugged bearded male engineer wearing a brown hood over black leather armor, gripping a tall survey pole and a coil of rope, siege camp and timber defenses. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_archers.png",
+      "generated_file": "exec-00541189-7f31-4594-a621-ccbc26eff288.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A disciplined male veteran crossbowman with a gray mail hood and black gold embroidered surcoat, large steel crossbow across chest, pale blue sky. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_ambassador.png",
+      "generated_file": "exec-3d2d4d9e-95b1-4607-805d-9cd6d63a796f.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An older gray-haired diplomat in richly patterned black-gold doublet and white ruff, holding a sealed ivory letter and a thin cane, palace chamber. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_grand_scorpion.png",
+      "generated_file": "exec-9d78511c-9ff5-4861-8324-cf95b3d82fb3.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An immense multi-armed imperial torsion ballista on heavy wheels firing three glowing green bolts, realistic siege machinery, storm clouds and silhouettes of crew. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_executioner.png",
+      "generated_file": "exec-d0a828c0-dbca-4063-9583-ca628604be70.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A muscular bald scarred male imperial executioner in black sleeveless leather armor with antique gold buckles, heavy sword held low, stern human face, grim stone square. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_chancellor.png",
+      "generated_file": "exec-1a99ad73-c0aa-49f1-8e41-fd4ceeded58f.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A shrewd portly male chancellor with curled moustache in broad black feathered hat and gold embroidered ceremonial armor, dark council chamber, scheming gaze. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_regent.png",
+      "generated_file": "exec-6280173d-22be-4f28-9b96-88ff68286bc2.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A powerful balding middle-aged male regent with neat moustache in black brocade robes and pleated white ruff, dark sash and gold seal, grand palace, imperious expression. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_duke.png",
+      "generated_file": "exec-d12ab4ac-55e3-4b0d-9d99-a6bfde809f3e.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: An austere noble siege commander with slick dark hair, black embossed ceremonial breastplate, heavy gold chain and signet, standing in a dim imperial war room. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "leader_shiron_rain.png",
+      "generated_file": "exec-0227266f-3b62-47e5-8300-da9077daf394.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE portrait 3:4 full bleed original fantasy card illustration. Input reference image: identity and black-gold oil-painting style reference only, retain the emperor's facial identity and hair from this reference. Subject: The same emperor Albrecht Tirol with shoulder-length dark curls, curled moustache and pointed beard, black and gold plate, ochre mantle, stands under palace arcade pointing toward a rainy battlefield of siege engines; slate storm clouds and dramatic amber light. Realistic historical oil painting, coherent with reference, full head inside central 75% with space above hair, waist-up composition. No writing, logos, labels, game UI, border, watermark, collage."
+    },
+    {
+      "asset": "leader_shiron_spy.png",
+      "generated_file": "exec-b353064c-5ab4-4951-9fa1-f2bd98fb5cd3.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE portrait 3:4 full bleed original fantasy card illustration. Input reference image: identity and black-gold oil-painting style reference only, retain the emperor's facial identity and hair from this reference. Subject: The same emperor Albrecht Tirol with shoulder-length dark curls, curled moustache and pointed beard, black and gold plate, white lace collar, sits at a dark desk examining three small unmarked playing cards beside sealed intelligence letters and a candle; cunning calm expression. Realistic historical oil painting, coherent with reference, full head inside central 75% with space above hair, waist-up composition. No writing, logos, labels, game UI, border, watermark, collage."
+    },
+    {
+      "asset": "leader_shiron_nullify.png",
+      "generated_file": "exec-a0474e6b-5b3a-4046-b6e9-081ff952fb92.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE portrait 3:4 full bleed original fantasy card illustration. Input reference image: identity and black-gold oil-painting style reference only, retain the emperor's facial identity and hair from this reference. Subject: The same emperor Albrecht Tirol with shoulder-length dark curls, curled moustache and pointed beard, black and gold plate, ochre cloak, seated on a carved imperial throne with one gauntleted hand raised in a firm forbidding gesture, dim palace banners and golden light. Realistic historical oil painting, coherent with reference, full head inside central 75% with space above hair, waist-up composition. No writing, logos, labels, game UI, border, watermark, collage."
+    },
+    {
+      "asset": "leader_shiron_levy.png",
+      "generated_file": "exec-f5e9417e-31c4-4973-9e3e-6b95fde18b15.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE portrait 3:4 full bleed original fantasy card illustration. Input reference image: identity and black-gold oil-painting style reference only, retain the emperor's facial identity and hair from this reference. Subject: The same emperor Albrecht Tirol with shoulder-length dark curls, curled moustache and pointed beard, black and gold armor and white lace collar, holds a conscription parchment with no readable text, a defeated enemy knight bows in shadow behind him, imperial military camp at dusk. Realistic historical oil painting, coherent with reference, full head inside central 75% with space above hair, waist-up composition. No writing, logos, labels, game UI, border, watermark, collage."
+    },
+    {
+      "asset": "shiron_marshal.png",
+      "generated_file": "exec-b3764ccb-7ba2-408f-bafc-fbc26b29d685.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE standalone full-bleed portrait 3:4 card illustration for Frontiers original medieval fantasy game. Subject: A resolute middle-aged field marshal in black gold plate and chainmail coif, a small healer's white cross token on shoulder, battlefield tent and guards. Rich realistic oil-painted medieval/early renaissance fantasy, anatomy and costume believable, restrained charcoal-black, antique gold, ochre and steel palette. Distinctive original character and composition, readable at small card size. Entire head and important equipment inside central 75%, some breathing space above head and both sides. Picture only: NO letters, name labels, numbers, borders, card frames, symbols overlay, collage, watermark or game UI. Original Empire of Shiron setting; no existing franchise characters."
+    },
+    {
+      "asset": "shiron_horn.png",
+      "generated_file": "exec-a9c150a2-6067-44d0-b274-e2ca1e5a7c84.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE full-bleed portrait 3:4 fantasy card illustration for Frontiers. Subject: the imperial standard of Shiron, a tall upright wooden flagstaff with a clearly visible large BLACK cloth flag carrying ONE bold GOLDEN SUN with a round disk and pointed radiating rays. Sun, not fleur-de-lis or eagle. Black and gold tassels, realistic heavy fabric billowing softly, imperial black-armored soldiers and stone fortress blurred in background, amber light and smoky sky. Rich realistic medieval oil painting coherent with black-gold imperial card art. Entire flag and staff finial safely framed in central 80%, no lettering, no numbers, no borders or card UI, no watermark."
+    },
+    {
+      "asset": "shiron_spy_hero.png",
+      "generated_file": "exec-27c11159-b37b-4069-ac8b-455496410f95.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE full-bleed portrait 3:4 original character illustration for Frontiers. Subject: Severin, the Emperor's Shadow, an enigmatic silver-haired male master spy in his forties, clean-shaven angular face, high-collared charcoal-black velvet coat with fine antique-gold embroidery, black gloves concealing a small sealed intelligence letter, half-lit face with calm piercing eyes. Candlelit imperial palace corridor at night, distant golden windows, rain outside. Black gold muted palette, realistic medieval/renaissance oil painting consistent with imperial fantasy card collection. Upper body to waist, entire head safely inside central 75%, air above hair. Original character, no existing franchise character, no writing, no logos, no name labels, numbers, card frame, or watermark."
+    }
+  ]
+}
+
