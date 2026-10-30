@@ -76,8 +76,8 @@
   },
   {
     "key": "ranger",
-    "name": "Лесной стрелок",
-    "prompt": "Use case: stylized-concept. Asset type: one unique original Frontiers fantasy card illustration. Portrait 3:4, full bleed. Rich traditional oil-painted medieval fantasy, realistic anatomy and materials, dramatic natural light, muted Burgundian blue, wine red, steel and antique gold. Centered large main subject, clear silhouette, face/equipment readable at small playing-card size, important subject within central 75 percent. Original character or scene, no existing franchise characters. Illustration only: no text, lettering, numbers, watermarks, borders, UI or card frames. Each scene must be a distinct finished painting, never a contact sheet. Subject: An auburn-haired female forest ranger in a deep green cloak and leather bracers, drawing a long yew bow in a sun-dappled ancient oak forest. A single arrow aimed off-frame, fern-covered ground, dynamic three-quarter profile. No crossbow."
+    "name": "Воительница Яра",
+    "prompt": "Original Frontiers collectible card illustration, dark medieval northern fantasy matching the Skone clan illustrations: detailed realistic painterly artwork, natural anatomy, weathered iron, muted violet wool, dark leather, cold sea light. Vertical portrait 2:3, full bleed. Keep entire head, hair and shoulders clearly inside frame with generous headroom and subject centered in the central 75 percent; face readable at playing-card size. No text, no typography, no numbers, no card border, no UI, no logos. Subject: Yara, a formidable adult northern warrior woman, stern grey eyes, windblown dark braided hair, purple wool cloak over leather and chainmail, holding a longbow and a ready arrow. Standing on a sea cliff above Viking longships during a thunderstorm, rain and lightning behind her. Powerful calm storm-born presence, fully clothed practical armour, no sexualization. Distinct original character."
   },
   {
     "key": "regent",
@@ -141,13 +141,13 @@
   },
   {
     "key": "berserker",
-    "name": "Бешеный ратник",
+    "name": "Хельм Безумный",
     "prompt": "Use case: stylized-concept. Asset type: one unique original Frontiers fantasy card illustration. Portrait 3:4, full bleed. Rich traditional oil-painted medieval fantasy, realistic anatomy and materials, dramatic natural light, muted Burgundian blue, wine red, steel and antique gold. Centered large main subject, clear silhouette, face/equipment readable at small playing-card size, important subject within central 75 percent. Original character or scene, no existing franchise characters. Illustration only: no text, lettering, numbers, watermarks, borders, UI or card frames. Each scene must be a distinct finished painting, never a contact sheet. Subject: An enraged muscular adult human berserker with shaved sides and a long dark braid, a heavy brown bearskin cloak over rough leather armor, wielding a broad battle axe in a snowy pine clearing. Fierce human expression with bared teeth, frost in beard, dynamic forward pose. Still entirely human, not transformed."
   },
   {
     "key": "young_berserker",
-    "name": "Лесной берсерк",
-    "prompt": "Use case: stylized-concept. Asset type: one unique original Frontiers fantasy card illustration. Portrait 3:4, full bleed. Rich traditional oil-painted medieval fantasy, realistic anatomy and materials, dramatic natural light, muted Burgundian blue, wine red, steel and antique gold. Centered large main subject, clear silhouette, face/equipment readable at small playing-card size, important subject within central 75 percent. Original character or scene, no existing franchise characters. Illustration only: no text, lettering, numbers, watermarks, borders, UI or card frames. Each scene must be a distinct finished painting, never a contact sheet. Subject: A fierce young human woodland berserker with unruly copper curls, a bear-tooth necklace and ragged green tunic, gripping two short axes while crouching among tangled roots and red mushrooms in a deep mossy forest. Human face visible, lean athletic build, green dawn mist. No animal transformation yet."
+    "name": "Воительница Сконе",
+    "prompt": "Original Frontiers collectible card illustration, dark medieval northern fantasy matching the Skone clan illustrations: detailed realistic painterly artwork, natural anatomy, weathered iron, muted violet wool, dark leather, cold sea light. Vertical portrait 2:3, full bleed. Keep entire head, hair and shoulders clearly inside frame with generous headroom and subject centered in the central 75 percent; face readable at playing-card size. No text, no typography, no numbers, no card border, no UI, no logos. Subject: a fierce adult Skone berserker warrior woman, copper-red braided hair, fur mantle and practical layered leather armour with violet wool, gripping a throwing axe, another throwing axe at her belt and a round wooden shield at her side. Snowy northern pine forest and standing stones, battle-ready human expression with a hint of primal rage; entirely human, no animal head or transformation. Clearly feminine but strong grounded anatomy, fully clothed, no sexualization. Distinct original character different from the dark-haired archer Yara."
   },
   {
     "key": "war_bear",

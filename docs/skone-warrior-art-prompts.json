@@ -1,0 +1,19 @@
+{
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "key": "ranger",
+      "asset": "ranger.png",
+      "name": "Воительница Яра",
+      "prompt": "Original Frontiers collectible card illustration, dark medieval northern fantasy matching the Skone clan illustrations: detailed realistic painterly artwork, natural anatomy, weathered iron, muted violet wool, dark leather, cold sea light. Vertical portrait 2:3, full bleed. Keep entire head, hair and shoulders clearly inside frame with generous headroom and subject centered in the central 75 percent; face readable at playing-card size. No text, no typography, no numbers, no card border, no UI, no logos. Subject: Yara, a formidable adult northern warrior woman, stern grey eyes, windblown dark braided hair, purple wool cloak over leather and chainmail, holding a longbow and a ready arrow. Standing on a sea cliff above Viking longships during a thunderstorm, rain and lightning behind her. Powerful calm storm-born presence, fully clothed practical armour, no sexualization. Distinct original character.",
+      "generated_file": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-eaf2b0d5-fcc3-4372-9eb8-da1ff8e867c7.png"
+    },
+    {
+      "key": "young_berserker",
+      "asset": "young_berserker.png",
+      "name": "Воительница Сконе",
+      "prompt": "Original Frontiers collectible card illustration, dark medieval northern fantasy matching the Skone clan illustrations: detailed realistic painterly artwork, natural anatomy, weathered iron, muted violet wool, dark leather, cold sea light. Vertical portrait 2:3, full bleed. Keep entire head, hair and shoulders clearly inside frame with generous headroom and subject centered in the central 75 percent; face readable at playing-card size. No text, no typography, no numbers, no card border, no UI, no logos. Subject: a fierce adult Skone berserker warrior woman, copper-red braided hair, fur mantle and practical layered leather armour with violet wool, gripping a throwing axe, another throwing axe at her belt and a round wooden shield at her side. Snowy northern pine forest and standing stones, battle-ready human expression with a hint of primal rage; entirely human, no animal head or transformation. Clearly feminine but strong grounded anatomy, fully clothed, no sexualization. Distinct original character different from the dark-haired archer Yara.",
+      "generated_file": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-414cebe2-a97b-4d54-8cef-deefc7fa73f6.png"
+    }
+  ]
+}

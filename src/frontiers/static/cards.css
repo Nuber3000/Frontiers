@@ -60,6 +60,9 @@
 .card .card-power .icon { width: 65%; height: 65%; stroke-width: 1.7; }
 .card.hero .card-power { color: #ffe6a3; background: radial-gradient(circle at 30% 20%, #584323, #171510); border-color: #d9a542; }
 .card .card-power.changed { color: #9f251e; }
+/* Число подстраивается под внутренний диаметр, включая мобильные размеры. */
+.numeric-badge { container-type: size; }
+.numeric-badge > .power-value { display: block; white-space: nowrap; font-size: min(1em, calc(135cqw / var(--power-digits)), 80cqh); font-variant-numeric: tabular-nums; line-height: 1; }
 .card .card-name { position: absolute; bottom: 0; inset-inline: 0; display: flex; justify-content: center; align-items: center; min-height: 24%; height: 24%; max-height: none; padding: 3% 5% 3% 18%; border-top: 2px solid #b39453; background: radial-gradient(ellipse at 0 0, #b9a87e55, transparent 70%), repeating-linear-gradient(15deg, #fff2 0 1px, transparent 1px 4px), #e3d8bd; font: 700 clamp(9px, 9cqw, 16px)/1.12 Georgia,'Times New Roman',serif; overflow-wrap: normal; }
 .card.hero .card-name { background-color: #e4d095; }
 .card .card-seals { position: absolute; right: 4%; bottom: 27%; display: flex; gap: 3px; align-items: center; }

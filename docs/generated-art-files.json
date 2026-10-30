@@ -78,7 +78,7 @@
     },
     {
       "key": "ranger",
-      "name": "Лесной стрелок",
+      "name": "Воительница Яра",
       "path": "src/frontiers/static/ranger.png"
     },
     {
@@ -143,12 +143,12 @@
     },
     {
       "key": "berserker",
-      "name": "Бешеный ратник",
+      "name": "Хельм Безумный",
       "path": "src/frontiers/static/berserker.png"
     },
     {
       "key": "young_berserker",
-      "name": "Лесной берсерк",
+      "name": "Воительница Сконе",
       "path": "src/frontiers/static/young_berserker.png"
     },
     {

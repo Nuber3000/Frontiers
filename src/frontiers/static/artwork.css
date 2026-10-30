@@ -14,7 +14,7 @@
 .art-veteran { background-image: url('/static/veteran.png'); background-size: cover; background-position: center; }
 .art-infantry { background-image: url('/static/infantry.png'); background-size: cover; background-position: center; }
 .art-scout { background-image: url('/static/scout.png'); background-size: cover; background-position: center; }
-.art-ranger { background-image: url('/static/ranger.png'); background-size: cover; background-position: center; }
+.art-ranger { background-image: url('/static/ranger.png'); background-size: cover; background-position: center top; }
 .art-regent { background-image: url('/static/regent.png'); background-size: cover; background-position: center; }
 .art-champion { background-image: url('/static/champion.png'); background-size: cover; background-position: center; }
 .art-archivist { background-image: url('/static/archivist.png'); background-size: cover; background-position: center; }
@@ -28,7 +28,7 @@
 .art-road_company { background-image: url('/static/road_company.png'); background-size: cover; background-position: center; }
 .art-company_captain { background-image: url('/static/company_captain.png'); background-size: cover; background-position: center; }
 .art-berserker { background-image: url('/static/berserker.png'); background-size: cover; background-position: center; }
-.art-young_berserker { background-image: url('/static/young_berserker.png'); background-size: cover; background-position: center; }
+.art-young_berserker { background-image: url('/static/young_berserker.png'); background-size: cover; background-position: center top; }
 .art-war_bear { background-image: url('/static/war_bear.png'); background-size: cover; background-position: center; }
 .art-young_bear { background-image: url('/static/young_bear.png'); background-size: cover; background-position: center; }
 .art-druid { background-image: url('/static/druid.png'); background-size: cover; background-position: center; }

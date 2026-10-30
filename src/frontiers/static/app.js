@@ -15,6 +15,7 @@
     horn: "Удваивает силу других ваших отрядов в ряду. Эффекты штандартов не складываются.",
     mushroom: "Обращает Берсерков своего ряда во вторую форму.",
     berserker: "Мухомор обращает отряд во вторую форму. Превращение сохраняется.",
+    stormborn: "Невосприимчив к погоде. При Шторме удваивает свою силу. Складывается с усилением ряда.",
     avenger: "При уходе в сброс призывает новый отряд. В конце раунда — к следующему раунду.",
     scorch_melee: "Казнит сильнейшие рукопашные отряды соперника, если сила его ряда не меньше 10.",
     scorch_ranged: "Казнит сильнейшие дальнобойные отряды соперника, если сила его ряда не меньше 10.",
@@ -61,6 +62,7 @@
     fog: ["M3 6h18M1 10h17M6 14h17M3 18h16"],
     rain: ["M4 12a3.5 3.5 0 0 1 0-7 5 5 0 0 1 9-1 4 4 0 0 1 5 8H4Z", "m6 16-2 4m8-4-2 4m8-4-2 4"],
     storm: ["M13 2 5 14h7l-1 8 8-13h-7l1-7Z"],
+    stormborn: ["M4 10a3 3 0 0 1 0-6 4 4 0 0 1 7-1 3 3 0 0 1 4 3", "M17 3 11 12h5l-1 6 7-10h-5V3Z", "M2 16h8M2 20l3 2 3-2 3 2 3-2 3 2 4-2"],
     scorch: ["M8 20v-3c-7-4-5-15 4-15s11 11 4 15v3H8Z", "M7 9h3v3H7ZM14 9h3v3h-3ZM12 12l-1 3h2l-1-3ZM10 17v3m4-3v3"],
     mushroom: ["M2 12a10 10 0 0 1 20 0H2ZM9 12v8h6v-8M7 21h10", "M7 8h.1M14 5h.1M17 9h.1"],
     decoy: ["M5 4h14M12 4v18M3 10l9-2 9 2M8 10l-1 9h10l-1-9", "M15 4a3 3 0 1 0-6 0"],
@@ -69,6 +71,7 @@
   const ABILITY_ICONS = {
     spy: "spy", medic: "medic", bond: "bond", morale: "morale", muster: "muster",
     horn: "banner", mushroom: "mushroom", berserker: "bear", avenger: "avenger",
+    stormborn: "stormborn",
     scorch_melee: "scorch_melee", scorch_ranged: "scorch_ranged", scorch_siege: "scorch_siege",
   };
   function icon(key, className = "") {
@@ -101,7 +104,18 @@
     return svg;
   }
   function artClass(card, faction = renderingFaction()) {
-    return card.key === "horn" && faction === "shiron" ? "art-shiron_horn" : `art-${card.key}`;
+    return card.key === "horn" && ["shiron", "skone"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
+  }
+  function factionMark(faction, className = "") {
+    const mark = node("span", className);
+    if (faction === "skone") {
+      mark.classList.add("valknut-mark");
+      mark.setAttribute("role", "img"); mark.setAttribute("aria-label", "Валькнут");
+    } else mark.textContent = catalog.factions[faction]?.emblem || "⚜";
+    return mark;
+  }
+  function cardName(card, faction = renderingFaction()) {
+    return card.key === "horn" && faction === "skone" ? "Командный рог" : card.name;
   }
   function factionInfo(key = leader) {
     return catalog.factions[catalog.leaders[key]?.faction || "burgundy"];
@@ -128,6 +142,11 @@
     if (className) result.className = className;
     if (text !== null) result.textContent = text;
     return result;
+  }
+  function powerValue(value) {
+    const number = node("span", "power-value", String(value));
+    number.style.setProperty("--power-digits", String(number.textContent.length));
+    return number;
   }
   function button(text, handler, className = "") {
     const result = node("button", className, text);
@@ -346,17 +365,18 @@
     return usableMoves().filter((move) => move.type === "play" && move.card_id === selected);
   }
 
-  function description(card) {
+  function description(card, faction = renderingFaction()) {
     const parts = [];
     if (card.hero) parts.push("Герой: иммунитет к погоде, усилению, Казни, Чучелу и возвращению Лекарем.");
     if (card.description) parts.push(card.description);
     for (const ability of card.abilities || []) if (EFFECT_TEXT[ability]) parts.push(EFFECT_TEXT[ability]);
     if (card.rows?.length > 1) parts.push("Можно выбрать ближний или дальний бой при розыгрыше.");
     if (!parts.length) parts.push("Обычный отряд. Его сила добавляется к вашему счёту.");
-    return parts.join(" ");
+    const text = parts.join(" ");
+    return faction === "skone" ? text.replaceAll("штандартов", "Командных рогов").replaceAll("Штандарт", "Командный рог") : text;
   }
   function glyph(card) {
-    if (card.hero) return catalog.factions[card.faction]?.emblem || "♛";
+    if (card.hero) return card.faction === "skone" ? "♛" : catalog.factions[card.faction]?.emblem || "♛";
     if (card.kind === "weather") return {frost: "❄", fog: "≋", rain: "☂", storm: "ϟ", clear: "☀"}[card.key] || "☁";
     if (card.kind === "special") return {horn: "⚑", decoy: "♟", scorch: "♨", mushroom: "♧"}[card.key] || "◇";
     if (card.abilities?.includes("spy")) return "◈";
@@ -375,13 +395,13 @@
     if (options.small && card.id && opponentPresentation?.arrivingCard === card.id) result.classList.add("opponent-arrival");
     const faction = options.faction || renderingFaction();
     result.dataset.faction = card.faction === "neutral" ? faction : card.faction || "burgundy";
-    result.title = `${card.name}. ${description(card)}`;
+    result.title = `${cardName(card, faction)}. ${description(card, faction)}`;
     result.setAttribute("aria-label", result.title);
-    result.append(node("span", `card-art ${artClass(card, faction)}`), node("span", "card-ribbon", (catalog.factions[card.faction] || catalog.factions[faction]).emblem || "⚜"));
+    result.append(node("span", `card-art ${artClass(card, faction)}`), factionMark(result.dataset.faction, "card-ribbon"));
     const power = card.strength ?? card.base_strength;
     const top = node("div", "card-top");
-    const badge = node("span", `card-power ${power !== card.base_strength ? "changed" : ""}`);
-    if (card.kind === "unit") badge.textContent = String(power);
+    const badge = node("span", `card-power numeric-badge ${power !== card.base_strength ? "changed" : ""}`);
+    if (card.kind === "unit") badge.append(powerValue(power));
     else badge.append(icon(card.key === "clear" ? "sun" : card.key === "horn" ? "banner" : card.key));
     top.append(badge,
                node("span", "", card.hero ? "Герой" : card.kind === "unit" ? "Отряд" : card.kind === "weather" ? "Погода" : "Особая"));
@@ -389,7 +409,7 @@
     for (const ability of card.abilities || []) {
       const seal = node("span", "ability-seal");
       seal.dataset.ability = ability;
-      seal.title = catalog.ability_names[ability];
+      seal.title = ability === "horn" && faction === "skone" ? "Командный рог" : catalog.ability_names[ability];
       seal.setAttribute("role", "img"); seal.setAttribute("aria-label", seal.title);
       seal.append(icon(ABILITY_ICONS[ability] || "unknown")); seals.append(seal);
     }
@@ -403,8 +423,8 @@
       rowIcon.prepend(rowTitle);
       seals.append(rowIcon);
     }
-    result.append(top, node("span", "card-name", card.name), seals,
-      node("span", "card-abilities", (card.abilities || []).map((ability) => catalog.ability_names[ability] || ability).join(" · ")),
+    result.append(top, node("span", "card-name", cardName(card, faction)), seals,
+      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && faction === "skone" ? "Командный рог" : catalog.ability_names[ability] || ability).join(" · ")),
       node("span", "card-row", (card.rows || []).map((row) => ROW_NAMES[row]).join(" / ")));
     return result;
   }
@@ -417,7 +437,7 @@
     const content = node("div", "card-details");
     const origin = catalog.factions[card.faction]?.name || "Общие карты";
     content.append(cardNode(card, {faction, onClick: () => {}}), node("p", "eyebrow", `${card.hero ? "Герой" : "Коллекция"} · ${origin}`),
-      node("h2", "", card.name), node("p", "", description(card)));
+      node("h2", "", cardName(card, faction)), node("p", "", description(card, faction)));
     if (card.transform_to) content.append(node("p", "muted", `Вторая форма: ${definitions.get(card.transform_to)?.name || card.transform_to}.`));
     if (card.summon_to) content.append(node("p", "muted", `Призывает: ${definitions.get(card.summon_to)?.name || card.summon_to}.`));
     showInfo(content);
@@ -462,7 +482,7 @@
     $("faction-select").disabled = locked;
     $("faction-name").textContent = info.name;
     $("faction-description").textContent = info.ability;
-    document.querySelector(".faction-crest").textContent = info.emblem;
+    document.querySelector(".faction-crest").replaceChildren(factionMark(faction));
     const leaderSelect = $("leader-select");
     const allowedLeaders = Object.entries(catalog.leaders).filter(([, item]) => item.faction === faction);
     if (leaderSelect.dataset.faction !== faction) {
@@ -523,7 +543,7 @@
           dirtyDeck = true; renderLobby();
         });
         adjust.disabled = locked || (!inDeck && deck.length >= 60);
-        adjust.setAttribute("aria-label", `${inDeck ? "Убрать" : "Добавить"}: ${card.name}`);
+        adjust.setAttribute("aria-label", `${inDeck ? "Убрать" : "Добавить"}: ${cardName(card)}`);
         controls.append(node("span", "", `×${inDeck ? count : card.copies - count}`), adjust);
         item.append(cardNode(card), controls); return item;
       }));
@@ -565,12 +585,15 @@
 
   function playerPanel(player, side) {
     const heading = node("div", "player-heading");
-    heading.append(node("strong", "", player.name), node("span", "score-number", String(player.score)));
+    const score = node("span", "score-number numeric-badge");
+    score.append(powerValue(player.score));
+    heading.append(node("strong", "", player.name), score);
     const gems = node("div", "gems");
     gems.setAttribute("aria-label", `Жетонов раунда: ${player.lives}`);
     for (let index = 0; index < 2; index++) gems.append(node("span", index >= player.lives ? "lost" : "", "◆"));
     const faction = factionInfo(player.leader);
-    const emblem = node("div", "player-emblem", faction.emblem);
+    const emblem = node("div", "player-emblem");
+    emblem.append(factionMark(factionKey(player.leader)));
     emblem.dataset.faction = factionKey(player.leader);
     const details = node("div", "player-details");
     details.append(heading, node("span", "player-faction", faction.name),
@@ -609,7 +632,7 @@
     $("opponent-score").classList.toggle("active-player", game.turn !== me && game.phase === "playing");
     for (const [prefix, player] of [["own", mine], ["enemy", game.players[1 - me]]]) {
       $(prefix + "-deck").dataset.faction = factionKey(player.leader);
-      $(prefix + "-deck").replaceChildren(node("span", "pile-crest", factionInfo(player.leader).emblem), node("strong", "", String(player.deck_count)), node("small", "", "Колода"));
+      $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", "Колода"));
       const discarded = player.discard.at(-1);
       const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
       preview.append(node("span", "", discarded ? glyph(discarded) : "∅"));
@@ -644,7 +667,7 @@
     const info = [];
     if (mine.revealed?.length) info.push(button(`Разведданные · ${mine.revealed.length}`, () => showIntel(mine.revealed), "text-button"));
     if (chosen) {
-      info.push(node("span", "", chosen.key === "horn" ? "Выберите подсвеченное место для штандарта слева" : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : chosen.name));
+      info.push(node("span", "", chosen.key === "horn" ? `Выберите подсвеченное место для ${renderingFaction() === "skone" ? "Командного рога" : "штандарта"} слева` : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : cardName(chosen)));
       if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button("Сыграть", () => send(moves[0]), "primary"));
       info.push(button("О карте", () => showCard(chosen), "text-button"));
     } else if (!canSwap) info.push(node("span", "", "Нажмите на карту в руке, чтобы выбрать действие"));
@@ -746,7 +769,17 @@
     const game = state?.game;
     if (state?.code !== leaderPreview.code || game?.phase !== "playing" || game.version !== leaderPreview.version ||
         game.players[state.me].leader !== leaderPreview.key || game.players[state.me].leader_used) return closeLeaderPreview();
-    $("leader-apply").disabled = !usableMoves().some(move => move.type === "leader");
+    const moves = usableMoves().filter(move => move.type === "leader");
+    const targeted = leaderPreview.key === "skone_horn";
+    $("leader-rows").hidden = !targeted;
+    $("leader-rows").replaceChildren(...(targeted ? ROWS.map(row => {
+      const choice = button(ROW_NAMES[row], () => { leaderPreview.row = row; renderLeaderPreview(); });
+      choice.prepend(icon(row)); choice.dataset.row = row;
+      choice.setAttribute("aria-pressed", String(leaderPreview.row === row));
+      choice.disabled = !moves.some(move => move.row === row);
+      return choice;
+    }) : []));
+    $("leader-apply").disabled = !moves.some(move => !targeted || move.row === leaderPreview.row);
     $("leader-confirmation-status").textContent = connected ? "Один раз за матч. Применение завершит ваш ход." : "Соединение потеряно. Дождитесь восстановления связи или отмените выбор.";
   }
   function openLeaderPreview() {
@@ -831,7 +864,7 @@
     $("mulligan-prev").disabled = mulliganIndex === 0;
     $("mulligan-next").disabled = mulliganIndex === hand.length - 1;
     const focused = hand[mulliganIndex];
-    $("mulligan-card-name").textContent = focused?.name || "Начальная рука";
+    $("mulligan-card-name").textContent = focused ? cardName(focused) : "Начальная рука";
     $("mulligan-card-description").textContent = focused ? description(focused) : "";
     $("mulligan-select").disabled = blocked || (!swaps.has(focused?.id) && swaps.size === 2);
     $("mulligan-select").textContent = swaps.has(focused?.id) ? "Оставить эту карту" : "Выбрать для замены";
@@ -1044,7 +1077,9 @@
     }
     const label = node("div", "row-info");
     label.title = ROW_NAMES[row];
-    label.append(node("span", "row-symbol", ROW_GLYPHS[row]), node("strong", "", String(player.rows[row])), node("span", "", ROW_NAMES[row]));
+    const rowScore = node("strong", "numeric-badge");
+    rowScore.append(powerValue(player.rows[row]));
+    label.append(node("span", "row-symbol", ROW_GLYPHS[row]), rowScore, node("span", "", ROW_NAMES[row]));
     for (const card of player.specials.filter((item) => item.row === row)) {
       const marker = button(glyph(card), (event) => { event.stopPropagation(); showCard(card); }, "mobile-row-effect");
       marker.title = card.name;
@@ -1081,11 +1116,11 @@
     if (player.leader_horn.includes(row) && !special.children.length) {
       const standard = cardNode(definitions.get("horn"), {small: true, faction: factionKey(player.leader), onClick: () => {
         const content = node("div");
-        content.append(node("p", "eyebrow", "Способность Франциска"), node("h2", "", "Военная академия"), node("p", "", catalog.leaders.academy.description));
+        content.append(node("p", "eyebrow", factionInfo(player.leader).leader), node("h2", "", catalog.leaders[player.leader].name), node("p", "", catalog.leaders[player.leader].description));
         showInfo(content);
       }});
       standard.classList.add("leader-standard"); standard.dataset.source = "leader";
-      standard.title = `Военная академия: ${catalog.leaders.academy.description}`;
+      standard.title = `${catalog.leaders[player.leader].name}: ${catalog.leaders[player.leader].description}`;
       standard.setAttribute("aria-label", standard.title);
       special.append(standard);
     }
@@ -1183,8 +1218,10 @@
   $("leader-cancel").addEventListener("click", closeLeaderPreview);
   $("leader-dialog").addEventListener("cancel", event => { event.preventDefault(); closeLeaderPreview(); });
   $("leader-apply").addEventListener("click", () => {
-    if (!leaderPreview || !usableMoves().some(move => move.type === "leader")) return;
-    closeLeaderPreview(); send({type: "leader"});
+    if (!leaderPreview) return;
+    const move = usableMoves().find(move => move.type === "leader" && (leaderPreview.key !== "skone_horn" || move.row === leaderPreview.row));
+    if (!move) return;
+    closeLeaderPreview(); send(move);
   });
   $("pass-button").addEventListener("click", () => send({type: "pass"}));
   $("concede-button").addEventListener("click", () => { if (confirm("Сдаться в этом матче?")) send({type: "concede"}); });
@@ -1227,6 +1264,7 @@
       "Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче.",
       "Герои защищены от погоды, усилений и Казни. Погода действует на обе стороны, штандарт — только на вашу.",
       "После раунда поле очищается. Бургундия добирает карту за выигранный раунд; обычного добора между раундами нет.",
+      "Сконе возвращает в начале третьего раунда два случайных обычных отряда из своего отбоя на поле с повторным срабатыванием способностей. Герои и особые карты не возвращаются.",
       "Нажмите на карту, чтобы узнать её способность. После перезагрузки страницы вы вернётесь на своё место, пока сохранена сессия браузера."])
       list.append(node("li", "", text));
     content.append(list); showInfo(content);

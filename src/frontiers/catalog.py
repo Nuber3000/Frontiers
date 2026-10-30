@@ -1,10 +1,12 @@
 """Авторский набор Бургундии, специальные карты и готовые колоды."""
 
 from collections import Counter
+from dataclasses import replace
 
 from frontiers.cards import CombatRow as Row
 from frontiers.models import CardDefinition
 from frontiers.shiron import SHIRON_CARDS, SHIRON_DECK
+from frontiers.skone import SKONE_UNITS, SKONE_DECK
 
 
 ROWS = tuple(Row)
@@ -14,6 +16,7 @@ ABILITY_NAMES = {
     "mushroom": "Мухомор", "berserker": "Берсерк", "avenger": "Наследие",
     "scorch_melee": "Казнь: ближний бой", "scorch_ranged": "Казнь: дальний бой",
     "scorch_siege": "Казнь: осада",
+    "stormborn": "Шторморождённый",
 }
 
 
@@ -47,7 +50,7 @@ _CARDS = [
     unit("infantry", "Городской ополченец", 1, Row.MELEE,
          abilities=("bond",), group="infantry", copies=3),
     unit("scout", "Дозорный", 4, Row.RANGED, copies=2),
-    unit("ranger", "Лесной стрелок", 6, Row.RANGED),
+    unit("ranger", "Воительница Яра", 6, Row.RANGED, abilities=("stormborn",)),
     unit("regent", "Аделина, щит короны", 10, Row.MELEE, hero=True),
     unit("champion", "Ориан, клинок рубежей", 15, Row.MELEE, hero=True),
     unit("archivist", "Этьен, хранитель клятв", 10, Row.RANGED, hero=True),
@@ -69,9 +72,9 @@ _CARDS = [
          abilities=("muster",), group="road_company", copies=3),
     unit("company_captain", "Капитан дорожной дружины", 10, Row.MELEE,
          abilities=("muster",), hero=True, group="road_company"),
-    unit("berserker", "Бешеный ратник", 4, Row.MELEE,
+    unit("berserker", "Хельм Безумный", 4, Row.MELEE,
          abilities=("berserker",), transform_to="war_bear"),
-    unit("young_berserker", "Лесной берсерк", 2, Row.RANGED,
+    unit("young_berserker", "Воительница Сконе", 2, Row.RANGED,
          abilities=("berserker",), transform_to="young_bear", copies=3),
     unit("war_bear", "Великий медведь", 14, Row.MELEE,
          abilities=("morale",), collectible=False),
@@ -100,18 +103,21 @@ for key, name, description in [
                                  description=description, faction="skone" if key in {"storm", "mushroom"} else "neutral"))
 
 _CARDS.extend(SHIRON_CARDS)
+_CARDS.extend(SKONE_UNITS)
 
-CATALOG = {card.key: card for card in _CARDS}
-
-# Карты сохранены для будущей Сконе, но недоступны в колодах Бургундии.
+# Ключи ранее отложенных карт сохраняются для существующих коллекций.
 SKONE_CARDS = frozenset({
     "berserker", "young_berserker", "war_bear", "young_bear", "mushroom", "ranger", "druid", "storm",
 })
+_CARDS = [replace(card, faction="skone") if card.key in SKONE_CARDS else card for card in _CARDS]
+CATALOG = {card.key: card for card in _CARDS}
 FACTIONS = {
     "burgundy": {"name": "Королевство Бургундия", "leader": "Франциск II Мудрый", "playable": True},
     "skone": {
-        "name": "Сконе", "leader": "Конунг Ульфрик Синезубый", "playable": False,
+        "name": "Сконе", "leader": "Конунг Ульфрик Синезубый", "playable": True,
         "description": "Земля викингов, где правят несколько ярлов и великий конунг.",
+        "ability": "В начале третьего раунда два случайных обычных отряда из своего отбоя возвращаются на поле. Их способности срабатывают повторно.",
+        "emblem": "valknut", "default_leader": "skone_resilience",
     },
 }
 
@@ -143,6 +149,17 @@ for _key, _leader in LEADERS.items():
     if _key.startswith("shiron_"):
         _leader.update(faction="shiron", portrait=f"leader_{_key}.png")
 
+LEADERS.update({
+    "skone_resilience": {"name": "Северная стойкость", "description": "Пассивно: в плохую погоду ваши обычные отряды сохраняют половину базовой силы с округлением вверх. Усиления применяются после погоды.", "passive": True},
+    "skone_storm": {"name": "Повелитель штормов", "description": "Призывает Шторм на дальнобойные и осадные линии обоих игроков."},
+    "skone_horn": {"name": "Боевой клич", "description": "Удваивает силу ваших обычных отрядов на выбранной линии. Командный рог занимает место усиления и не складывается с другим рогом или штандартом."},
+    "skone_rage": {"name": "Ярость предков", "description": "Обращает всех ваших Берсерков на боевых линиях во вторую форму."},
+    "skone_chaos": {"name": "Зачинщик Хаоса", "description": "Возвращает весь отбой каждого игрока в его колоду и перемешивает обе колоды."},
+})
+for _key, _leader in LEADERS.items():
+    if _key.startswith("skone_"):
+        _leader.update(faction="skone", portrait=f"leader_{_key}.png")
+
 STARTER_DECK = (
     ["blue_guard"] * 3 + ["crossbow"] * 3 + ["catapult"] * 2
     + ["siege_expert"] * 2
@@ -154,6 +171,7 @@ STARTER_DECK = (
 DECKS = {
     "guard": {"name": "Королевская гвардия", "cards": STARTER_DECK, "faction": "burgundy"},
     "imperial": {"name": "Императорский легион", "cards": SHIRON_DECK, "faction": "shiron"},
+    "clans": {"name": "Союз северных кланов", "cards": SKONE_DECK, "faction": "skone"},
 }
 
 
@@ -167,8 +185,6 @@ def validate_deck(keys: list[str], leader: str) -> None:
         card = CATALOG.get(key)
         if card is None or not card.collectible:
             raise ValueError("Колода содержит недоступную карту.")
-        if key in SKONE_CARDS:
-            raise ValueError(f"Карта «{card.name}» сохранена для будущей фракции Сконе.")
         if card.faction not in {"neutral", LEADERS[leader]["faction"]}:
             raise ValueError(f"Карта «{card.name}» недоступна выбранной фракции.")
         if count > card.copies:
@@ -186,8 +202,8 @@ def card_definition_view(card: CardDefinition) -> dict:
         "base_strength": card.strength, "rows": [row.value for row in card.rows],
         "abilities": list(card.abilities), "hero": card.hero,
         "copies": card.copies, "collectible": card.collectible,
-        "faction": "skone" if card.key in SKONE_CARDS else card.faction,
-        "available": card.collectible and card.key not in SKONE_CARDS,
+        "faction": card.faction,
+        "available": card.collectible,
         "description": card.description,
         "transform_to": card.transform_to, "summon_to": card.summon_to,
     }

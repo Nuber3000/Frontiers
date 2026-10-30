@@ -291,13 +291,14 @@ def save_artwork_gallery(browser, url, catalog, output):
           <link rel="stylesheet" href="{url}/static/cards.css">
           <link rel="stylesheet" href="{url}/static/artwork.css">
           <link rel="stylesheet" href="{url}/static/shiron.css">
+          <link rel="stylesheet" href="{url}/static/skone.css">
           <style>*{{box-sizing:border-box}}body{{margin:0;padding:20px;background:#15140f;color:#e8d8b6;font:14px Georgia}}
           header{{display:flex;align-items:center;gap:22px;margin-bottom:18px}}h1{{font-weight:400;margin:0}}
           main{{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}}
           article{{margin:0;min-width:0;background:#282316;border:1px solid #80683e}}
           .gallery-art,article img{{display:block;width:100%;aspect-ratio:3/4;object-fit:cover}}
           article p{{margin:0;min-height:42px;padding:7px;text-align:center}}</style>
-          <header><h1>Frontiers · все иллюстрации, включая резерв Сконе</h1></header>
+          <header><h1>Frontiers · иллюстрации трёх фракций</h1></header>
           <main>{''.join(tiles)}</main></html>''')
         signatures = gallery.evaluate('''async () => {
           await Promise.all([...document.querySelectorAll('link')].map(link => link.sheet ? null :
@@ -439,6 +440,7 @@ def run(browser_channel, output):
                     save_artwork_gallery(browser, url, catalog, output)
                     save_portrait_review(browser, first, url, output)
                     save_icon_review(browser, first, url, output)
+                    ability_samples = {}
                     for faction, definition in catalog['factions'].items():
                         if not definition['playable']:
                             continue
@@ -448,6 +450,11 @@ def run(browser_channel, output):
                                 continue
                             first.locator('#leader-select').select_option(key)
                             assert first.locator('.leader-portrait .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+                        for sample in first.evaluate('''() => [...document.querySelectorAll('.ability-seal')].map(seal => ({
+                          ability:seal.dataset.ability, icon:seal.querySelector('svg').dataset.icon,
+                          geometry:seal.querySelector('svg').innerHTML
+                        }))'''):
+                            ability_samples[sample['ability']] = sample
                         if faction == 'shiron':
                             assert first.locator('#collection .card[data-faction="burgundy"]').count() == 0
                             assert first.locator('#deck-cards .card[data-faction="shiron"]').count() > 0
@@ -458,15 +465,9 @@ def run(browser_channel, output):
                             first.set_viewport_size({'width':1440, 'height':1100})
                     first.locator('#faction-select').select_option('burgundy')
                     first.locator('#leader-select').select_option('sun')
-                    ability_icons = first.evaluate("""async () => {
-                      const catalog = await (await fetch('/api/catalog')).json();
-                      const abilities = new Set(catalog.cards.filter(card => card.available).flatMap(card => card.abilities));
-                      return [...abilities].map(ability => {
-                        const seal = document.querySelector(`.ability-seal[data-ability="${ability}"]`);
-                        const svg = seal?.querySelector('svg');
-                        return {ability, icon: svg?.dataset.icon, geometry: svg?.innerHTML};
-                      });
-                    }""")
+                    expected_abilities = {ability for card in catalog['cards'] if card['available'] for ability in card['abilities']}
+                    assert set(ability_samples) == expected_abilities, ability_samples
+                    ability_icons = list(ability_samples.values())
                     assert all(item['geometry'] and item['icon'] != 'unknown' for item in ability_icons), ability_icons
                     assert len({item['geometry'] for item in ability_icons}) == len(ability_icons), ability_icons
                     by_ability = {item['ability']: item['icon'] for item in ability_icons}
@@ -559,6 +560,21 @@ def run(browser_channel, output):
                     first.locator('#info-dialog').wait_for(state='visible')
                     first.locator('#close-info').click()
                     rng = random.Random(14)
+                    # Два клиента показывают результат одновременно. Удерживаем
+                    # первый результат, чтобы он не исчез на втором клиенте,
+                    # пока Playwright сохраняет скриншот первого.
+                    for peer in pages:
+                        peer.evaluate('''() => {
+                          window.holdRoundScreenshot = true;
+                          const layer = document.querySelector('#match-announcement');
+                          new MutationObserver(() => {
+                            if (!window.holdRoundScreenshot || layer.hidden || !layer.dataset.kind?.startsWith('round-')) return;
+                            for (const animation of layer.getAnimations()) {
+                              animation.pause();
+                              animation.currentTime = Number(animation.effect.getTiming().duration) * .4;
+                            }
+                          }).observe(layer, {attributes:true, attributeFilter:['hidden','data-sequence']});
+                        }''')
                     moves_used = set()
                     standard_slots = 0
                     steps = 0
@@ -596,6 +612,11 @@ def run(browser_channel, output):
                             for side, peer in enumerate(pages):
                                 kind = 'round-draw' if round_result['winner'] is None else 'round-win' if round_result['winner'] == side else 'round-loss'
                                 save_announcement(peer, output, f'announcement-{kind}.png', kind)
+                            for peer in pages:
+                                peer.evaluate('''() => {
+                                  window.holdRoundScreenshot = false;
+                                  for (const animation of document.querySelector('#match-announcement').getAnimations()) animation.play();
+                                }''')
                             captured_round = True
                         if move['type'] == 'leader' and actor == 0:
                             marker = first.locator('.combat-row.own[data-row="siege"] .leader-standard')

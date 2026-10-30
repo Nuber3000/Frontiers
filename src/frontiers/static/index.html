@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/static/match.css">
   <link rel="stylesheet" href="/static/presentation.css">
   <link rel="stylesheet" href="/static/shiron.css">
+  <link rel="stylesheet" href="/static/skone.css">
   <script src="/static/scorch.js" defer></script>
   <script src="/static/opponent-play.js" defer></script>
   <script src="/static/app.js" defer></script>
@@ -93,7 +94,7 @@
   <div id="match-announcement" class="match-announcement" role="status" aria-live="polite" aria-atomic="true" hidden><div id="announcement-emblem" class="announcement-emblem" aria-hidden="true"></div><div class="announcement-copy"><p id="announcement-title"></p><span id="announcement-detail"></span></div></div>
   <dialog id="result-dialog" class="result-dialog" aria-labelledby="result-title"><div id="result-emblem" class="result-emblem" aria-hidden="true"></div><p class="eyebrow">Дуэль завершена</p><h1 id="result-title"></h1><p id="result-subtitle"></p><div id="result-table"></div><div class="result-actions"><button id="result-home" class="text-button" type="button">На главную</button><button id="result-continue" class="primary" type="button">К выбору колоды</button></div></dialog>
   <dialog id="leader-dialog" class="leader-dialog" aria-labelledby="leader-title" aria-describedby="leader-rule">
-    <div class="leader-confirmation"><div id="leader-preview" class="leader-preview"></div><section class="leader-confirmation-copy"><p class="eyebrow">Лидер Бургундии</p><h2 id="leader-title"></h2><p id="leader-rule"></p><p id="leader-confirmation-status" class="muted small" aria-live="polite"></p><div class="leader-confirmation-actions"><button id="leader-cancel" type="button" autofocus>Отмена</button><button id="leader-apply" class="primary" type="button">Применить</button></div></section></div>
+    <div class="leader-confirmation"><div id="leader-preview" class="leader-preview"></div><section class="leader-confirmation-copy"><p class="eyebrow">Лидер фракции</p><h2 id="leader-title"></h2><p id="leader-rule"></p><div id="leader-rows" class="leader-row-choices" role="group" aria-label="Линия для Командного рога" hidden></div><p id="leader-confirmation-status" class="muted small" aria-live="polite"></p><div class="leader-confirmation-actions"><button id="leader-cancel" type="button" autofocus>Отмена</button><button id="leader-apply" class="primary" type="button">Применить</button></div></section></div>
   </dialog>
   <dialog id="choice-dialog"><div class="dialog-heading"><p class="eyebrow">Способность Лекаря</p><h2>Вернуть отряд на поле</h2><p class="muted">Выберите отряд из сброса. Для подвижного отряда также выберите линию.</p></div><div id="choice-cards" class="choice-cards"></div></dialog>
   <dialog id="info-dialog"><button id="close-info" class="dialog-close" type="button" aria-label="Закрыть">×</button><div id="info-content"></div></dialog>

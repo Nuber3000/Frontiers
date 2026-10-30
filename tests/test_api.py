@@ -62,17 +62,17 @@ class APITests(unittest.TestCase):
         self.assertNotIn(self.tokens[0], response.text)
         self.assertNotIn("session", response.json()["seats"][0])
 
-    def test_skone_is_reserved_and_its_cards_cannot_enter_burgundy_decks(self):
+    def test_skone_is_playable_but_its_cards_cannot_enter_burgundy_decks(self):
         from frontiers.catalog import STARTER_DECK, SKONE_CARDS
 
         catalog = self.client.get("/api/catalog").json()
         self.assertNotIn("forest", catalog["decks"])
         self.assertEqual(catalog["factions"]["skone"]["leader"], "Конунг Ульфрик Синезубый")
-        self.assertFalse(catalog["factions"]["skone"]["playable"])
+        self.assertTrue(catalog["factions"]["skone"]["playable"])
         for card in catalog["cards"]:
             if card["key"] in SKONE_CARDS:
                 self.assertEqual(card["faction"], "skone")
-                self.assertFalse(card["available"])
+                self.assertEqual(card["available"], card["collectible"])
         self.assertEqual(sum(card["available"] and card["faction"] in {"burgundy", "neutral"} for card in catalog["cards"]), 35)
         herald = next(card for card in catalog["cards"] if card["key"] == "herald")
         self.assertEqual(herald["name"], "Габриэль фон Ард")

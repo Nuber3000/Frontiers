@@ -43,7 +43,9 @@ class Game:
     version: int = 0
     weather: list[WeatherEffect] = field(default_factory=list)
     pending: list[str] = field(default_factory=list)
+    pending_actors: list[int] = field(default_factory=list)
     pending_levy: bool = False
+    round_resume_turn: int | None = None
     history: list[dict] = field(default_factory=list)
     events: list[str] = field(default_factory=list)
     scorched: list[str] = field(default_factory=list)
@@ -60,8 +62,9 @@ class Game:
         rng = random.Random(seed if seed is not None else secrets.randbits(256))
         game = cls([MatchPlayer(names[i], leaders[i]) for i in range(2)], rng)
         for side, player in enumerate(game.players):
-            if player.leader == "shiron_nullify":
+            if LEADERS[player.leader].get("passive"):
                 player.leader_used = True
+            if player.leader == "shiron_nullify":
                 game.players[1 - side].leader_blocked = True
         for player, keys in zip(game.players, decks):
             player.deck = [game._new_card(key) for key in keys]
@@ -106,7 +109,9 @@ class Game:
         if kind == "concede":
             self.phase, self.winner = "finished", 1 - actor
             self.pending.clear()
+            self.pending_actors.clear()
             self.pending_levy = False
+            self.round_resume_turn = None
             self._log(f"{self.players[actor].name} сдаётся.")
             return
         if self.phase == "mulligan":
@@ -131,7 +136,7 @@ class Game:
         elif kind == "play":
             self._play(actor, action)
         elif kind == "leader":
-            self._leader(actor)
+            self._leader(actor, action)
         elif kind == "pass":
             self.players[actor].passed = True
             self._log(f"{self.players[actor].name} пасует.")
@@ -247,6 +252,7 @@ class Game:
                     self._scorch(1 - actor, target_row)
         if "medic" in definition.abilities and self._medic_targets(actor):
             self.pending.append(definition.name)
+            self.pending_actors.append(actor)
 
     def _muster(self, actor: int, group: str) -> None:
         player = self.players[actor]
@@ -263,11 +269,13 @@ class Game:
 
     def _transform(self, instant_side: int | None = None, instant_row: Row | None = None) -> None:
         for side, player in enumerate(self.players):
+            if instant_side is not None and side != instant_side:
+                continue
             for item in player.board:
                 definition = CATALOG[item.card.key]
                 if not definition.transform_to or definition.hero:
                     continue
-                instant_effect = side == instant_side and item.row == instant_row
+                instant_effect = side == instant_side and (instant_row is None or item.row == instant_row)
                 druids = any(other.row == item.row and
                              "mushroom" in CATALOG[other.card.key].abilities
                              for other in player.board)
@@ -293,8 +301,10 @@ class Game:
                 values[item.card.id] = definition.strength
                 continue
             value = definition.strength
-            if any(item.row in WEATHER_ROWS[effect.key] for effect in self.weather):
-                value = 1
+            stormborn = "stormborn" in definition.abilities
+            if not stormborn and any(item.row in WEATHER_ROWS[effect.key] for effect in self.weather):
+                resilient = player.leader == "skone_resilience" and not player.leader_blocked
+                value = (value + 1) // 2 if resilient else 1
             allies = [other for other in player.board if other.row == item.row]
             if "bond" in definition.abilities:
                 value *= sum(CATALOG[other.card.key].group == definition.group and
@@ -302,6 +312,8 @@ class Game:
                              for other in allies)
             value += sum(other.card.id != item.card.id and
                          "morale" in CATALOG[other.card.key].abilities for other in allies)
+            if stormborn and any(effect.key == "storm" for effect in self.weather):
+                value *= 2
             horn = item.row in player.leader_horn or any(
                 special.row == item.row and special.card.key == "horn"
                 for special in player.specials)
@@ -356,11 +368,13 @@ class Game:
         card = self._find(self._medic_targets(actor), action.get("card_id"))
         row = self._row(action.get("row"), CATALOG[card.key].rows)
         self.pending.pop(0)
+        if self.pending_actors:
+            self.pending_actors.pop(0)
         self.players[actor].discard.remove(card)
         self._log(f"Лекарь возвращает «{CATALOG[card.key].name}».")
         self._place_unit(actor, card, row)
 
-    def _leader(self, actor: int) -> None:
+    def _leader(self, actor: int, action: dict) -> None:
         player = self.players[actor]
         if player.leader_used or player.leader_blocked:
             raise RuleError("Способность лидера использована или заблокирована.")
@@ -393,15 +407,31 @@ class Game:
             if not self._medic_targets(1 - actor):
                 raise RuleError("В отбое соперника нет обычных отрядов.")
             self.pending_levy = True
-        elif player.leader == "shiron_nullify":
-            raise RuleError("Натиск Империи действует пассивно с начала матча.")
+        elif player.leader == "skone_storm":
+            self.weather.append(WeatherEffect(actor, "storm"))
+        elif player.leader == "skone_horn":
+            row = self._row(action.get("row"))
+            if row in player.leader_horn or not self._slot_free(actor, row):
+                raise RuleError("Место усиления выбранной линии уже занято.")
+            player.leader_horn.add(row)
+        elif player.leader == "skone_rage":
+            self._transform(instant_side=actor)
+        elif player.leader == "skone_chaos":
+            for owner in self.players:
+                owner.deck.extend(owner.discard)
+                owner.discard.clear()
+                self.rng.shuffle(owner.deck)
+        elif LEADERS[player.leader].get("passive"):
+            raise RuleError("Эта способность лидера действует пассивно с начала матча.")
         player.leader_used = True
         self._log(f"{player.name}: {LEADERS[player.leader]['name']}.")
 
     def _finish_action(self, actor: int) -> None:
-        while self.pending and not self._medic_targets(actor):
-            self.pending.pop(0)
-        if self.pending or self.pending_levy:
+        if self._resolve_pending():
+            return
+        if self.round_resume_turn is not None:
+            self.turn, self.round_resume_turn = self.round_resume_turn, None
+            self._start_round_turn()
             return
         self._auto_pass_empty()
         if all(player.passed for player in self.players):
@@ -409,6 +439,25 @@ class Game:
             return
         opponent = 1 - actor
         self.turn = opponent if not self.players[opponent].passed else actor
+
+    def _resolve_pending(self) -> bool:
+        # В третьем раунде лекари обеих сторон могут ждать выбора одновременно.
+        while self.pending and not self._medic_targets(self.pending_actors[0] if self.pending_actors else self.turn):
+            self.pending.pop(0)
+            if self.pending_actors:
+                self.pending_actors.pop(0)
+        if self.pending:
+            if self.pending_actors:
+                self.turn = self.pending_actors[0]
+            return True
+        return self.pending_levy
+
+    def _start_round_turn(self) -> None:
+        self._auto_pass_empty()
+        if all(player.passed for player in self.players):
+            self._end_round()
+        elif self.players[self.turn].passed:
+            self.turn = 1 - self.turn
 
     def _auto_pass_empty(self) -> None:
         for index, player in enumerate(self.players):
@@ -460,11 +509,30 @@ class Game:
         for index, key in summons:
             self._place_unit(index, self._new_card(key), CATALOG[key].rows[0])
         self._log(f"Раунд {self.round_number}. Первый ход: {self.players[self.turn].name}.")
-        self._auto_pass_empty()
-        if all(player.passed for player in self.players):
-            self._end_round()
-        elif self.players[self.turn].passed:
-            self.turn = 1 - self.turn
+        if self.round_number == 3:
+            self._revive_skone()
+        if self.pending:
+            self.round_resume_turn = self.round_starter
+            if self._resolve_pending():
+                return
+            self.round_resume_turn = None
+        self._start_round_turn()
+
+    def _revive_skone(self) -> None:
+        selected = []
+        # Сначала выбираем и извлекаем обе карты каждой стороны. Лекарь и Казнь
+        # не должны менять выбор второго отряда в ходе разрешения способности.
+        for side, player in enumerate(self.players):
+            if LEADERS[player.leader]["faction"] != "skone":
+                continue
+            targets = self._medic_targets(side)
+            cards = self.rng.sample(targets, min(2, len(targets)))
+            for card in cards:
+                player.discard.remove(card)
+                selected.append((side, card))
+            self._log(f"Сконе: {player.name} возвращает отрядов из отбоя: {len(cards)}.")
+        for side, card in selected:
+            self._place_unit(side, card, CATALOG[card.key].rows[0])
 
     def _play_moves(self, actor: int) -> list[dict]:
         player = self.players[actor]
@@ -506,8 +574,12 @@ class Game:
             item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials))
         no_target = (player.leader == "shiron_hand" and not self._medic_targets(actor)) or (
             player.leader == "shiron_levy" and not self._medic_targets(1 - actor))
-        if not player.leader_used and not player.leader_blocked and not blocked_horn and not no_target and player.leader != "shiron_nullify":
-            moves.append({"type": "leader"})
+        if not player.leader_used and not player.leader_blocked and not blocked_horn and not no_target and not LEADERS[player.leader].get("passive"):
+            if player.leader == "skone_horn":
+                moves.extend({"type": "leader", "row": row.value} for row in ROWS
+                             if self._slot_free(actor, row) and row not in player.leader_horn)
+            else:
+                moves.append({"type": "leader"})
         return moves + [{"type": "pass"}, *concede]
 
     @staticmethod
