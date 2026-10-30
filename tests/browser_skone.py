@@ -16,6 +16,7 @@ import uvicorn
 
 from frontiers.app import create_app
 from frontiers.cards import CombatRow as Row
+from frontiers.engine import WeatherEffect
 from browser_smoke import assert_game_fits, assert_lobby_fits, snapshot, wait_version, click_move
 from test_engine import fixture, put
 
@@ -90,8 +91,8 @@ def run(channel, output):
                 for page in pages:
                     page.locator('#mulligan-dialog').wait_for(state='hidden')
                     assert_game_fits(page)
-                    assert page.locator('.deck-pile[data-faction="skone"] .valknut-mark').count() == 2
-                    assert page.locator('.deck-pile').evaluate_all("els => els.every(el => getComputedStyle(el).backgroundImage.includes('172, 147, 192'))")
+                    assert page.locator('#arena .deck-pile[data-faction="skone"] .valknut-mark').count() == 2
+                    assert page.locator('#arena .deck-pile').evaluate_all("els => els.every(el => getComputedStyle(el).backgroundImage.includes('172, 147, 192'))")
 
                 def load(game):
                     for page in pages:
@@ -181,10 +182,65 @@ def run(channel, output):
                                                arg={'id':rolf.id,'power':expected})
                     if key == 'horn':
                         first.screenshot(path=str(output / 'skone-stormborn-stacking.png'))
+
+                # Последний раунд сохраняет стол; итоги можно свернуть и открыть снова.
+                game = fixture(['skone_heir'], ['skone_heir'], 'skone_horn', 'skone_rage')
+                for player in game.players:
+                    player.lives = 1
+                own = put(game, 0, 'skone_sailor')
+                enemy = put(game, 1, 'skone_heir')
+                game.players[0].leader_horn.add(Row.SIEGE)
+                game.weather.append(WeatherEffect(0, 'storm'))
+                load(game)
+                first.locator('#pass-button').click()
+                wait_version(second, 0)
+                for page in pages:
+                    page.evaluate('window.resultTestStart = performance.now()')
+                second.locator('#pass-button').click()
+                for page in pages:
+                    wait_version(page, 1)
+                    assert page.locator('#result-dialog').is_hidden()
+                for page in pages:
+                    page.locator('#result-dialog').wait_for(state='visible')
+                    assert page.evaluate('performance.now() - window.resultTestStart') >= 850
+                    assert page.locator('#result-dialog').evaluate("el => el.getAnimations().some(a => a.effect.getTiming().duration === 800)")
+                    page.locator('#result-minimize').click()
+                    assert page.locator('#result-dialog').is_hidden()
+                    assert page.locator('#arena').is_visible()
+                    assert page.locator(f'.row-cards [data-card-id="{own.id}"] .card-power').inner_text() == '16'
+                    assert page.locator(f'.row-cards [data-card-id="{enemy.id}"]').count() == 1
+                    assert snapshot(page, code)['game']['weather'][0]['key'] == 'storm'
+                    assert snapshot(page, code)['game']['moves'] == []
+                first.locator(f'.row-cards [data-card-id="{own.id}"]').click()
+                first.locator('#info-dialog').wait_for(state='visible')
+                first.locator('#close-info').click()
+                # Повторное состояние комнаты не раскрывает свёрнутые итоги.
+                async def presence():
+                    app.state.rooms.rooms[code].changed()
+                asyncio.run_coroutine_threadsafe(presence(), loop).result(timeout=5)
+                first.locator('#result-reopen').click()
+                first.locator('#result-dialog').wait_for(state='visible')
+                first.keyboard.press('Escape')
+                assert first.locator('#arena').is_visible()
+                assert first.locator('#result-dialog').is_hidden()
+                first.screenshot(path=str(output / 'finished-table.png'))
+                first.reload()
+                first.locator('#result-dialog').wait_for(state='visible')
+                first.locator('#result-minimize').click()
+                assert first.locator(f'.row-cards [data-card-id="{own.id}"]').count() == 1
+                first.locator('#result-reopen').click()
+                first.locator('#result-dialog').wait_for(state='visible')
+                for width,height in [(1440,1000),(390,844),(844,390)]:
+                    first.set_viewport_size({'width':width,'height':height})
+                    first.locator('#result-minimize').scroll_into_view_if_needed()
+                    assert first.locator('#result-minimize').is_visible()
+                first.locator('#result-continue').click()
+                assert first.locator('#lobby').is_visible()
                 assert not errors, errors
                 print(json.dumps({'browser':channel,'skone_deck':'ok','valknut':'ok','battlecry_rows':'ok',
                                   'third_round_medics_both_sides':'ok','responsive':'ok','own_berserkers_only':'ok',
-                                  'stormborn_stacking':'ok','agile_ivar':'ok','js_errors':errors}))
+                                  'stormborn_stacking':'ok','agile_ivar':'ok','final_table_and_minimize':'ok',
+                                  'delayed_result':'ok','js_errors':errors}))
             except Exception:
                 for side, page in enumerate(pages):
                     with suppress(Exception):

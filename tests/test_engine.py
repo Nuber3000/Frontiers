@@ -449,6 +449,51 @@ class LeaderAndRoundTests(unittest.TestCase):
         self.assertEqual(game.phase, "finished")
         self.assertEqual(game.winner, 0)
 
+    def test_final_round_keeps_board_weather_boosts_and_scores(self):
+        game = fixture(["knight"], ["knight"])
+        game.players[1].lives = 1
+        own = put(game, 0, "catapult")
+        enemy = put(game, 1, "knight")
+        game.players[0].leader_horn.add(Row.SIEGE)
+        horn = game._new_card("horn")
+        game.players[0].specials.append(PlacedCard(horn, Row.RANGED))
+        rain = game._new_card("rain")
+        game.weather = [WeatherEffect(0, "rain", rain)]
+        # 2 после Ливня и Академии против 1 после Мороза.
+        frost = game._new_card("frost")
+        game.weather.append(WeatherEffect(1, "frost", frost))
+        scores = [game.total(0), game.total(1)]
+        game = game.act(0, {"type": "pass"}, game.version)
+        game = game.act(1, {"type": "pass"}, game.version)
+        self.assertEqual(game.phase, "finished")
+        self.assertEqual(game.history[-1]["scores"], scores)
+        self.assertEqual([game.total(0), game.total(1)], scores)
+        self.assertEqual(game.players[0].board[0].card.id, own.id)
+        self.assertEqual(game.players[1].board[0].card.id, enemy.id)
+        self.assertEqual(game.players[0].specials[0].card.id, horn.id)
+        self.assertIn(Row.SIEGE, game.players[0].leader_horn)
+        self.assertEqual([w.card.id for w in game.weather], [rain.id, frost.id])
+        self.assertEqual([len(p.discard) for p in game.players], [0, 0])
+        for side in (0, 1):
+            self.assertEqual(game.legal_moves(side), [])
+            with self.assertRaises(RuleError):
+                game.act(side, {"type": "pass"}, game.version)
+
+    def test_final_draw_preserves_both_sides_and_concede_preserves_table(self):
+        game = fixture(["knight"], ["knight"])
+        for side in (0, 1):
+            game.players[side].lives = 1
+            put(game, side, "knight")
+        game = game.act(0, {"type": "pass"}, game.version)
+        game = game.act(1, {"type": "pass"}, game.version)
+        self.assertEqual(game.phase, "finished")
+        self.assertIsNone(game.winner)
+        self.assertEqual([len(p.board) for p in game.players], [1, 1])
+        game = fixture(["knight"], ["knight"])
+        put(game, 0, "knight")
+        game = game.act(1, {"type": "concede"}, game.version)
+        self.assertEqual(len(game.players[0].board), 1)
+
 
 class SimulationTests(unittest.TestCase):
     def test_one_hundred_complete_matches_using_legal_commands(self):

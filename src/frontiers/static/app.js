@@ -28,6 +28,7 @@
   let deckFilter = "all";
   let changingFullscreen = false;
   let mulliganIndex = 0, resultDismissed = false, resultSignature = "";
+  let resultMinimized = false, resultTimer = null, resultReadyAt = 0;
   let noticeQueue = [], currentNotice = null, noticeAnimation = null, noticeSerial = 0;
   let leaderPreview = null, leaderPreviewAnimation = null;
   const burningCards = new Map();
@@ -105,6 +106,20 @@
   }
   function artClass(card, faction = renderingFaction()) {
     return card.key === "horn" && ["shiron", "skone"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
+  }
+  function renderLandingBacks() {
+    const factions = Object.entries(catalog.factions).filter(([, info]) => info.playable);
+    $("faction-backs").replaceChildren(...factions.map(([key], index) => {
+      const offset = factions.length === 1 ? 0 : (index / (factions.length - 1) * 2 - 1);
+      const back = node("div", "hero-card deck-pile");
+      back.dataset.faction = key;
+      back.style.setProperty("--fan-offset", String(offset));
+      back.style.setProperty("--fan-depth", String(Math.abs(offset)));
+      back.style.setProperty("--fan-angle", `${offset * 17}deg`);
+      back.style.zIndex = String(10 - Math.round(Math.abs(offset) * 3));
+      back.append(factionMark(key, "pile-crest"));
+      return back;
+    }));
   }
   function factionMark(faction, className = "") {
     const mark = node("span", className);
@@ -284,6 +299,7 @@
       lastPresentedPlay = "";
       selected = null; swaps.clear(); pendingVersion = null;
       mulliganIndex = 0; resultDismissed = false; resultSignature = "";
+      resultMinimized = false; resultReadyAt = 0; clearResultTimer();
       clearScorchAnimations();
       clearAnnouncements();
       if ($("result-dialog").open) $("result-dialog").close();
@@ -661,12 +677,14 @@
         } else showCard(card);
       },
     })));
-    if (!mine.hand.length) $("hand").append(node("div", "empty-hand", "Рука пуста. Можно использовать доступную способность лидера или спасовать."));
+    if (!mine.hand.length) $("hand").append(node("div", "empty-hand", game.phase === "finished" ? "Матч завершён." : "Рука пуста. Можно использовать доступную способность лидера или спасовать."));
     const chosen = mine.hand.find((card) => card.id === selected);
     const moves = selectedMoves();
     const info = [];
     if (mine.revealed?.length) info.push(button(`Разведданные · ${mine.revealed.length}`, () => showIntel(mine.revealed), "text-button"));
-    if (chosen) {
+    if (game.phase === "finished") {
+      const reopen = button("Итоги матча", openResult, "primary"); reopen.id = "result-reopen"; info.push(reopen);
+    } else if (chosen) {
       info.push(node("span", "", chosen.key === "horn" ? `Выберите подсвеченное место для ${renderingFaction() === "skone" ? "Командного рога" : "штандарта"} слева` : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : cardName(chosen)));
       if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button("Сыграть", () => send(moves[0]), "primary"));
       info.push(button("О карте", () => showCard(chosen), "text-button"));
@@ -931,6 +949,7 @@
     $("match-announcement").hidden = true;
   }
   function closePresentation() {
+    clearResultTimer();
     closeMulligan(); closeLeaderPreview(); clearScorchAnimations(); clearAnnouncements();
     if ($("result-dialog").open) $("result-dialog").close();
   }
@@ -964,6 +983,7 @@
     const before = previous?.game, game = next.game;
     // Снимок при входе и повторная доставка той же версии не повторяют старые события.
     if (!before || !game || game.version <= before.version || before.phase === "finished") return;
+    if (game.phase === "finished") { clearAnnouncements(); renderResult(); return; }
     const notices = [], me = next.me;
     const rounds = game.history.slice(before.history.length);
     if (before.phase === "playing") {
@@ -993,13 +1013,23 @@
   }
   function dismissResult() {
     resultDismissed = true;
+    clearResultTimer();
     clearAnnouncements();
     if ($("result-dialog").open) $("result-dialog").close();
     render();
   }
+  function clearResultTimer() { clearTimeout(resultTimer); resultTimer = null; }
+  function minimizeResult() {
+    resultMinimized = true; clearResultTimer();
+    if ($("result-dialog").open) $("result-dialog").close();
+    render();
+  }
+  function openResult() {
+    resultMinimized = false; resultReadyAt = 0; clearResultTimer(); renderResult();
+  }
   function renderResult() {
     const game = state?.game;
-    if (!game || game.phase !== "finished" || resultDismissed || currentNotice || noticeQueue.length || burningCards.size || opponentPresentation) return;
+    if (!game || game.phase !== "finished" || resultDismissed || resultMinimized || currentNotice || noticeQueue.length || burningCards.size || opponentPresentation) return;
     const dialog = $("result-dialog"), me = state.me;
     const signature = `${state.code}:${game.version}:${me}`;
     if (resultSignature !== signature) {
@@ -1026,6 +1056,11 @@
       }
       table.append(head, body); $("result-table").replaceChildren(table);
       resultSignature = signature;
+      resultReadyAt = performance.now() + 900;
+    }
+    if (performance.now() < resultReadyAt) {
+      if (resultTimer === null) resultTimer = setTimeout(() => { resultTimer = null; renderResult(); }, resultReadyAt - performance.now());
+      return;
     }
     closeMulligan(); closeChoice(); closeLeaderPreview();
     if ($("info-dialog").open) $("info-dialog").close();
@@ -1204,7 +1239,8 @@
   $("mulligan-concede").addEventListener("click", () => $("concede-button").click());
   $("mulligan-home").addEventListener("click", () => $("leave-view").click());
   $("mulligan-dialog").addEventListener("cancel", event => event.preventDefault());
-  $("result-dialog").addEventListener("cancel", event => { event.preventDefault(); dismissResult(); });
+  $("result-dialog").addEventListener("cancel", event => { event.preventDefault(); minimizeResult(); });
+  $("result-minimize").addEventListener("click", minimizeResult);
   $("result-continue").addEventListener("click", dismissResult);
   $("result-home").addEventListener("click", () => $("leave-view").click());
   document.addEventListener("keydown", event => {
@@ -1256,18 +1292,53 @@
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && selected) { selected = null; if (state?.game) renderGame(); } });
   $("rules-button").addEventListener("click", () => {
     const content = node("div", "rules-copy"), list = node("ol");
-    content.append(node("p", "eyebrow", "Перед первой дуэлью"), node("h2", "", "Как играть в Frontiers"));
-    for (const text of ["Выберите фракцию, колоду и одну способность лидера. Нажмите «Готов к матчу».",
+    content.append(node("h2", "", "Как играть"));
+    for (const text of ["Выберите фракцию, способность лидера и соберите колоду. Нажмите «Готов к матчу».",
       "Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты.",
-      "Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют. Дополнительные карты дают способности.",
-      "Пас действует до конца раунда. Соперник может продолжать играть. Когда оба спасовали, побеждает большая суммарная сила. При равной силе побеждает Широн, если его выбрал только один игрок.",
+      "Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют.",
+      "Пас действует до конца раунда. Когда оба спасовали, побеждает игрок с большей суммарной силой. При равной силе — ничья.",
       "Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче.",
-      "Герои защищены от погоды, усилений и Казни. Погода действует на обе стороны, штандарт — только на вашу.",
-      "После раунда поле очищается. Бургундия добирает карту за выигранный раунд; обычного добора между раундами нет.",
-      "Сконе возвращает в начале третьего раунда два случайных обычных отряда из своего отбоя на поле с повторным срабатыванием способностей. Герои и особые карты не возвращаются.",
-      "Нажмите на карту, чтобы узнать её способность. После перезагрузки страницы вы вернётесь на своё место, пока сохранена сессия браузера."])
+      "Герои невосприимчивы к особым картам и умениям. Погода действует на обе стороны.",
+      "После конца раунда поле очищается."])
       list.append(node("li", "", text));
     content.append(list); showInfo(content);
+  });
+  $("support-button").addEventListener("click", () => {
+    const content = node("div", "support-copy");
+    content.append(node("h2", "", "Поддержать проект"), node("p", "", "Если вам понравилась игра, можно скинуть донат на оплату сервера и еду для разработчика. Спасибо за поддержку!"));
+    const contact = node("p", "", "Связаться с разработчиком: ");
+    const telegram = node("a", "", "Tg @Nuber3000");
+    telegram.href = "https://t.me/Nuber3000"; telegram.target = "_blank"; telegram.rel = "noopener noreferrer";
+    contact.append(telegram); content.append(contact);
+    const details = node("dl", "support-details");
+    for (const [label, value] of [
+      ["Карта", "2202202178558304"],
+      ["Bitcoin", "bc1qjp8u5zvx862zsgqnas6tftphzn7s5caevry2hq"],
+      ["BNB Smart Chain", "0x53f30C940DCe5D1cB28797a84310dbBf1bDFf85D"],
+      ["Ethereum", "0x53f30C940DCe5D1cB28797a84310dbBf1bDFf85D"],
+      ["TON", "UQDtdSRivWDlOhPkTa8GnyffHBA8ZhC4wrN2RzvTT9rFZ7G2"],
+      ["TRON", "TSTZpP1Rwae2XYNefo6qCGXyuj9GPSHRYx"],
+      ["Solana", "AxUMRZwtAHF4nvVr9wKYoLRk6w5wV37ir3wP3hxsVWjS"],
+    ]) {
+      const row = node("div", "support-detail"), address = node("dd");
+      address.append(node("code", "", value));
+      const copy = button("Копировать", async () => {
+        let copied = false;
+        try { await navigator.clipboard.writeText(value); copied = true; } catch {}
+        if (!copied) {
+          const field = node("textarea"); field.value = value; field.readOnly = true;
+          field.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px";
+          // Поле внутри dialog остаётся доступным и при открытом модальном окне.
+          content.append(field); field.focus({preventScroll: true}); field.select();
+          copied = document.execCommand("copy"); field.remove(); copy.focus({preventScroll: true});
+        }
+        if (copied) { copy.textContent = "Скопировано"; toast(`${label}: реквизиты скопированы.`); }
+        else { const selection = getSelection(), range = document.createRange(); range.selectNodeContents(address); selection.removeAllRanges(); selection.addRange(range); toast("Реквизиты выделены. Скопируйте их вручную."); }
+      });
+      copy.setAttribute("aria-label", `Копировать: ${label}`);
+      row.append(node("dt", "", label), address, copy); details.append(row);
+    }
+    content.append(details); showInfo(content);
   });
 
   async function boot() {
@@ -1280,6 +1351,7 @@
     $("room-code").value = (invite || "").toUpperCase();
     try {
       catalog = await api("/api/catalog");
+      renderLandingBacks();
       definitions = new Map(catalog.cards.map((card) => [card.key, card]));
       for (const [key, info] of Object.entries(catalog.factions).filter(([, info]) => info.playable)) {
         const option = node("option", "", info.name); option.value = key; $("faction-select").append(option);

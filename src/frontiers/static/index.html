@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/static/presentation.css">
   <link rel="stylesheet" href="/static/shiron.css">
   <link rel="stylesheet" href="/static/skone.css">
+  <link rel="stylesheet" href="/static/landing.css">
   <script src="/static/scorch.js" defer></script>
   <script src="/static/opponent-play.js" defer></script>
   <script src="/static/app.js" defer></script>
@@ -26,22 +27,21 @@
   <main>
     <section id="landing" class="landing">
       <div class="introduction">
-        <p class="eyebrow">Тактика · блеф · королевские знамёна</p>
-        <h1>Победа начинается<br>до последней карты.</h1>
-        <p class="intro-copy">Собери войско Бургундии или Широна, пригласи друга и выбери, за какой раунд стоит сражаться. Одна рука — на весь матч.</p>
-        <div class="hero-cards" aria-hidden="true"><div class="hero-card back-one">♜<span>СИЛА</span></div><div class="hero-card back-two">⚜<span>ВОЛЯ</span></div><div class="hero-card back-three">♞<span>ТАКТИКА</span></div></div>
+        <h1>Карточная игра для двоих</h1>
+        <p class="intro-copy">Собери колоду, пригласи друга и выбери, за какой раунд стоит сражаться. Одна рука — на весь матч.</p>
+        <div id="faction-backs" class="hero-cards" aria-hidden="true"></div>
         <div class="feature-line"><span>2 игрока</span><span>3 боевые линии</span><span>До 3 раундов</span></div>
       </div>
       <form id="entry-form" class="entry-panel panel">
-        <p class="eyebrow">К столу переговоров</p><h2>Ваша дуэль</h2>
-        <label for="player-name">Как вас зовут?</label>
-        <input id="player-name" name="name" maxlength="32" required autocomplete="nickname" placeholder="Имя полководца">
-        <button id="create-room" class="primary wide" type="submit">Создать комнату <span>↗</span></button>
+        <h2>Начать игру</h2>
+        <label for="player-name">Ваше имя</label>
+        <input id="player-name" name="name" maxlength="32" required autocomplete="nickname" placeholder="Имя">
+        <button id="create-room" class="primary wide" type="submit">Создать комнату</button>
         <div class="divider"><span>или по приглашению</span></div>
         <label for="room-code">Код комнаты</label>
         <div class="join-fields"><input id="room-code" maxlength="8" autocomplete="off" placeholder="ABCD2345"><button id="join-room" type="button">Войти</button></div>
-        <p class="muted small">Отправьте другу ссылку на комнату. Аккаунт не нужен. На одном компьютере используйте разные браузеры или приватное окно.</p>
-        <button id="rules-button" class="text-button" type="button">Как играть →</button>
+        <p class="muted small">Создайте комнату и отправьте другу приглашение.</p>
+        <div class="entry-actions"><button id="rules-button" class="text-button" type="button">Как играть</button><button id="support-button" class="text-button" type="button">Поддержать проект</button></div>
       </form>
     </section>
     <section id="room" hidden>
@@ -92,7 +92,7 @@
     <p id="mulligan-hint" class="mulligan-hint">Можно заменить до двух карт. Остальные останутся в руке.</p>
   </dialog>
   <div id="match-announcement" class="match-announcement" role="status" aria-live="polite" aria-atomic="true" hidden><div id="announcement-emblem" class="announcement-emblem" aria-hidden="true"></div><div class="announcement-copy"><p id="announcement-title"></p><span id="announcement-detail"></span></div></div>
-  <dialog id="result-dialog" class="result-dialog" aria-labelledby="result-title"><div id="result-emblem" class="result-emblem" aria-hidden="true"></div><p class="eyebrow">Дуэль завершена</p><h1 id="result-title"></h1><p id="result-subtitle"></p><div id="result-table"></div><div class="result-actions"><button id="result-home" class="text-button" type="button">На главную</button><button id="result-continue" class="primary" type="button">К выбору колоды</button></div></dialog>
+  <dialog id="result-dialog" class="result-dialog" aria-labelledby="result-title"><div id="result-emblem" class="result-emblem" aria-hidden="true"></div><p class="eyebrow">Дуэль завершена</p><h1 id="result-title"></h1><p id="result-subtitle"></p><div id="result-table"></div><div class="result-actions"><button id="result-home" class="text-button" type="button">На главную</button><button id="result-minimize" type="button">Посмотреть стол</button><button id="result-continue" class="primary" type="button">К выбору колоды</button></div></dialog>
   <dialog id="leader-dialog" class="leader-dialog" aria-labelledby="leader-title" aria-describedby="leader-rule">
     <div class="leader-confirmation"><div id="leader-preview" class="leader-preview"></div><section class="leader-confirmation-copy"><p class="eyebrow">Лидер фракции</p><h2 id="leader-title"></h2><p id="leader-rule"></p><div id="leader-rows" class="leader-row-choices" role="group" aria-label="Линия для Командного рога" hidden></div><p id="leader-confirmation-status" class="muted small" aria-live="polite"></p><div class="leader-confirmation-actions"><button id="leader-cancel" type="button" autofocus>Отмена</button><button id="leader-apply" class="primary" type="button">Применить</button></div></section></div>
   </dialog>

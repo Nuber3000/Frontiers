@@ -1,6 +1,7 @@
 /* Северные кланы: фиолетовая ткань, валькнут и Командный рог. */
 .valknut-mark { display: inline-block; width: 1em; height: .9em; flex-shrink: 0; background: currentColor; mask: url('/static/valknut.svg') center / contain no-repeat; }
-.faction-crest > .valknut-mark, .player-emblem > .valknut-mark { width: 70%; height: 65%; }
+/* Оптический центр переплетённых треугольников совмещён с центром щита. */
+.faction-crest > .valknut-mark, .player-emblem > .valknut-mark { width: 70%; height: auto; aspect-ratio: 380 / 355; transform: translate(3.4%, -11.6%); }
 body[data-faction='skone'] .faction-crest, .player-emblem[data-faction='skone'], .deck-pile[data-faction='skone'] { background: repeating-linear-gradient(45deg,#ac93c01c 0 2px,transparent 2px 6px), #372441; color: #d8bf77; }
 .card[data-faction='skone'] .card-ribbon { background: repeating-linear-gradient(45deg,#b799d326 0 1px,transparent 1px 4px),linear-gradient(90deg,#2b183b,#594163,#24142f); color: #e3c784; border-color: #c2a7d0; }
 .card .card-ribbon.valknut-mark { height: auto; mask: none; }

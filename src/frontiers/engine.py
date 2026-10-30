@@ -482,6 +482,14 @@ class Game:
         if winner is not None and LEADERS[self.players[winner].leader]["faction"] == "burgundy":
             drawn = self._draw(self.players[winner], 1)
             self._log(f"Бургундия: {self.players[winner].name} добирает карт: {drawn}.")
+        # Завершённый матч сохраняет последний стол вместе с погодой и усилениями.
+        if any(player.lives <= 0 for player in self.players):
+            self.phase = "finished"
+            self.winner = None if all(player.lives <= 0 for player in self.players) else (
+                0 if self.players[0].lives > 0 else 1)
+            self._log("Матч завершён ничьей." if self.winner is None else
+                      f"Победа: {self.players[self.winner].name}.")
+            return
         summons = []
         for index, player in enumerate(self.players):
             player.revealed.clear()
@@ -495,13 +503,6 @@ class Game:
             player.specials.clear()
             player.leader_horn.clear()
         self._clear_weather()
-        if any(player.lives <= 0 for player in self.players):
-            self.phase = "finished"
-            self.winner = None if all(player.lives <= 0 for player in self.players) else (
-                0 if self.players[0].lives > 0 else 1)
-            self._log("Матч завершён ничьей." if self.winner is None else
-                      f"Победа: {self.players[self.winner].name}.")
-            return
         self.round_number += 1
         self.turn = self.round_starter = winner if winner is not None else 1 - self.round_starter
         for player in self.players:

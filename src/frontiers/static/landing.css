@@ -1,0 +1,74 @@
+/* Стартовый экран помещается в окно; длинные окна правил и поддержки прокручиваются внутри. */
+body:not(.in-room) { height: 100dvh; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+body:not(.in-room) > .topbar { flex: 0 0 clamp(58px, 10dvh, 94px); height: auto; width: 100%; padding-block: 12px; }
+body:not(.in-room) > main { flex: 1; min-height: 0; width: 100%; padding: clamp(12px, 3dvh, 30px) 4%; display: grid; align-items: center; }
+body:not(.in-room) > footer, body:not(.in-room) #connection, body:not(.in-room) .brand small { display: none; }
+#landing { min-height: 0; height: 100%; width: 100%; gap: 6%; grid-template-columns: 1.2fr 1fr; }
+#landing .introduction { padding: 0; min-width: 0; }
+#landing h1 { font-size: clamp(28px, 3.5vw, 48px); letter-spacing: -1px; margin: 0 0 18px; }
+#landing .intro-copy { font-size: clamp(14px, 1.2vw, 18px); margin: 0; }
+#landing .entry-panel { padding: clamp(18px, 3dvh, 32px); min-width: 0; }
+#landing .entry-panel h2 { font-size: 28px; margin-bottom: 18px; }
+#landing label { margin: 12px 0 6px; }
+#landing .entry-panel .primary { margin-top: 18px; justify-content: center; }
+#landing .entry-panel .small { margin: 16px 0 10px; }
+.entry-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
+.entry-actions button { padding: 8px 6px; font-size: 13px; }
+#landing .hero-cards { display: flex; --fan-height: clamp(135px, 24dvh, 220px); height: calc(var(--fan-height) + 40px); width: 100%; margin: 22px 0 10px; }
+#landing .hero-card { position: absolute; pointer-events: none; width: calc(var(--fan-height) * .64); height: var(--fan-height); left: 50%; top: 50%; border-radius: 4px; box-shadow: none; transform: translate(-50%, -50%) translate(calc(var(--fan-height) * var(--fan-offset) * .52), calc(var(--fan-height) * (var(--fan-depth) * .13 - .05))) rotate(var(--fan-angle)); }
+#landing .hero-card .pile-crest { font: clamp(36px, 6dvh, 60px) Georgia,serif; margin: 0; letter-spacing: 0; }
+#landing .feature-line { padding: 12px 0 0; margin: 16px 0 0; font-size: 10px; gap: 20px; justify-content: center; text-align: center; }
+#info-dialog:has(.support-copy), #info-dialog:has(.rules-copy) { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: clamp(18px, 3vw, 30px); }
+.support-copy h2, .rules-copy h2 { padding-right: 30px; }
+.support-copy > p { color: var(--muted); }
+.support-copy a { color: var(--gold); text-decoration: underline; }
+.support-details { display: grid; gap: 10px; margin: 20px 0 0; }
+.support-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px 12px; padding: 12px; border: 1px solid var(--border); border-radius: 5px; }
+.support-detail dt { color: var(--gold); font-size: 12px; }
+.support-detail dd { min-width: 0; margin: 0; grid-column: 1; }
+.support-detail code { font-size: 13px; overflow-wrap: anywhere; user-select: all; }
+.support-detail button { grid-column: 2; grid-row: 1 / 3; padding: 7px 9px; font-size: 12px; }
+.rules-copy ol { padding-left: 22px; }
+.rules-copy li { padding-left: 4px; margin-bottom: 12px; }
+@media (max-width: 660px) {
+  body:not(.in-room) > .topbar { flex-basis: 56px; padding-block: 7px; }
+  body:not(.in-room) > main { padding: 10px 16px; }
+  #landing { grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 14px; align-content: center; }
+  #landing h1 { font-size: 25px; margin-bottom: 8px; }
+  #landing .intro-copy { font-size: 13px; line-height: 1.45; max-width: none; }
+  #landing .hero-cards { --fan-height: clamp(70px, 13dvh, 115px); height: calc(var(--fan-height) + 18px); margin: 8px 0; }
+  #landing .hero-card .pile-crest { font-size: 30px; }
+  #landing .feature-line { font-size: 9px; padding-top: 7px; gap: 16px; }
+  #landing .entry-panel { padding: 14px 18px; }
+  #landing .entry-panel h2 { font-size: 23px; margin-bottom: 10px; }
+  #landing label { margin-top: 7px; }
+  #landing input, #landing button { font-size: 13px; padding-block: 8px; }
+  #landing .entry-panel .primary { margin-top: 12px; }
+  #landing .divider { height: 28px; }
+  #landing .entry-panel .small { margin: 10px 0 4px; font-size: 11px; }
+}
+@media (max-height: 700px) and (max-width: 660px) {
+  #landing { gap: 8px; }
+  #landing .hero-cards { --fan-height: 58px; margin: 5px 0; }
+  #landing .hero-card .pile-crest { font-size: 22px; }
+  #landing h1, #landing .feature-line { display: none; }
+  #landing .intro-copy { font-size: 12px; line-height: 1.35; }
+  #landing .entry-panel .small { display: none; }
+}
+@media (max-height: 540px) and (min-width: 661px) {
+  body:not(.in-room) > .topbar { flex-basis: 48px; padding-block: 4px; }
+  body:not(.in-room) > main { padding-block: 8px; }
+  #landing { gap: 4%; grid-template-columns: 1fr 1.1fr; }
+  #landing h1 { font-size: 25px; margin-bottom: 10px; }
+  #landing .intro-copy { font-size: 12px; line-height: 1.4; }
+  #landing .hero-cards { --fan-height: 90px; height: 115px; margin: 10px 0; }
+  #landing .hero-card .pile-crest { font-size: 32px; }
+  #landing .entry-panel { padding: 12px 18px; }
+  #landing .entry-panel h2 { font-size: 22px; margin-bottom: 5px; }
+  #landing label { margin: 5px 0 3px; font-size: 11px; }
+  #landing input, #landing button { padding-block: 6px; font-size: 12px; }
+  #landing .entry-panel .primary { margin-top: 9px; }
+  #landing .divider { height: 24px; }
+  #landing .entry-panel .small { display: none; }
+  .entry-actions { margin-top: 7px; }
+}
