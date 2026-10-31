@@ -49,4 +49,5 @@ SKONE_DECK = (
     + ["skone_medic", "skone_bard", "skone_rooster", "skone_ghost",
        "skone_pirate", "skone_shieldhero", "skone_hero_archer"]
     + ["horn", "mushroom", "mushroom", "storm", "clear", "scorch", "decoy"]
+    + ["ting"] * 3
 )

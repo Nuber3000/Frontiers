@@ -182,7 +182,7 @@ def check_leader_confirmation(page, code, output):
     page.locator('#leader-button').click()
     page.locator('#leader-dialog').wait_for(state='visible')
     assert snapshot(page, code)['game']['version'] == before['version']
-    assert page.locator('#leader-preview .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+    assert page.locator('#leader-preview .leader-art image').get_attribute('href').endswith(f'leader_{key}.webp')
     assert page.locator('#leader-rule').inner_text()
     page.wait_for_function("() => document.querySelector('#leader-preview').getAnimations().every(animation => animation.playState === 'finished')")
     for width, height in [(1440, 900), (1366, 768), (390, 844), (844, 390)]:
@@ -240,6 +240,31 @@ def save_announcement(page, output, name, kind):
     page.screenshot(path=str(output / name))
 
 
+def hold_round_screenshot(page, kind_prefix="round-"):
+    # A reload replaces the document and its observers. Reinstall before resuming.
+    page.evaluate('''prefix => {
+      window.holdRoundScreenshot = true;
+      window.screenshotKindPrefix = prefix;
+      const layer = document.querySelector('#match-announcement');
+      if (window.screenshotNoticeObserver) return;
+      window.screenshotNoticeObserver = new MutationObserver(() => {
+        if (!window.holdRoundScreenshot || layer.hidden || !layer.dataset.kind?.startsWith(window.screenshotKindPrefix)) return;
+        for (const animation of layer.getAnimations()) {
+          animation.pause();
+          animation.currentTime = Number(animation.effect.getTiming().duration) * .4;
+        }
+      });
+      window.screenshotNoticeObserver.observe(layer, {attributes:true, attributeFilter:['hidden','data-sequence']});
+    }''', kind_prefix)
+
+
+def release_announcement_screenshot(page):
+    page.evaluate('''() => {
+      window.holdRoundScreenshot = false;
+      for (const animation of document.querySelector('#match-announcement').getAnimations()) animation.play();
+    }''')
+
+
 def check_fullscreen(page, code, output):
     version = snapshot(page, code)['game']['version']
     toggle = page.locator('#fullscreen-button')
@@ -283,7 +308,7 @@ def save_artwork_gallery(browser, url, catalog, output):
         tiles.append(f'<article><div class="gallery-art card-art art-{card["key"]}"></div>'
                      f'<p>{html.escape(card["name"])}</p></article>')
     for key, leader in catalog['leaders'].items():
-        tiles.append(f'<article><img src="{url}/static/leader_{key}.png">'
+        tiles.append(f'<article><img src="{url}/static/leader_{key}.webp">'
                      f'<p>{html.escape(catalog["factions"][leader["faction"]]["leader"])} · {html.escape(leader["name"])}</p></article>')
     gallery = browser.new_page(viewport={'width': 1540, 'height': 1200})
     try:
@@ -449,7 +474,7 @@ def run(browser_channel, output):
                             if item['faction'] != faction:
                                 continue
                             first.locator('#leader-select').select_option(key)
-                            assert first.locator('.leader-portrait .leader-art image').get_attribute('href').endswith(f'leader_{key}.png')
+                            assert first.locator('.leader-portrait .leader-art image').get_attribute('href').endswith(f'leader_{key}.webp')
                         for sample in first.evaluate('''() => [...document.querySelectorAll('.ability-seal')].map(seal => ({
                           ability:seal.dataset.ability, icon:seal.querySelector('svg').dataset.icon,
                           geometry:seal.querySelector('svg').innerHTML
@@ -544,12 +569,16 @@ def run(browser_channel, output):
                     assert not {card['id'] for card in before['game']['players'][0]['hand'][:2]} & {card['id'] for card in swapped_hand}
                     assert first.locator('#mulligan-dialog').is_visible()
                     assert 'Ждём соперника' in first.locator('#mulligan-title').inner_text()
+                    for page in pages:
+                        hold_round_screenshot(page, "")
                     second.locator("#mulligan-button").click()
                     wait_version(first, 1)
                     wait_version(second, 1)
                     for side, page in enumerate(pages):
                         kind = 'your-turn' if snapshot(page, code)['game']['turn'] == side else 'enemy-turn'
                         save_announcement(page, output, f'announcement-{kind}.png', kind)
+                    for page in pages:
+                        release_announcement_screenshot(page)
                     notice_sequence = first.locator('#match-announcement').get_attribute('data-sequence')
                     check_fullscreen(first, code, output)
                     first.locator('#journal-button').click()
@@ -564,17 +593,7 @@ def run(browser_channel, output):
                     # первый результат, чтобы он не исчез на втором клиенте,
                     # пока Playwright сохраняет скриншот первого.
                     for peer in pages:
-                        peer.evaluate('''() => {
-                          window.holdRoundScreenshot = true;
-                          const layer = document.querySelector('#match-announcement');
-                          new MutationObserver(() => {
-                            if (!window.holdRoundScreenshot || layer.hidden || !layer.dataset.kind?.startsWith('round-')) return;
-                            for (const animation of layer.getAnimations()) {
-                              animation.pause();
-                              animation.currentTime = Number(animation.effect.getTiming().duration) * .4;
-                            }
-                          }).observe(layer, {attributes:true, attributeFilter:['hidden','data-sequence']});
-                        }''')
+                        hold_round_screenshot(peer)
                     moves_used = set()
                     standard_slots = 0
                     steps = 0
@@ -613,17 +632,14 @@ def run(browser_channel, output):
                                 kind = 'round-draw' if round_result['winner'] is None else 'round-win' if round_result['winner'] == side else 'round-loss'
                                 save_announcement(peer, output, f'announcement-{kind}.png', kind)
                             for peer in pages:
-                                peer.evaluate('''() => {
-                                  window.holdRoundScreenshot = false;
-                                  for (const animation of document.querySelector('#match-announcement').getAnimations()) animation.play();
-                                }''')
+                                release_announcement_screenshot(peer)
                             captured_round = True
                         if move['type'] == 'leader' and actor == 0:
                             marker = first.locator('.combat-row.own[data-row="siege"] .leader-standard')
                             marker.wait_for(state='visible')
                             assert marker.locator('.card-art.art-horn').count() == 1
                             assert marker.get_attribute('data-source') == 'leader'
-                            assert marker.evaluate("card => getComputedStyle(card.querySelector('.card-art')).backgroundImage.includes('/horn.png')")
+                            assert marker.evaluate("card => getComputedStyle(card.querySelector('.card-art')).backgroundImage.includes('/horn.webp')")
                             second.locator('.combat-row.enemy[data-row="siege"] .leader-standard').wait_for(state='visible')
                             marker.click()
                             first.locator('#info-dialog').wait_for(state='visible')
@@ -641,6 +657,8 @@ def run(browser_channel, output):
                             first.wait_for_function("version => Number(document.body.dataset.gameVersion) === version", arg=version + 1)
                             assert first.locator('#match-announcement').is_hidden(), 'Reconnect replayed old announcements'
                             observe_announcements(first)
+                            if not captured_round:
+                                hold_round_screenshot(first)
                             for width, height in [(1920, 1080), (1907, 936), (1600, 900), (1366, 768),
                                                   (1280, 720), (1024, 768), (390, 844), (844, 390)]:
                                 first.set_viewport_size({"width": width, "height": height})
@@ -653,7 +671,8 @@ def run(browser_channel, output):
                         page.locator('#result-dialog').wait_for(state='visible', timeout=45000)
                         notices[side].extend(page.evaluate('window.presentationNotices'))
                         round_notices = [item for item in notices[side] if item['kind'].startswith('round-')]
-                        assert len(round_notices) == len(final['game']['history']), notices[side]
+                        # The final round opens the result directly, without a duplicate round banner.
+                        assert len(round_notices) == max(0, len(final['game']['history']) - 1), notices[side]
                         for item in notices[side]:
                             if item['kind'] == 'pass':
                                 assert item['title'] == ('Вы спасовали' if item['detail'] == final['game']['players'][side]['name'] else 'Противник спасовал'), item
@@ -667,7 +686,10 @@ def run(browser_channel, output):
                             assert_presentation_fits(page, result=True)
                         page.set_viewport_size({'width': 1440, 'height': 1100})
                         page.locator('#result-continue').click()
-                        page.locator("#match-result").wait_for(state="visible")
+                        page.locator("#match-history").wait_for(state="visible")
+                        page.locator("#match-history").click()
+                        page.locator(".history-item").wait_for(state="visible")
+                        page.locator("#close-info").click()
                     first.screenshot(path=str(output / "result.png"), full_page=True)
                     for page in pages:
                         page.locator("#ready-button").click()

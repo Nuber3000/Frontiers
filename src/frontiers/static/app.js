@@ -22,6 +22,7 @@
     scorch_siege: "Казнит сильнейшие осадные отряды соперника, если сила его ряда не меньше 10.",
   };
   let catalog, definitions = new Map(), state = null, socket = null;
+  let profile = null, activeSavedDeck = null, storageWarningShown = false;
   let selected = null, swaps = new Set(), deck = [], leader = "sun", dirtyDeck = false;
   let connected = false, busy = false, pendingVersion = null, reconnectDelay = 700;
   let retryTimer = null, heartbeat = null, toastTimer = null;
@@ -44,6 +45,7 @@
     expand: ["M8 3H3v5M16 3h5v5M3 16v5h5M16 21h5v-5"],
     collapse: ["M3 8h5V3M16 3v5h5M3 16h5v5M16 21v-5h5"],
     cards: ["M7 5h12v16H7z", "M4 17H2V2h12v1", "M10 8h6M10 11h6"],
+    ting: ["M2 7h10v15H2z", "M6 3h10v15h-2", "M19 3v9m-3-3 3 3 3-3"],
     melee: ["M8 15 18 3l3-1-1 3L10 17Z", "m6 13 6 6M5 18l3 3M7 17l-3 4M3 20l1 1"],
     ranged: ["M5 3C14 1 23 10 21 21", "M5 3 7 17 21 21", "M3 21 20 4m-5 1 5-1-1 5M4 17h3v3"],
     agile: ["M8 2.5C16 1 23.5 8 21.5 17.5L20.2 16.5C21.5 8.5 15.8 2.5 8.4 3.8Z", "M8 3 10 13 21 17", "M9 15 22 2m-4 1 4-1-1 4", "M2 10.5 5 12l5 5-2 2-5-5-1-3.5Z", "M6.5 19.5l5-5M9.4 18.4l3 3M11.5 22l2-2"],
@@ -148,7 +150,7 @@
     svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
     svg.setAttribute("aria-hidden", "true");
     const image = document.createElementNS(svg.namespaceURI, "image");
-    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.png`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: "xMidYMid slice"})) image.setAttribute(attribute, value);
+    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.webp`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: "xMidYMid slice"})) image.setAttribute(attribute, value);
     svg.append(image); return svg;
   }
 
@@ -171,6 +173,80 @@
   }
   function readStorage(key) { try { return localStorage.getItem(key); } catch { return null; } }
   function writeStorage(key, value) { try { localStorage.setItem(key, value); } catch {} }
+  function locally(action) {
+    try { action(); }
+    catch (error) { if (!storageWarningShown) { toast(error.message); storageWarningShown = true; } }
+  }
+  function currentDeck() { return {faction: factionKey(), leader, cards: [...deck]}; }
+  function deckChanged() {
+    dirtyDeck = true;
+    locally(() => profile.saveDraft(currentDeck()));
+    renderLobby();
+  }
+  function loadSavedDeck(item) {
+    leader = item.leader; deck = [...item.cards]; activeSavedDeck = item.id || null;
+    deckChanged();
+  }
+  function showMatchHistory() {
+    const content = node("section", "profile-dialog match-history");
+    content.append(node("h2", "", "История матчей"), node("p", "muted", "Последние 100 завершённых матчей в этом браузере. Очистка данных сайта удалит историю и сохранённые колоды."));
+    const items = profile.history();
+    if (!items.length) content.append(node("p", "", "Завершённых матчей пока нет."));
+    for (const match of items) {
+      const item = node("article", `history-item ${match.outcome}`);
+      item.append(node("h3", "", {victory: "Победа", defeat: "Поражение", draw: "Ничья"}[match.outcome]),
+        node("p", "muted small", new Date(match.finishedAt).toLocaleString("ru-RU")),
+        node("p", "", match.players.map(player => `${player.name} · ${catalog.factions[player.faction].name}`).join(" против ")));
+      const scores = node("div", "history-scores");
+      for (const round of match.rounds) scores.append(node("span", "", `Раунд ${round.round}: ${round.scores[0]} : ${round.scores[1]}`));
+      if (!match.rounds.length) scores.append(node("span", "", "Матч завершился до окончания первого раунда."));
+      item.append(scores); content.append(item);
+    }
+    showInfo(content);
+  }
+  function showSavedDecks() {
+    const content = node("section", "profile-dialog saved-decks");
+    const locked = state.seats[state.me].ready || busy;
+    content.append(node("h2", "", "Мои колоды"), node("p", "muted", "Состав и лидер сохраняются в этом браузере. Можно хранить до 50 именованных колод, включая незаконченные. Для матча нужно минимум 22 отряда."));
+    const form = node("form", "save-deck-form"), label = node("label", "", "Название новой колоды");
+    const name = node("input"); name.id = "saved-deck-name"; name.maxLength = 40; name.required = true;
+    label.htmlFor = name.id;
+    const save = node("button", "primary", "Сохранить новую"); save.type = "submit"; save.disabled = locked;
+    form.append(label, name, save);
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      if (locked || !name.value.trim()) return;
+      try {
+        const saved = profile.saveDeck(name.value, currentDeck()); activeSavedDeck = saved.id;
+        renderLobby(); showSavedDecks(); toast("Колода сохранена.");
+      } catch (error) { toast(error.message); }
+    });
+    content.append(form);
+    const items = profile.decks();
+    if (!items.length) content.append(node("p", "muted", "Сохранённых колод пока нет."));
+    for (const saved of items) {
+      const item = node("article", "saved-deck-item"); item.dataset.savedId = saved.id;
+      item.append(node("h3", "", saved.name), node("p", "muted small", `${catalog.factions[saved.faction].name} · ${saved.cards.length} карт · ${catalog.leaders[saved.leader].name}`));
+      const actions = node("div", "profile-actions");
+      const load = button("Загрузить", () => { loadSavedDeck(saved); $("info-dialog").close(); });
+      load.disabled = locked; load.dataset.action = "load";
+      const update = button("Обновить состав", () => {
+        if (!confirm(`Заменить состав и лидера колоды «${saved.name}» текущим выбором?`)) return;
+        try { profile.saveDeck(saved.name, currentDeck(), saved.id); activeSavedDeck = saved.id; renderLobby(); showSavedDecks(); toast("Колода обновлена."); }
+        catch (error) { toast(error.message); }
+      });
+      update.disabled = locked || saved.faction !== factionKey(); update.dataset.action = "update";
+      const remove = button("Удалить", () => {
+        if (!confirm(`Удалить колоду «${saved.name}»?`)) return;
+        try {
+          profile.deleteDeck(saved.id); if (activeSavedDeck === saved.id) activeSavedDeck = null;
+          renderLobby(); showSavedDecks();
+        } catch (error) { toast(error.message); }
+      }); remove.dataset.action = "delete";
+      actions.append(load, update, remove); item.append(actions); content.append(item);
+    }
+    showInfo(content);
+  }
   function toast(message) {
     $("toast").textContent = message;
     $("toast").hidden = false;
@@ -291,6 +367,13 @@
       deck = [...next.my_deck];
       leader = next.my_leader;
     }
+    if (freshRoom) {
+      activeSavedDeck = null;
+      if (!next.seats[next.me].ready && (!next.game || next.game.phase === "finished")) {
+        const draft = profile.draft();
+        if (draft) { leader = draft.leader; deck = [...draft.cards]; dirtyDeck = true; }
+      }
+    }
     if (next.seats[next.me].ready) {
       deck = [...next.my_deck]; leader = next.my_leader; dirtyDeck = false;
     }
@@ -307,6 +390,7 @@
     if (pendingVersion !== null && next.game?.version > pendingVersion) pendingVersion = null;
     if (!freshRoom) collectScorchedCards(previous, next);
     state = next;
+    locally(() => profile.record(next));
     document.body.dataset.revision = String(next.revision);
     document.body.dataset.gameVersion = String(next.game?.version ?? -1);
     if (state.game && !state.game.players[state.me].hand.some((card) => card.id === selected)) selected = null;
@@ -394,7 +478,7 @@
   function glyph(card) {
     if (card.hero) return card.faction === "skone" ? "♛" : catalog.factions[card.faction]?.emblem || "♛";
     if (card.kind === "weather") return {frost: "❄", fog: "≋", rain: "☂", storm: "ϟ", clear: "☀"}[card.key] || "☁";
-    if (card.kind === "special") return {horn: "⚑", decoy: "♟", scorch: "♨", mushroom: "♧"}[card.key] || "◇";
+    if (card.kind === "special") return {horn: "⚑", decoy: "♟", scorch: "♨", mushroom: "♧", ting: "+2"}[card.key] || "◇";
     if (card.abilities?.includes("spy")) return "◈";
     if (card.abilities?.includes("medic")) return "✚";
     if (card.abilities?.includes("berserker")) return "♞";
@@ -484,6 +568,7 @@
     }
     $("room-label").textContent = state.code;
     $("copy-invite").hidden = active;
+    $("match-history").hidden = active;
     $("lobby").hidden = !!active;
     $("arena").hidden = !active;
     if (active) renderGame(); else { closeChoice(); closeMulligan(); closeLeaderPreview(); renderLobby(); }
@@ -508,11 +593,14 @@
       leaderSelect.dataset.faction = faction;
     }
     const presetSelect = $("deck-preset");
-    if (presetSelect.dataset.faction !== faction) {
+    {
       presetSelect.replaceChildren(...Object.entries(catalog.decks).filter(([, item]) => item.faction === faction).map(([key, item]) => {
         const option = node("option", "", item.name); option.value = key; return option;
       }));
       const custom = node("option", "", "Своя колода"); custom.value = "custom"; presetSelect.append(custom);
+      for (const saved of profile.decks().filter(item => item.faction === faction)) {
+        const option = node("option", "", saved.name); option.value = `saved:${saved.id}`; presetSelect.append(option);
+      }
       presetSelect.dataset.faction = faction;
     }
     document.querySelector(".leader-portrait > div").textContent = info.leader;
@@ -536,6 +624,9 @@
     $("deck-preset").disabled = locked;
     const sorted = [...deck].sort().join(",");
     $("deck-preset").value = Object.keys(catalog.decks).find((key) => [...catalog.decks[key].cards].sort().join(",") === sorted) || "custom";
+    const saved = profile.decks().find(item => item.id === activeSavedDeck && item.leader === leader
+      && [...item.cards].sort().join(",") === sorted);
+    if (saved) $("deck-preset").value = `saved:${saved.id}`;
     const units = deck.filter((key) => definitions.get(key).kind === "unit").length;
     const specials = deck.length - units;
     const valid = units >= 22 && specials <= 10 && deck.length <= 60;
@@ -556,7 +647,7 @@
         const controls = node("div", "card-adjust");
         const adjust = button(inDeck ? "−" : "+", () => {
           if (inDeck) deck.splice(deck.indexOf(card.key), 1); else deck.push(card.key);
-          dirtyDeck = true; renderLobby();
+          deckChanged();
         });
         adjust.disabled = locked || (!inDeck && deck.length >= 60);
         adjust.setAttribute("aria-label", `${inDeck ? "Убрать" : "Добавить"}: ${cardName(card)}`);
@@ -576,15 +667,6 @@
     $("ready-button").disabled = busy || !connected || (!mine.ready && !valid);
     $("ready-button").textContent = mine.ready ? "Отменить готовность" : state.game ? "Готов к реваншу" : "Готов к матчу";
     $("ready-hint").textContent = mine.ready ? "Ждём готовности второго игрока." : "Матч начнётся, когда оба игрока будут готовы.";
-    $("match-result").hidden = !state.game;
-    if (state.game) {
-      const game = state.game;
-      const title = game.winner === null ? "Ничья" : game.winner === state.me ? "Ваша победа" : "Победа соперника";
-      const results = node("div", "result-scores");
-      for (const round of game.history) results.append(node("span", "", `Раунд ${round.round}: ${round.scores[state.me]} : ${round.scores[1 - state.me]}`));
-      $("match-result").replaceChildren(node("p", "eyebrow", "Дуэль завершена"), node("h2", "", title),
-        node("p", "muted", "Можно изменить колоду и подтвердить готовность к новому матчу."), results);
-    }
   }
 
   function matchesFilter(card, filter) {
@@ -1213,21 +1295,30 @@
     }
   });
   $("room-code").addEventListener("input", () => { $("room-code").value = $("room-code").value.toUpperCase().replace(/[^A-Z2-9]/g, ""); });
-  $("leader-select").addEventListener("change", () => { leader = $("leader-select").value; dirtyDeck = true; renderLobby(); });
+  $("leader-select").addEventListener("change", () => { leader = $("leader-select").value; deckChanged(); });
   $("faction-select").addEventListener("change", () => {
     const faction = $("faction-select").value;
     leader = catalog.factions[faction].default_leader;
     deck = [...Object.values(catalog.decks).find(item => item.faction === faction).cards];
-    dirtyDeck = true; renderLobby();
+    activeSavedDeck = null;
+    const draft = profile.draft(faction);
+    if (draft) { leader = draft.leader; deck = [...draft.cards]; }
+    deckChanged();
   });
   $("deck-preset").addEventListener("change", () => {
+    const saved = profile.decks().find(item => `saved:${item.id}` === $("deck-preset").value);
+    if (saved) return loadSavedDeck(saved);
     const preset = catalog.decks[$("deck-preset").value];
-    if (preset) { deck = [...preset.cards]; dirtyDeck = true; renderLobby(); }
+    if (preset) { deck = [...preset.cards]; activeSavedDeck = null; deckChanged(); }
   });
+  $("landing-history").addEventListener("click", () => { if (profile) showMatchHistory(); });
+  $("match-history").addEventListener("click", showMatchHistory);
+  $("saved-decks").addEventListener("click", showSavedDecks);
   $("collection-filter").addEventListener("change", renderLobby);
   $("ready-button").addEventListener("click", async () => {
     if (busy || !state) return;
     busy = true; renderLobby();
+    locally(() => profile.saveDraft(currentDeck()));
     try { receive(await api(`/api/rooms/${state.code}/ready`, {leader, deck, ready: !state.seats[state.me].ready})); }
     catch (error) { toast(error.message); }
     finally { busy = false; render(); }
@@ -1351,6 +1442,7 @@
     $("room-code").value = (invite || "").toUpperCase();
     try {
       catalog = await api("/api/catalog");
+      profile = new window.FrontiersProfile(catalog);
       renderLandingBacks();
       definitions = new Map(catalog.cards.map((card) => [card.key, card]));
       for (const [key, info] of Object.entries(catalog.factions).filter(([, info]) => info.playable)) {

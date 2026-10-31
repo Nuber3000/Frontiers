@@ -14,3 +14,5 @@ dist/
 .idea/
 tests/
 docs/
+assets/
+tools/

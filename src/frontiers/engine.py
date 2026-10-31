@@ -51,6 +51,7 @@ class Game:
     scorched: list[str] = field(default_factory=list)
     played: dict | None = None
     winner: int | None = None
+    match_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
     @classmethod
     def create(cls, names: list[str], decks: list[list[str]], leaders: list[str],
@@ -228,6 +229,10 @@ class Game:
         elif card.key == "mushroom":
             player.discard.append(card)
             self._transform(instant_side=actor, instant_row=row)
+        elif card.key == "ting":
+            player.discard.append(card)
+            count = self._draw(player, 2)
+            self._log(f"Тинг: {player.name} добирает карт: {count}.")
         elif card.key == "decoy":
             index = player.board.index(target)
             player.board[index] = PlacedCard(card, target.row)
@@ -613,6 +618,7 @@ class Game:
                                     if any(other.id == card.id for other in self.players[1 - side].hand)]
             players.append(data)
         return {
+            "match_id": self.match_id,
             "phase": self.phase, "version": self.version, "turn": self.turn,
             "round": self.round_number, "winner": self.winner, "players": players,
             "weather": [{"key": effect.key, "name": CATALOG[effect.key].name}

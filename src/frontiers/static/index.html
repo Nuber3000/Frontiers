@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/static/landing.css">
   <script src="/static/scorch.js" defer></script>
   <script src="/static/opponent-play.js" defer></script>
+  <script src="/static/local-profile.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -41,14 +42,13 @@
         <label for="room-code">Код комнаты</label>
         <div class="join-fields"><input id="room-code" maxlength="8" autocomplete="off" placeholder="ABCD2345"><button id="join-room" type="button">Войти</button></div>
         <p class="muted small">Создайте комнату и отправьте другу приглашение.</p>
-        <div class="entry-actions"><button id="rules-button" class="text-button" type="button">Как играть</button><button id="support-button" class="text-button" type="button">Поддержать проект</button></div>
+        <div class="entry-actions"><button id="rules-button" class="text-button" type="button">Как играть</button><button id="landing-history" class="text-button" type="button">История матчей</button><button id="support-button" class="text-button" type="button">Поддержать проект</button></div>
       </form>
     </section>
     <section id="room" hidden>
-      <div class="room-toolbar"><div><button id="leave-view" class="room-brand" type="button" aria-label="Frontiers — на главную">Frontiers</button><h2>Комната <span id="room-label"></span></h2></div><span id="room-status"></span><div class="toolbar-actions"><button id="copy-invite" type="button">Скопировать приглашение</button></div></div>
+      <div class="room-toolbar"><div><button id="leave-view" class="room-brand" type="button" aria-label="Frontiers — на главную">Frontiers</button><h2>Комната <span id="room-label"></span></h2></div><span id="room-status"></span><div class="toolbar-actions"><button id="match-history" type="button">История матчей</button><button id="copy-invite" type="button">Скопировать приглашение</button></div></div>
       <section id="lobby" class="lobby">
         <header class="faction-heading"><span class="faction-crest" aria-hidden="true">⚜</span><div><label class="sr-only" for="faction-select">Фракция</label><select id="faction-select" aria-label="Фракция"></select><h1 id="faction-name">Королевство Бургундия</h1><p id="faction-description">После каждого выигранного раунда возьмите карту из своей колоды.</p></div></header>
-        <div id="match-result" class="result-panel" hidden></div>
         <section class="card-library collection-panel" aria-labelledby="collection-title">
           <div class="library-heading"><div><h2 id="collection-title">Коллекция карт</h2><p>Добавьте карты в своё войско</p></div><label class="sr-only" for="collection-filter">Фильтр коллекции</label><select id="collection-filter"><option value="all">Все карты</option><option value="unit">Отряды</option><option value="melee">Ближний бой</option><option value="ranged">Дальний бой</option><option value="siege">Осада</option><option value="hero">Герои</option><option value="weather">Погода</option><option value="special">Особые</option></select></div>
           <div id="collection-tabs" class="filter-tabs" role="group" aria-label="Категории коллекции"></div>
@@ -65,7 +65,7 @@
           <button id="ready-button" class="primary wide" type="button">Готов к матчу</button><p id="ready-hint" class="muted small" aria-live="polite"></p>
         </aside>
         <section class="card-library deck-panel" aria-labelledby="deck-title">
-          <div class="library-heading"><div><h2 id="deck-title">Карты колоды</h2><p>Минимум 22 отряда · до 10 особых</p></div><label class="sr-only" for="deck-preset">Готовая колода</label><select id="deck-preset"></select></div>
+          <div class="library-heading"><div><h2 id="deck-title">Карты колоды</h2><p>Минимум 22 отряда · до 10 особых</p></div><div class="deck-actions"><button id="saved-decks" type="button">Мои колоды</button><label class="sr-only" for="deck-preset">Готовая колода</label><select id="deck-preset"></select></div></div>
           <div id="deck-tabs" class="filter-tabs" role="group" aria-label="Категории колоды"></div>
           <div id="deck-cards" class="collection"></div>
           <p class="library-footnote">Ваше войско на весь матч. <span>− убрать из колоды</span></p>

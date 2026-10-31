@@ -60,6 +60,9 @@ def run(channel, output):
                 assert first.locator('#leader-select option').count() == 5
                 assert first.locator('.faction-crest .valknut-mark').count() == 1
                 assert first.locator('#deck-preset option[value="clans"]').inner_text() == 'Союз северных кланов'
+                assert first.locator('#deck-cards [data-card-key="ting"]').count() == 1
+                assert first.locator('#deck-cards [data-card-key="ting"]').locator('..').locator('.card-adjust span').inner_text() == '×3'
+                assert first.locator('#deck-cards [data-card-key="ting"] .card-power svg').get_attribute('data-icon') == 'ting'
                 assert first.locator('#collection .card[data-faction="burgundy"], #collection .card[data-faction="shiron"]').count() == 0
                 assert first.locator('#deck-cards [data-card-key="horn"] .card-art').get_attribute('class').endswith('art-skone_horn')
                 assert first.locator('#deck-cards [data-card-key="berserker"] .ability-seal svg').get_attribute('data-icon') == 'bear'
@@ -108,6 +111,27 @@ def run(channel, output):
                         page.goto(f'{url}/?room={code}')
                         page.wait_for_selector('#connection.online')
                         page.locator('.combat-row').first.wait_for()
+
+                game = fixture(['ting', 'skone_heir'], ['knight'], 'skone_storm')
+                game.players[0].deck = [game._new_card('skone_jarl'), game._new_card('skone_medic')]
+                draw_ids = [card.id for card in game.players[0].deck]
+                load(game)
+                first.locator('#hand [data-card-key="ting"]').click()
+                first.locator('#selection-info').get_by_role('button', name='О карте', exact=True).click()
+                first.locator('#info-dialog .art-ting').wait_for()
+                assert 'две карты' in first.locator('#info-content').inner_text()
+                first.screenshot(path=str(output / 'ting-card.png'))
+                first.locator('#close-info').click()
+                first.locator('#selection-info').get_by_role('button', name='Сыграть', exact=True).click()
+                for page in pages:
+                    wait_version(page, 0)
+                for page in pages:
+                    assert snapshot(page, code)['game']['players'][0]['hand_count'] == 3
+                    assert snapshot(page, code)['game']['players'][0]['deck_count'] == 0
+                    assert snapshot(page, code)['game']['players'][0]['discard'][-1]['key'] == 'ting'
+                assert [card['id'] for card in snapshot(first, code)['game']['players'][0]['hand'][1:]] == draw_ids
+                assert not any(key in json.dumps(snapshot(second, code)) for key in draw_ids)
+                assert first.locator('#arena .combat-row [data-card-key="ting"]').count() == 0
 
                 game = fixture(['horn', 'skone_heir'], ['knight'], 'skone_horn')
                 put(game, 0, 'skone_heir', Row.RANGED)

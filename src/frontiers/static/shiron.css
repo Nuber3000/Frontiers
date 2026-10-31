@@ -1,35 +1,35 @@
 /* Индивидуальные иллюстрации и оформление Империи Широн. */
-.art-shiron_horn { background-image: url('/static/shiron_horn.png'); background-size: cover; background-position: center; }
-.art-shiron_spy_hero { background-image: url('/static/shiron_spy_hero.png'); background-size: cover; background-position: center top; }
-.art-shiron_siege_medic { background-image: url('/static/shiron_siege_medic.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_archer_medic { background-image: url('/static/shiron_archer_medic.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_eck { background-image: url('/static/shiron_eck.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_riders { background-image: url('/static/shiron_riders.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_marksman { background-image: url('/static/shiron_marksman.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_pyromancer { background-image: url('/static/shiron_pyromancer.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_viscount { background-image: url('/static/shiron_viscount.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_guard { background-image: url('/static/shiron_guard.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_cadet { background-image: url('/static/shiron_cadet.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_mangonel { background-image: url('/static/shiron_mangonel.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_warden { background-image: url('/static/shiron_warden.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_spy { background-image: url('/static/shiron_spy.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_fire_advisor { background-image: url('/static/shiron_fire_advisor.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_sorceress { background-image: url('/static/shiron_sorceress.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_envoys { background-image: url('/static/shiron_envoys.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_captain { background-image: url('/static/shiron_captain.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_scorpion { background-image: url('/static/shiron_scorpion.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_knight { background-image: url('/static/shiron_knight.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_ruby { background-image: url('/static/shiron_ruby.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_amber { background-image: url('/static/shiron_amber.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_pioneer { background-image: url('/static/shiron_pioneer.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_ambassador { background-image: url('/static/shiron_ambassador.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_chancellor { background-image: url('/static/shiron_chancellor.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_archers { background-image: url('/static/shiron_archers.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_grand_scorpion { background-image: url('/static/shiron_grand_scorpion.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_executioner { background-image: url('/static/shiron_executioner.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_marshal { background-image: url('/static/shiron_marshal.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_regent { background-image: url('/static/shiron_regent.png'); background-size: cover; background-position: center 25%; }
-.art-shiron_duke { background-image: url('/static/shiron_duke.png'); background-size: cover; background-position: center 25%; }
+.art-shiron_horn { background-image: url('/static/shiron_horn.webp'); background-size: cover; background-position: center; }
+.art-shiron_spy_hero { background-image: url('/static/shiron_spy_hero.webp'); background-size: cover; background-position: center top; }
+.art-shiron_siege_medic { background-image: url('/static/shiron_siege_medic.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_archer_medic { background-image: url('/static/shiron_archer_medic.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_eck { background-image: url('/static/shiron_eck.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_riders { background-image: url('/static/shiron_riders.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_marksman { background-image: url('/static/shiron_marksman.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_pyromancer { background-image: url('/static/shiron_pyromancer.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_viscount { background-image: url('/static/shiron_viscount.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_guard { background-image: url('/static/shiron_guard.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_cadet { background-image: url('/static/shiron_cadet.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_mangonel { background-image: url('/static/shiron_mangonel.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_warden { background-image: url('/static/shiron_warden.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_spy { background-image: url('/static/shiron_spy.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_fire_advisor { background-image: url('/static/shiron_fire_advisor.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_sorceress { background-image: url('/static/shiron_sorceress.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_envoys { background-image: url('/static/shiron_envoys.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_captain { background-image: url('/static/shiron_captain.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_scorpion { background-image: url('/static/shiron_scorpion.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_knight { background-image: url('/static/shiron_knight.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_ruby { background-image: url('/static/shiron_ruby.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_amber { background-image: url('/static/shiron_amber.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_pioneer { background-image: url('/static/shiron_pioneer.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_ambassador { background-image: url('/static/shiron_ambassador.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_chancellor { background-image: url('/static/shiron_chancellor.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_archers { background-image: url('/static/shiron_archers.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_grand_scorpion { background-image: url('/static/shiron_grand_scorpion.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_executioner { background-image: url('/static/shiron_executioner.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_marshal { background-image: url('/static/shiron_marshal.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_regent { background-image: url('/static/shiron_regent.webp'); background-size: cover; background-position: center 25%; }
+.art-shiron_duke { background-image: url('/static/shiron_duke.webp'); background-size: cover; background-position: center 25%; }
 #faction-select { width: auto; max-width: 100%; padding: 3px 12px; margin: 0 0 5px; background: #171610; border: 1px solid #655131; color: #d2b26d; font: 12px 'Segoe UI',sans-serif; border-radius: 0; }
 .faction-heading #faction-description { max-width: 660px; }
 body[data-faction='shiron'] .faction-crest, .player-emblem[data-faction='shiron'], .deck-pile[data-faction='shiron'] { background: repeating-linear-gradient(45deg,#b08b331c 0 2px,transparent 2px 6px), #171713; color: #d7b45d; }

@@ -97,10 +97,11 @@ for key, name, description in [
     ("horn", "Штандарт", "Удваивает силу ваших отрядов в ряду, кроме героев."),
     ("decoy", "Чучело", "Заменяет дружественный отряд и возвращает его в руку. Герои недоступны."),
     ("mushroom", "Мухомор", "Обращает текущих Берсерков выбранного вашего ряда во вторую форму, затем уходит в сброс. Штандарт не мешает применению."),
+    ("ting", "Тинг", "Возьмите две карты из своей колоды, затем отправьте Тинг в отбой. Если карт осталось меньше двух, возьмите оставшиеся."),
 ]:
     kind = "weather" if key in {"frost", "fog", "rain", "storm", "clear"} else "special"
     _CARDS.append(CardDefinition(key, name, kind=kind, copies=3,
-                                 description=description, faction="skone" if key in {"storm", "mushroom"} else "neutral"))
+                                 description=description, faction="skone" if key in {"storm", "mushroom", "ting"} else "neutral"))
 
 _CARDS.extend(SHIRON_CARDS)
 _CARDS.extend(SKONE_UNITS)
@@ -147,7 +148,7 @@ LEADERS.update({
 })
 for _key, _leader in LEADERS.items():
     if _key.startswith("shiron_"):
-        _leader.update(faction="shiron", portrait=f"leader_{_key}.png")
+        _leader.update(faction="shiron", portrait=f"leader_{_key}.webp")
 
 LEADERS.update({
     "skone_resilience": {"name": "Северная стойкость", "description": "Пассивно: в плохую погоду ваши обычные отряды сохраняют половину базовой силы с округлением вверх. Усиления применяются после погоды.", "passive": True},
@@ -158,7 +159,7 @@ LEADERS.update({
 })
 for _key, _leader in LEADERS.items():
     if _key.startswith("skone_"):
-        _leader.update(faction="skone", portrait=f"leader_{_key}.png")
+        _leader.update(faction="skone", portrait=f"leader_{_key}.webp")
 
 STARTER_DECK = (
     ["blue_guard"] * 3 + ["crossbow"] * 3 + ["catapult"] * 2

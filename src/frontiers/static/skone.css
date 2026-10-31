@@ -10,25 +10,26 @@ body[data-faction='skone'] .faction-crest, .player-emblem[data-faction='skone'],
 .leader-row-choices[hidden] { display: none; }
 .leader-row-choices button { display: flex; align-items: center; gap: 5px; flex: 1 1 90px; justify-content: center; padding: 8px; font-size: 13px; }
 .leader-row-choices button[aria-pressed='true'] { border-color: #e3c784; box-shadow: 0 0 0 1px #d4ab5b; background: #544125; }
-.art-skone_horn { background-image: url('/static/skone_horn.png'); background-size: cover; background-position: center; }
-.art-skone_rooster { background-image: url('/static/skone_rooster.png'); }
-.art-skone_ancestor { background-image: url('/static/skone_ancestor.png'); }
-.art-skone_medic { background-image: url('/static/skone_medic.png'); }
-.art-skone_bard { background-image: url('/static/skone_bard.png'); }
-.art-skone_heir { background-image: url('/static/skone_heir.png'); }
-.art-skone_raider { background-image: url('/static/skone_raider.png'); }
-.art-skone_jarl { background-image: url('/static/skone_jarl.png'); }
-.art-skone_sailor { background-image: url('/static/skone_sailor.png'); }
-.art-skone_smith { background-image: url('/static/skone_smith.png'); }
-.art-skone_skald { background-image: url('/static/skone_skald.png'); }
-.art-skone_shieldmaidens { background-image: url('/static/skone_shieldmaidens.png'); }
-.art-skone_lightship { background-image: url('/static/skone_lightship.png'); }
-.art-skone_redaxe { background-image: url('/static/skone_redaxe.png'); }
-.art-skone_ghost { background-image: url('/static/skone_ghost.png'); }
-.art-skone_warship { background-image: url('/static/skone_warship.png'); }
-.art-skone_clan { background-image: url('/static/skone_clan.png'); }
-.art-skone_pirate { background-image: url('/static/skone_pirate.png'); }
-.art-skone_bear { background-image: url('/static/skone_bear.png'); }
-.art-skone_shieldhero { background-image: url('/static/skone_shieldhero.png'); }
-.art-skone_hero_archer { background-image: url('/static/skone_hero_archer.png'); }
+.art-skone_horn { background-image: url('/static/skone_horn.webp'); background-size: cover; background-position: center; }
+.art-ting { background-image: url('/static/ting.webp'); background-size: cover; background-position: center; }
+.art-skone_rooster { background-image: url('/static/skone_rooster.webp'); }
+.art-skone_ancestor { background-image: url('/static/skone_ancestor.webp'); }
+.art-skone_medic { background-image: url('/static/skone_medic.webp'); }
+.art-skone_bard { background-image: url('/static/skone_bard.webp'); }
+.art-skone_heir { background-image: url('/static/skone_heir.webp'); }
+.art-skone_raider { background-image: url('/static/skone_raider.webp'); }
+.art-skone_jarl { background-image: url('/static/skone_jarl.webp'); }
+.art-skone_sailor { background-image: url('/static/skone_sailor.webp'); }
+.art-skone_smith { background-image: url('/static/skone_smith.webp'); }
+.art-skone_skald { background-image: url('/static/skone_skald.webp'); }
+.art-skone_shieldmaidens { background-image: url('/static/skone_shieldmaidens.webp'); }
+.art-skone_lightship { background-image: url('/static/skone_lightship.webp'); }
+.art-skone_redaxe { background-image: url('/static/skone_redaxe.webp'); }
+.art-skone_ghost { background-image: url('/static/skone_ghost.webp'); }
+.art-skone_warship { background-image: url('/static/skone_warship.webp'); }
+.art-skone_clan { background-image: url('/static/skone_clan.webp'); }
+.art-skone_pirate { background-image: url('/static/skone_pirate.webp'); }
+.art-skone_bear { background-image: url('/static/skone_bear.webp'); }
+.art-skone_shieldhero { background-image: url('/static/skone_shieldhero.webp'); }
+.art-skone_hero_archer { background-image: url('/static/skone_hero_archer.webp'); }
 [class*='art-skone_'] { background-size: cover; background-position: center top; }

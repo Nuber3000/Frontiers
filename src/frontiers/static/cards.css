@@ -11,7 +11,7 @@
 .agile-icon path:last-of-type { stroke-width: 1.7; }
 .ghost-icon path:first-of-type { stroke-width: 1.7; }
 .ghost-icon path:last-of-type { fill: currentColor; stroke: none; }
-.card-art, .discard-preview { background-image: url('/static/card-art.png'); background-size: 400% 300%; background-repeat: no-repeat; }
+.card-art, .discard-preview { background-image: url('/static/card-art.webp'); background-size: 400% 300%; background-repeat: no-repeat; }
 .art-knight { background-position: 0 0; }
 .art-archer { background-position: 33.333333% 0; }
 .art-siege { background-position: 66.666667% 0; }
@@ -24,11 +24,11 @@
 .art-fog { background-position: 33.333333% 100%; }
 .art-storm { background-position: 66.666667% 100%; }
 .art-clear { background-position: 100% 100%; }
-.art-decoy { background-image: url('/static/decoy.png'); }
-.art-rain { background-image: url('/static/rain.png'); }
-.art-scorch { background-image: url('/static/scorch.png'); }
-.art-horn { background-image: url('/static/horn.png'); }
-.art-mushroom { background-image: url('/static/mushroom.png'); }
+.art-decoy { background-image: url('/static/decoy.webp'); }
+.art-rain { background-image: url('/static/rain.webp'); }
+.art-scorch { background-image: url('/static/scorch.webp'); }
+.art-horn { background-image: url('/static/horn.webp'); }
+.art-mushroom { background-image: url('/static/mushroom.webp'); }
 .art-decoy, .art-rain, .art-scorch, .art-horn, .art-mushroom { background-size: cover; background-position: center; }
 .leader-art { display: block; position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 .card, .card.small, .collection-item .card {

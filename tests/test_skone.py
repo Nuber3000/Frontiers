@@ -12,6 +12,45 @@ from test_engine import fixture, put, play
 
 
 class SkoneTests(unittest.TestCase):
+    def test_ting_draws_available_cards_and_discards_itself(self):
+        for remaining in (0, 1, 2, 5):
+            with self.subTest(deck_size=remaining):
+                game = fixture(["ting", "skone_heir"], ["knight"], "skone_storm")
+                player = game.players[0]
+                player.deck = [game._new_card("skone_jarl") for _ in range(remaining)]
+                draw_ids = [card.id for card in player.deck[:2]]
+                ting = player.hand[0]
+                self.assertIn({"type": "play", "card_id": ting.id}, game.legal_moves(0))
+                updated = play(game, 0, "ting")
+                self.assertEqual([card.id for card in updated.players[0].hand[1:]], draw_ids)
+                self.assertEqual(len(updated.players[0].deck), max(0, remaining - 2))
+                self.assertEqual(updated.players[0].discard, [ting])
+                self.assertEqual(updated.players[0].board, [])
+                self.assertEqual(updated.players[0].specials, [])
+                self.assertEqual(updated.players[1].hand, game.players[1].hand)
+                self.assertEqual(updated.turn, 1)
+                self.assertEqual(updated.played["card"]["key"], "ting")
+                self.assertIsNone(updated.played["row"])
+                self.assertEqual(len(game.players[0].deck), remaining)
+
+    def test_ting_has_three_copies_and_counts_as_special(self):
+        card = CATALOG["ting"]
+        self.assertEqual((card.kind, card.faction, card.copies), ("special", "skone", 3))
+        self.assertEqual(SKONE_DECK.count("ting"), 3)
+        self.assertEqual(sum(CATALOG[key].kind != "unit" for key in SKONE_DECK), 10)
+        validate_deck(list(SKONE_DECK), "skone_storm")
+        units = [key for key in SKONE_DECK if CATALOG[key].kind == "unit"]
+        with self.assertRaises(ValueError):
+            validate_deck(units + ["ting"] * 4, "skone_storm")
+        game = fixture(["ting"] * 3, [], "skone_storm")
+        game.players[1].passed = True
+        game.players[0].deck = [game._new_card("skone_heir") for _ in range(6)]
+        for _ in range(3):
+            game = play(game, 0, "ting")
+        self.assertEqual(len(game.players[0].hand), 6)
+        self.assertEqual([card.key for card in game.players[0].discard], ["ting"] * 3)
+        self.assertEqual(len(game.players[0].deck), 0)
+
     def leader(self, game, row=None):
         action = {"type": "leader"}
         if row:
@@ -34,7 +73,7 @@ class SkoneTests(unittest.TestCase):
                 validate_deck(list(SKONE_DECK), leader)
         data = catalog_view()
         self.assertTrue(data["factions"]["skone"]["playable"])
-        for key in ("berserker", "young_berserker", "ranger", "druid", "mushroom", "storm"):
+        for key in ("berserker", "young_berserker", "ranger", "druid", "mushroom", "storm", "ting"):
             self.assertEqual(CATALOG[key].faction, "skone")
             self.assertTrue(next(c for c in data["cards"] if c["key"] == key)["available"])
             with self.assertRaises(ValueError):

@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "card": "Тинг",
+  "source": "assets/art-source/ting.png",
+  "asset": "src/frontiers/static/ting.webp",
+  "prompt": "Use case: stylized-concept\nAsset type: portrait card illustration for the original medieval Nordic fantasy card game Frontiers, Skone faction, card named Thing (a gathering of clans).\nPrimary request: a solemn Nordic clan assembly in a weathered timber longhouse, wise jarls and shieldmaidens in wool and fur gathered around a large oak council table; a raised ceremonial carved wooden staff and two sealed parchment messages on the table suggest a council bringing new resources. Wide view within a portrait composition, varied adult faces fully visible, main council group centered and visually clear at small card size.\nStyle/medium: richly detailed painterly fantasy book cover art, natural anatomy, realistic materials, cinematic firelight and cold blue fjord daylight from the doorway, muted violet cloth, antique gold accents, dark oak and fur. Match a serious Viking-inspired original card game, no modern elements.\nComposition/framing: single continuous portrait painting, approximately 2:3 aspect ratio, safe headroom, no cropping heads, main subjects in upper and middle portions; lower quarter atmospheric table details.\nConstraints: artwork only, no card frame, no lettering, no numbers, no icons, no watermark, no logos."
+}

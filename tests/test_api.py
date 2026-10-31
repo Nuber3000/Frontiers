@@ -45,13 +45,15 @@ class APITests(unittest.TestCase):
 
     def test_health_static_and_catalog(self):
         self.assertEqual(self.client.get("/healthz").json()["status"], "ok")
-        for path in ("/", "/static/app.js", "/static/scorch.js", "/static/opponent-play.js", "/static/presentation.css", "/static/shiron.css", "/static/styles.css", "/static/match.css",
-                     "/static/cards.css", "/static/lobby.css", "/static/artwork.css", "/static/card-art.png", "/static/wood.svg",
-                     "/static/decoy.png", "/static/rain.png", "/static/scorch.png",
-                     "/static/horn.png", "/static/mushroom.png"):
+        for path in ("/", "/static/app.js", "/static/local-profile.js", "/static/scorch.js", "/static/opponent-play.js", "/static/presentation.css", "/static/shiron.css", "/static/styles.css", "/static/match.css",
+                     "/static/cards.css", "/static/lobby.css", "/static/artwork.css", "/static/card-art.webp", "/static/wood.svg",
+                     "/static/decoy.webp", "/static/rain.webp", "/static/scorch.webp",
+                     "/static/horn.webp", "/static/mushroom.webp"):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
             self.assertIn("frame-ancestors 'none'", response.headers["content-security-policy"])
+            if path.endswith(".webp"):
+                self.assertEqual(response.headers["content-type"], "image/webp")
         self.assertEqual(self.client.get("/api/catalog").json()["faction"], "Королевство Бургундия")
 
     def test_cookie_is_http_only_and_not_exposed_in_room(self):

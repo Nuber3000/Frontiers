@@ -36,6 +36,14 @@ def play(game, side, key, row=None, target=None):
 
 
 class PreparationTests(unittest.TestCase):
+    def test_match_identity_survives_moves_but_changes_for_rematch(self):
+        game = fixture(["knight"], ["knight"])
+        identity = game.view(0)["match_id"]
+        self.assertEqual(game.view(1)["match_id"], identity)
+        updated = game.act(0, {"type": "pass"}, game.version)
+        self.assertEqual(updated.view(0)["match_id"], identity)
+        self.assertNotEqual(fixture().view(0)["match_id"], identity)
+
     def test_played_metadata_is_public_only_after_a_valid_play(self):
         game = fixture(["knight", "crossbow"], ["knight"])
         played, secret = game.players[0].hand

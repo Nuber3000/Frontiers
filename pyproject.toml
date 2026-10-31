@@ -21,4 +21,4 @@ browser = ["playwright>=1.49,<2.0"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-frontiers = ["static/*.html", "static/*.css", "static/*.js", "static/*.png", "static/*.svg"]
+frontiers = ["static/*.html", "static/*.css", "static/*.js", "static/*.webp", "static/*.svg"]

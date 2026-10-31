@@ -38,6 +38,12 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t frontiers:ci .
+
+      - name: Smoke-test runtime image
+        run: >-
+          docker run --rm --network none
+          --mount type=bind,src="$PWD/tests/container_smoke.py",dst=/tmp/check_runtime.py,readonly
+          frontiers:ci python /tmp/check_runtime.py
   
   publish:
     needs: test-and-build
