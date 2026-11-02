@@ -71,7 +71,8 @@ def same_origin(origin: str | None, host: str | None) -> bool:
 
 def create_app(store: RoomStore | None = None, secure_cookies: bool | None = None) -> FastAPI:
     room_store = store if store is not None else RoomStore(
-        max_rooms=int(os.getenv("FRONTIERS_MAX_ROOMS", "128")))
+        max_rooms=int(os.getenv("FRONTIERS_MAX_ROOMS", "128")),
+        disconnected_ttl=float(os.getenv("FRONTIERS_DISCONNECTED_ROOM_TTL", "120")))
     cookie_secure = (os.getenv("FRONTIERS_SECURE_COOKIES", "0").lower() in {"1", "true", "yes"}
                      if secure_cookies is None else secure_cookies)
 
@@ -79,7 +80,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     async def lifespan(application):
         async def clean_rooms():
             while True:
-                await asyncio.sleep(60)
+                await asyncio.sleep(10)
                 await room_store.cleanup()
         task = asyncio.create_task(clean_rooms())
         try:
@@ -144,6 +145,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
 
     @app.post("/api/rooms", status_code=201)
     async def create_room(body: NameBody, request: Request, response: Response):
+        await room_store.cleanup()
         room = room_store.create(session(request, response), body.name)
         return room.view(0)
 
@@ -151,6 +153,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     async def join_room(code: str, body: NameBody, request: Request, response: Response):
         room = room_store.get(code)
         async with room.lock:
+            room_store.get(code)
             side = room.join(session(request, response), body.name)
             await room.broadcast()
             return room.view(side)
@@ -164,6 +167,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     async def ready(code: str, body: ReadyBody, request: Request):
         room, side = membership(request, code)
         async with room.lock:
+            room_store.get(code)
             try:
                 room.set_ready(side, body.leader, body.deck, body.ready)
             except ValueError as error:
@@ -177,6 +181,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     async def action(code: str, body: ActionBody, request: Request):
         room, side = membership(request, code)
         async with room.lock:
+            room_store.get(code)
             room.apply(side, body.model_dump(exclude={"version"}, exclude_none=True), body.version)
             await room.broadcast()
             return room.view(side)
@@ -192,11 +197,14 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
             await socket.close(code=1008)
             return
         async with room.lock:
+            if room_store.rooms.get(room.code) is not room:
+                await socket.close(code=1008)
+                return
             if len(room.connections[side]) >= 3:
                 await socket.close(code=1008)
                 return
             await socket.accept()
-            room.connections[side].add(socket)
+            room.connect(side, socket)
             await room.broadcast()
         times = deque()
         try:
@@ -232,7 +240,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
             logger.exception("Ошибка соединения комнаты %s", code)
         finally:
             async with room.lock:
-                room.connections[side].discard(socket)
+                room.disconnect(side, socket)
                 await room.broadcast()
 
     @app.get("/", include_in_schema=False)

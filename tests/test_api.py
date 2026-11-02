@@ -227,6 +227,30 @@ class APITests(unittest.TestCase):
         asyncio.run(self.store.cleanup())
         self.assertEqual(self.request(0, "GET", f"/api/rooms/{code}").status_code, 404)
 
+    def test_create_room_reclaims_expired_capacity_without_waiting_for_sweep(self):
+        self.store.max_rooms = 1
+        code = self.room(start=True)
+        self.store.rooms[code].touched = time.monotonic() - 121
+        response = self.request(2, "POST", "/api/rooms", {"name": "Third"})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(self.store.rooms), 1)
+        self.assertEqual(self.request(0, "GET", f"/api/rooms/{code}").status_code, 404)
+
+    def test_connected_room_survives_cleanup_and_tracks_disconnect(self):
+        code = self.room(start=True)
+        room = self.store.rooms[code]
+        with self.client.websocket_connect(f"/ws/rooms/{code}", headers=self.headers(0)) as socket:
+            socket.receive_json()
+            room.touched = time.monotonic() - 100000
+            asyncio.run(self.store.cleanup())
+            self.assertIn(code, self.store.rooms)
+            socket.send_json({"type": "ping"})
+            self.assertEqual(socket.receive_json()["type"], "pong")
+        self.assertFalse(room.online)
+        self.assertIsNotNone(room.disconnected_at)
+        asyncio.run(self.store.cleanup())
+        self.assertIn(code, self.store.rooms)
+
 
 if __name__ == "__main__":
     unittest.main()

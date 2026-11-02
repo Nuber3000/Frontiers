@@ -4,11 +4,14 @@ import asyncio
 from collections import deque
 from dataclasses import dataclass, field
 import hmac
+import logging
 import secrets
 import time
 
 from frontiers.catalog import LEADERS, STARTER_DECK, validate_deck
 from frontiers.engine import Game
+
+logger = logging.getLogger("frontiers.rooms")
 
 
 class RoomError(ValueError):
@@ -33,6 +36,7 @@ class Room:
     game: Game | None = None
     revision: int = 0
     touched: float = field(default_factory=time.monotonic)
+    disconnected_at: float | None = None
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     connections: dict = field(default_factory=lambda: {0: set(), 1: set()})
     action_times: dict = field(default_factory=lambda: {0: deque(), 1: deque()})
@@ -46,6 +50,22 @@ class Room:
     def changed(self) -> None:
         self.revision += 1
         self.touched = time.monotonic()
+
+    @property
+    def online(self) -> bool:
+        return any(self.connections.values())
+
+    def connect(self, side: int, socket) -> None:
+        self.connections[side].add(socket)
+        self.disconnected_at = None
+        self.touched = time.monotonic()
+
+    def disconnect(self, side: int, socket) -> None:
+        if socket not in self.connections[side]:
+            return
+        self.connections[side].discard(socket)
+        if not self.online:
+            self.disconnected_at = time.monotonic()
 
     def join(self, session: str, name: str) -> int:
         for index, seat in enumerate(self.seats):
@@ -100,7 +120,7 @@ class Room:
             try:
                 await asyncio.wait_for(socket.send_json({"type": "state", "state": self.view(side)}), 3)
             except Exception:
-                self.connections[side].discard(socket)
+                self.disconnect(side, socket)
                 try:
                     await socket.close(code=1011)
                 except Exception:
@@ -111,13 +131,14 @@ class Room:
 
 class RoomStore:
     def __init__(self, max_rooms: int = 128, waiting_ttl: float = 3600,
-                 match_ttl: float = 86400):
+                 match_ttl: float = 86400, disconnected_ttl: float = 120):
         self.rooms: dict[str, Room] = {}
-        if max_rooms < 1 or waiting_ttl <= 0 or match_ttl <= 0:
+        if max_rooms < 1 or waiting_ttl <= 0 or match_ttl <= 0 or disconnected_ttl <= 0:
             raise ValueError("Лимиты комнат и время хранения должны быть положительными.")
         self.max_rooms = max_rooms
         self.waiting_ttl = waiting_ttl
         self.match_ttl = match_ttl
+        self.disconnected_ttl = disconnected_ttl
 
     def create(self, session: str, name: str) -> Room:
         if len(self.rooms) >= self.max_rooms:
@@ -140,17 +161,24 @@ class RoomStore:
             raise RoomError("Комната не найдена или уже удалена. Создайте новое приглашение.", 404)
         return room
 
-    async def cleanup(self) -> None:
+    async def cleanup(self) -> int:
         now = time.monotonic()
+        removed = 0
         for code, room in tuple(self.rooms.items()):
+            # A slow broadcast in one room must not delay cleanup or creation elsewhere.
+            if room.lock.locked():
+                continue
             async with room.lock:
-                ttl = self.match_ttl if room.game and room.game.phase != "finished" else self.waiting_ttl
-                if now - room.touched <= ttl:
+                if room.online:
+                    continue
+                ttl = min(self.disconnected_ttl,
+                          self.match_ttl if room.game and room.game.phase != "finished" else self.waiting_ttl)
+                last_activity = max(room.touched, room.disconnected_at
+                                    if room.disconnected_at is not None else room.touched)
+                if now - last_activity <= ttl:
                     continue
                 self.rooms.pop(code, None)
-                for sockets in room.connections.values():
-                    for socket in tuple(sockets):
-                        try:
-                            await asyncio.wait_for(socket.close(code=1001), 1)
-                        except Exception:
-                            pass
+                removed += 1
+        if removed:
+            logger.info("Удалено неактивных комнат: %s; осталось: %s", removed, len(self.rooms))
+        return removed
