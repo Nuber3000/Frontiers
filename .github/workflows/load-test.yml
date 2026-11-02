@@ -1,5 +1,5 @@
 name: Load test (manual)
-run-name: Load test - ${{ inputs.rooms }} rooms / ${{ inputs.seconds }}s
+run-name: Load test - ${{ inputs.rooms }} rooms / ${{ inputs.seconds }}s / ${{ inputs.think_ms }}ms
 
 on:
   workflow_dispatch:
@@ -13,13 +13,25 @@ on:
         required: true
         type: choice
         default: "5"
-        options: ["5", "10", "20"]
+        options: ["5", "10", "20", "40", "64", "96", "128"]
       seconds:
-        description: "Duration in seconds"
+        description: "Hold duration after ramp-up, in seconds"
         required: true
         type: choice
         default: "60"
-        options: ["60", "180", "300"]
+        options: ["60", "180", "300", "600"]
+      ramp_seconds:
+        description: "Seconds to gradually start all rooms (60 recommended for 128)"
+        required: true
+        type: choice
+        default: "5"
+        options: ["5", "30", "60", "120"]
+      think_ms:
+        description: "Pause between commands per room, in milliseconds"
+        required: true
+        type: choice
+        default: "2000"
+        options: ["2000", "1000", "500", "250"]
 
 permissions:
   contents: read
@@ -32,13 +44,13 @@ concurrency:
 jobs:
   load:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 20
     env:
       BASE_URL: ${{ inputs.base_url }}
       ROOMS: ${{ inputs.rooms }}
       TEST_SECONDS: ${{ inputs.seconds }}
-      THINK_MS: "2000"
-      RAMP_SECONDS: "5"
+      THINK_MS: ${{ inputs.think_ms }}
+      RAMP_SECONDS: ${{ inputs.ramp_seconds }}
 
     steps:
       - name: Checkout repository
@@ -64,10 +76,14 @@ jobs:
           if not parsed.hostname:
               raise SystemExit("BASE_URL must include a hostname")
           parsed.port  # Validate a port if supplied.
-          if os.environ["ROOMS"] not in {"5", "10", "20"}:
+          if os.environ["ROOMS"] not in {"5", "10", "20", "40", "64", "96", "128"}:
               raise SystemExit("Unsupported room count")
-          if os.environ["TEST_SECONDS"] not in {"60", "180", "300"}:
+          if os.environ["TEST_SECONDS"] not in {"60", "180", "300", "600"}:
               raise SystemExit("Unsupported duration")
+          if os.environ["THINK_MS"] not in {"2000", "1000", "500", "250"}:
+              raise SystemExit("Unsupported command pause")
+          if os.environ["RAMP_SECONDS"] not in {"5", "30", "60", "120"}:
+              raise SystemExit("Unsupported ramp duration")
           folder = Path("artifacts/load")
           folder.mkdir(parents=True, exist_ok=True)
           metadata = {key: os.environ[key] for key in (

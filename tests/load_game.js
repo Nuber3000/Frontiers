@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 import { WebSocket } from 'k6/websockets';
 import { Counter, Trend } from 'k6/metrics';
+import execution from 'k6/execution';
 
 // One VU owns one room and two independent authenticated players.
 function integer(name, fallback, min, max) {
@@ -12,16 +13,19 @@ function integer(name, fallback, min, max) {
 }
 const BASE = (__ENV.BASE_URL || '').replace(/\/+$/, '');
 if (!/^https?:\/\/[^\s/?#@]+$/.test(BASE)) throw new Error('Set BASE_URL to the exact game origin, e.g. http://127.0.0.1:8000');
-const ROOMS = integer('ROOMS', 5, 1, 64);
+const ROOMS = integer('ROOMS', 5, 1, 128);
 const SECONDS = integer('SECONDS', 60, 5, 900);
 const THINK_MS = integer('THINK_MS', 2000, 250, 60000);
-const RAMP_SECONDS = integer('RAMP_SECONDS', 5, 0, 60);
+const RAMP_SECONDS = integer('RAMP_SECONDS', 5, 0, 300);
 const TIMEOUT_MS = 5000;
 const commands = new Counter('frontiers_commands');
 const errors = new Counter('frontiers_errors');
 const healthErrors = new Counter('frontiers_health_errors');
 const matches = new Counter('frontiers_matches');
 const rooms = new Counter('frontiers_rooms');
+const connectedRooms = new Counter('frontiers_connected_rooms');
+const capacityRejections = new Counter('frontiers_capacity_rejections');
+const connectedAt = new Trend('frontiers_room_connected_at_ms', true);
 const cleanRooms = new Counter('frontiers_clean_rooms');
 const actorLatency = new Trend('frontiers_actor_ms', true);
 const bothLatency = new Trend('frontiers_both_players_ms', true);
@@ -39,6 +43,10 @@ export const options = {
     frontiers_errors: [{ threshold: 'count==0', abortOnFail: true, delayAbortEval: '15s' }],
     frontiers_health_errors: ['count==0'],
     frontiers_commands: ['count>0'],
+    frontiers_connected_rooms: [`count==${ROOMS}`],
+    // Late startup must not turn a hold test into a momentary connection spike.
+    frontiers_room_connected_at_ms: [`max<=${(RAMP_SECONDS + SECONDS * .1) * 1000}`],
+    frontiers_capacity_rejections: ['count==0'],
     frontiers_clean_rooms: [`count==${ROOMS}`],
     frontiers_both_players_ms: ['p(95)<1000'],
     'http_req_duration{name:GET /healthz}': ['p(95)<500'],
@@ -63,12 +71,18 @@ export function probeHealth() {
 }
 
 export default function () {
-  sleep((__VU - 1) * RAMP_SECONDS / ROOMS);
+  // Scenario-local iteration IDs exclude the independent health VU.
+  const ordinal = execution.scenario.iterationInTest;
+  const scenarioStarted = execution.scenario.startTime;
+  const endAt = scenarioStarted + (RAMP_SECONDS + SECONDS) * 1000;
+  const launchAt = scenarioStarted + ordinal * RAMP_SECONDS * 1000 / Math.max(1, ROOMS - 1);
+  sleep(Math.max(0, (launchAt - Date.now()) / 1000));
   commands.add(0); errors.add(0); matches.add(0); rooms.add(0); cleanRooms.add(0);
+  connectedRooms.add(0); capacityRejections.add(0);
   const players = [0, 1].map(() => ({ jar: new http.CookieJar() }));
   const sockets = [];
   let code = '', states = [null, null], pending = null, cycle = 0, completedCycle = -1;
-  let stopping = false, closing = false, driveTimer, stopTimer, forceTimer, heartbeat, watchdog;
+  let stopping = false, closing = false, connected = false, driveTimer, stopTimer, forceTimer, heartbeat, watchdog;
   const startedAt = Date.now(), lastReceived = [null, null];
 
   function close() {
@@ -98,6 +112,10 @@ export default function () {
       headers: { 'Content-Type': 'application/json', Origin: BASE }, tags: { name } };
     const response = body === null ? http.get(BASE + path, params) : http.post(BASE + path, JSON.stringify(body), params);
     if (response.timings.duration > 1000) console.warn(`${new Date().toISOString()} VU ${__VU} slow HTTP: ${name}; status=${response.status}; duration_ms=${response.timings.duration.toFixed(1)}`);
+    if (path === '/api/rooms' && response.status === 503 && String(response.body).includes('Сервер заполнен')) {
+      capacityRejections.add(1);
+      throw new Error('Room capacity limit reached (HTTP 503): existing rooms also occupy slots; this is not proof of CPU or memory exhaustion');
+    }
     if (response.status < 200 || response.status >= 300)
       throw new Error(`${name}: HTTP ${response.status}; ${String(response.body).slice(0, 180)}`);
     return response.json();
@@ -171,6 +189,7 @@ export default function () {
   }
 
   try {
+    if (Date.now() >= endAt) throw new Error('Load generator missed the scheduled room start');
     const catalog = request(0, '/api/catalog', null, 'GET /api/catalog');
     const presets = Object.values(catalog.decks).filter(deck => catalog.factions[deck.faction]?.playable);
     for (const [side, player] of players.entries()) {
@@ -188,7 +207,14 @@ export default function () {
         headers: { Origin: BASE }, tags: { name: 'WS /ws/rooms/:code' } });
       sockets.push(socket);
       socket.onmessage = event => receive(side, event.data);
-      socket.onopen = () => queue(0);
+      socket.onopen = () => {
+        if (!connected && sockets.length === 2 && sockets.every(item => item.readyState === 1)) {
+          connected = true;
+          connectedRooms.add(1);
+          connectedAt.add(Date.now() - scenarioStarted);
+        }
+        queue(0);
+      };
       socket.onerror = event => problem(`WebSocket transport error: ${event.error || event.message || 'no transport details'}`,
         { side, event_type: event.type });
       socket.onclose = event => {
@@ -207,7 +233,7 @@ export default function () {
       if (driveTimer !== undefined) { clearTimeout(driveTimer); driveTimer = undefined; }
       queue(0);
       forceTimer = setTimeout(() => problem('Cleanup timed out; the test room may remain active'), TIMEOUT_MS + 2000);
-    }, SECONDS * 1000);
+    }, Math.max(0, endAt - Date.now()));
   } catch (error) { problem(error.message); }
 }
 
@@ -215,12 +241,21 @@ export function handleSummary(data) {
   const values = metric => data.metrics[metric]?.values || {};
   const report = __ENV.REPORT || 'artifacts/load/summary.json';
   const rows = [`Frontiers: ${ROOMS} rooms / ${ROOMS * 2} players, think time ${THINK_MS} ms`,
+    `Schedule: ramp ${RAMP_SECONDS}s, hold ${SECONDS}s, then cleanup`,
     `Created rooms: ${values('frontiers_rooms').count || 0}`,
+    `Connected rooms (both players): ${values('frontiers_connected_rooms').count || 0}`,
+    `Room capacity rejections: ${values('frontiers_capacity_rejections').count || 0}`,
     `Cleanly finished test rooms: ${values('frontiers_clean_rooms').count || 0}`,
     `Acknowledged commands: ${values('frontiers_commands').count || 0}`,
     `Naturally completed matches: ${values('frontiers_matches').count || 0}`,
     `Game errors: ${values('frontiers_errors').count || 0}`,
     `Health probe errors: ${values('frontiers_health_errors').count || 0}`];
+  if (values('frontiers_connected_rooms').count === ROOMS) {
+    const hold = Math.max(0, RAMP_SECONDS + SECONDS - values('frontiers_room_connected_at_ms').max / 1000);
+    rows.push(`Time from last room connection to scheduled cleanup: ${hold.toFixed(1)}s (requires no intervening errors)`);
+  }
+  if (values('frontiers_capacity_rejections').count > 0)
+    rows.push('Capacity limit reached: target concurrency was not achieved; check existing room occupancy before interpreting performance.');
   for (const metric of ['frontiers_actor_ms', 'frontiers_both_players_ms']) {
     const result = values(metric);
     rows.push(`${metric}: p50=${result.med?.toFixed(1) ?? '-'} ms, p95=${result['p(95)']?.toFixed(1) ?? '-'} ms, p99=${result['p(99)']?.toFixed(1) ?? '-'} ms`);
