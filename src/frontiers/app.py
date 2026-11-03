@@ -13,7 +13,7 @@ import time
 from typing import Literal
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -75,6 +75,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
         disconnected_ttl=float(os.getenv("FRONTIERS_DISCONNECTED_ROOM_TTL", "120")))
     cookie_secure = (os.getenv("FRONTIERS_SECURE_COOKIES", "0").lower() in {"1", "true", "yes"}
                      if secure_cookies is None else secure_cookies)
+    metrics_token = os.getenv("FRONTIERS_METRICS_TOKEN", "").strip()
 
     @asynccontextmanager
     async def lifespan(application):
@@ -138,6 +139,22 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     @app.get("/healthz")
     async def health():
         return {"status": "ok", "version": "0.1.0"}
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics(request: Request):
+        if not metrics_token:
+            raise HTTPException(status_code=404)
+        authorization = request.headers.get("authorization", "")
+        if not secrets.compare_digest(authorization.encode(), f"Bearer {metrics_token}".encode()):
+            raise HTTPException(status_code=401, headers={"WWW-Authenticate": "Bearer"})
+
+        active_rooms = sum(room.online for room in room_store.rooms.values())
+        return Response(
+            "# HELP frontiers_active_rooms Online rooms with at least one connected player.\n"
+            "# TYPE frontiers_active_rooms gauge\n"
+            f"frontiers_active_rooms {active_rooms}\n",
+            media_type="text/plain; version=0.0.4",
+        )
 
     @app.get("/api/catalog")
     async def catalog():
