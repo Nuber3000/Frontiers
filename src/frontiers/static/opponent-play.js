@@ -48,7 +48,7 @@
       const token = {}; this.token = token;
       const layer = document.createElement("section"), wrapper = document.createElement("div");
       layer.id = "opponent-play"; layer.className = "opponent-play";
-      layer.setAttribute("aria-label", "Карта соперника"); layer.setAttribute("aria-live", "polite");
+      layer.setAttribute("aria-label", window.FrontiersI18n.t("Карта соперника")); layer.setAttribute("aria-live", "polite");
       wrapper.className = "opponent-play-card"; wrapper.append(card); layer.append(wrapper);
       card.disabled = true; card.tabIndex = -1;
       document.body.append(layer); this.layer = layer;

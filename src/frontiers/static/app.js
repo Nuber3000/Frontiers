@@ -2,6 +2,8 @@
 
 (() => {
   const $ = (id) => document.getElementById(id);
+  const i18n = window.FrontiersI18n;
+  const {t} = i18n;
   const ROWS = ["melee", "ranged", "siege"];
   const ROW_NAMES = {melee: "Ближний бой", ranged: "Дальний бой", siege: "Осада"};
   const ROW_GLYPHS = {melee: "⚔", ranged: "➶", siege: "♜"};
@@ -21,7 +23,9 @@
     scorch_ranged: "Казнит сильнейшие дальнобойные отряды соперника, если сила его ряда не меньше 10.",
     scorch_siege: "Казнит сильнейшие осадные отряды соперника, если сила его ряда не меньше 10.",
   };
-  let catalog, definitions = new Map(), state = null, socket = null;
+  let catalogSource, catalog, definitions = new Map(), state = null, socket = null;
+  let connectionText = "Карточная дуэль для двоих", connectionMode = "";
+  let localWorker = null, localReply = null, localRequestId = 0;
   let profile = null, activeSavedDeck = null, storageWarningShown = false;
   let selected = null, swaps = new Set(), deck = [], leader = "sun", dirtyDeck = false;
   let connected = false, busy = false, pendingVersion = null, reconnectDelay = 700;
@@ -127,12 +131,12 @@
     const mark = node("span", className);
     if (faction === "skone") {
       mark.classList.add("valknut-mark");
-      mark.setAttribute("role", "img"); mark.setAttribute("aria-label", "Валькнут");
+      mark.setAttribute("role", "img"); mark.setAttribute("aria-label", t("Валькнут"));
     } else mark.textContent = catalog.factions[faction]?.emblem || "⚜";
     return mark;
   }
   function cardName(card, faction = renderingFaction()) {
-    return card.key === "horn" && faction === "skone" ? "Командный рог" : card.name;
+    return card.key === "horn" && faction === "skone" ? t("Командный рог") : t(card.name);
   }
   function factionInfo(key = leader) {
     return catalog.factions[catalog.leaders[key]?.faction || "burgundy"];
@@ -189,17 +193,17 @@
   }
   function showMatchHistory() {
     const content = node("section", "profile-dialog match-history");
-    content.append(node("h2", "", "История матчей"), node("p", "muted", "Последние 100 завершённых матчей в этом браузере. Очистка данных сайта удалит историю и сохранённые колоды."));
+    content.append(node("h2", "", t("История матчей")), node("p", "muted", t("Последние 100 завершённых матчей в этом браузере. Очистка данных сайта удалит историю и сохранённые колоды.")));
     const items = profile.history();
-    if (!items.length) content.append(node("p", "", "Завершённых матчей пока нет."));
+    if (!items.length) content.append(node("p", "", t("Завершённых матчей пока нет.")));
     for (const match of items) {
       const item = node("article", `history-item ${match.outcome}`);
-      item.append(node("h3", "", {victory: "Победа", defeat: "Поражение", draw: "Ничья"}[match.outcome]),
-        node("p", "muted small", new Date(match.finishedAt).toLocaleString("ru-RU")),
-        node("p", "", match.players.map(player => `${player.name} · ${catalog.factions[player.faction].name}`).join(" против ")));
+      item.append(node("h3", "", {victory: t("Победа"), defeat: t("Поражение"), draw: t("Ничья")}[match.outcome]),
+        node("p", "muted small", new Date(match.finishedAt).toLocaleString(i18n.language)),
+        node("p", "", match.players.map(player => `${player.name} · ${catalog.factions[player.faction].name}`).join(t(" против "))));
       const scores = node("div", "history-scores");
-      for (const round of match.rounds) scores.append(node("span", "", `Раунд ${round.round}: ${round.scores[0]} : ${round.scores[1]}`));
-      if (!match.rounds.length) scores.append(node("span", "", "Матч завершился до окончания первого раунда."));
+      for (const round of match.rounds) scores.append(node("span", "", t("Раунд {0}: {1} : {2}", round.round, round.scores[0], round.scores[1])));
+      if (!match.rounds.length) scores.append(node("span", "", t("Матч завершился до окончания первого раунда.")));
       item.append(scores); content.append(item);
     }
     showInfo(content);
@@ -207,37 +211,37 @@
   function showSavedDecks() {
     const content = node("section", "profile-dialog saved-decks");
     const locked = state.seats[state.me].ready || busy;
-    content.append(node("h2", "", "Мои колоды"), node("p", "muted", "Состав и лидер сохраняются в этом браузере. Можно хранить до 50 именованных колод, включая незаконченные. Для матча нужно минимум 22 отряда."));
-    const form = node("form", "save-deck-form"), label = node("label", "", "Название новой колоды");
+    content.append(node("h2", "", t("Мои колоды")), node("p", "muted", t("Состав и лидер сохраняются в этом браузере. Можно хранить до 50 именованных колод, включая незаконченные. Для матча нужно минимум 22 отряда.")));
+    const form = node("form", "save-deck-form"), label = node("label", "", t("Название новой колоды"));
     const name = node("input"); name.id = "saved-deck-name"; name.maxLength = 40; name.required = true;
     label.htmlFor = name.id;
-    const save = node("button", "primary", "Сохранить новую"); save.type = "submit"; save.disabled = locked;
+    const save = node("button", "primary", t("Сохранить новую")); save.type = "submit"; save.disabled = locked;
     form.append(label, name, save);
     form.addEventListener("submit", event => {
       event.preventDefault();
       if (locked || !name.value.trim()) return;
       try {
         const saved = profile.saveDeck(name.value, currentDeck()); activeSavedDeck = saved.id;
-        renderLobby(); showSavedDecks(); toast("Колода сохранена.");
+        renderLobby(); showSavedDecks(); toast(t("Колода сохранена."));
       } catch (error) { toast(error.message); }
     });
     content.append(form);
     const items = profile.decks();
-    if (!items.length) content.append(node("p", "muted", "Сохранённых колод пока нет."));
+    if (!items.length) content.append(node("p", "muted", t("Сохранённых колод пока нет.")));
     for (const saved of items) {
       const item = node("article", "saved-deck-item"); item.dataset.savedId = saved.id;
-      item.append(node("h3", "", saved.name), node("p", "muted small", `${catalog.factions[saved.faction].name} · ${saved.cards.length} карт · ${catalog.leaders[saved.leader].name}`));
+      item.append(node("h3", "", saved.name), node("p", "muted small", t("{0} · {1} карт · {2}", catalog.factions[saved.faction].name, saved.cards.length, catalog.leaders[saved.leader].name)));
       const actions = node("div", "profile-actions");
-      const load = button("Загрузить", () => { loadSavedDeck(saved); $("info-dialog").close(); });
+      const load = button(t("Загрузить"), () => { loadSavedDeck(saved); $("info-dialog").close(); });
       load.disabled = locked; load.dataset.action = "load";
-      const update = button("Обновить состав", () => {
-        if (!confirm(`Заменить состав и лидера колоды «${saved.name}» текущим выбором?`)) return;
-        try { profile.saveDeck(saved.name, currentDeck(), saved.id); activeSavedDeck = saved.id; renderLobby(); showSavedDecks(); toast("Колода обновлена."); }
+      const update = button(t("Обновить состав"), () => {
+        if (!confirm(t("Заменить состав и лидера колоды «{0}» текущим выбором?", saved.name))) return;
+        try { profile.saveDeck(saved.name, currentDeck(), saved.id); activeSavedDeck = saved.id; renderLobby(); showSavedDecks(); toast(t("Колода обновлена.")); }
         catch (error) { toast(error.message); }
       });
       update.disabled = locked || saved.faction !== factionKey(); update.dataset.action = "update";
-      const remove = button("Удалить", () => {
-        if (!confirm(`Удалить колоду «${saved.name}»?`)) return;
+      const remove = button(t("Удалить"), () => {
+        if (!confirm(t("Удалить колоду «{0}»?", saved.name))) return;
         try {
           profile.deleteDeck(saved.id); if (activeSavedDeck === saved.id) activeSavedDeck = null;
           renderLobby(); showSavedDecks();
@@ -248,7 +252,7 @@
     showInfo(content);
   }
   function toast(message) {
-    $("toast").textContent = message;
+    $("toast").textContent = i18n.errorText(message);
     $("toast").hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { $("toast").hidden = true; }, 6000);
@@ -259,8 +263,8 @@
     toggle.hidden = !document.fullscreenEnabled || typeof document.documentElement.requestFullscreen !== "function";
     toggle.disabled = changingFullscreen;
     toggle.setAttribute("aria-pressed", String(active));
-    toggle.setAttribute("aria-label", active ? "Выйти из полноэкранного режима" : "На весь экран");
-    toggle.title = active ? "Выйти из полноэкранного режима (Esc)" : "На весь экран";
+    toggle.setAttribute("aria-label", active ? t("Выйти из полноэкранного режима") : t("На весь экран"));
+    toggle.title = active ? t("Выйти из полноэкранного режима (Esc)") : t("На весь экран");
     toggle.replaceChildren(icon(active ? "collapse" : "expand"));
   }
   async function toggleFullscreen() {
@@ -271,7 +275,7 @@
       if (document.fullscreenElement) await document.exitFullscreen();
       else await document.documentElement.requestFullscreen();
     } catch {
-      toast("Браузер не разрешил сменить режим экрана.");
+      toast(t("Браузер не разрешил сменить режим экрана."));
     } finally {
       changingFullscreen = false;
       syncFullscreen();
@@ -285,14 +289,16 @@
     });
     const data = await response.json();
     if (!response.ok) {
-      const error = new Error(typeof data.detail === "string" ? data.detail : "Проверьте введённые данные.");
+      const error = new Error(typeof data.detail === "string" ? data.detail : t("Проверьте введённые данные."));
       error.status = response.status;
       throw error;
     }
     return data;
   }
   function status(text, mode = "") {
-    $("connection").textContent = text;
+    connectionText = text;
+    connectionMode = mode;
+    $("connection").textContent = t(text);
     $("connection").className = `connection ${mode}`;
   }
 
@@ -395,8 +401,10 @@
     document.body.dataset.gameVersion = String(next.game?.version ?? -1);
     if (state.game && !state.game.players[state.me].hand.some((card) => card.id === selected)) selected = null;
     if (state.game?.players[state.me].mulligan_done) swaps.clear();
-    writeStorage("frontiers.room", state.code);
-    history.replaceState(null, "", `/?room=${encodeURIComponent(state.code)}`);
+    if (!localWorker) {
+      writeStorage("frontiers.room", state.code);
+      history.replaceState(null, "", `/?room=${encodeURIComponent(state.code)}`);
+    }
     announceChanges(freshRoom ? null : previous, next);
     render();
     const mine = next.game?.players[next.me];
@@ -409,7 +417,46 @@
     clearTimeout(retryTimer); clearInterval(heartbeat);
     const previous = socket; socket = null;
     if (previous) previous.close();
+    if (localWorker) localWorker.terminate();
+    localWorker = null;
+    if (localReply) localReply.reject(new Error(t("Локальная игра закрыта.")));
+    localReply = null;
     connected = false;
+  }
+
+  function localRequest(request) {
+    if (!localWorker) return Promise.reject(new Error(t("Локальная игра закрыта.")));
+    return new Promise((resolve, reject) => {
+      const id = ++localRequestId;
+      localReply = {id, resolve, reject};
+      localWorker.postMessage({id, request});
+    });
+  }
+
+  function openLocalWorker() {
+    const worker = new Worker("/static/local-bot-worker.js");
+    localWorker = worker;
+    worker.onmessage = ({data}) => {
+      if (localWorker !== worker) return;
+      if (localReply && localReply.id === data.id) {
+        const reply = localReply;
+        localReply = null;
+        if (data.error) reply.reject(new Error(data.error));
+        else reply.resolve(data.state);
+      } else if (data.state) receive(data.state);
+      else if (data.error) toast(data.error);
+    };
+    worker.onerror = () => {
+      if (localWorker !== worker) return;
+      const error = new Error(t("Не удалось запустить локальный движок."));
+      if (localReply) localReply.reject(error);
+      localReply = null;
+      connected = false;
+      pendingVersion = null;
+      status("Локальный движок недоступен", "offline");
+      toast(error.message);
+      render();
+    };
   }
   function connect(code) {
     disconnect();
@@ -434,14 +481,14 @@
           if (message.state) receive(message.state); else render();
           toast(message.message);
         }
-      } catch { toast("Не удалось прочитать обновление комнаты."); }
+      } catch { toast(t("Не удалось прочитать обновление комнаты.")); }
     };
     current.onclose = (event) => {
       if (socket !== current) return;
       connected = false; pendingVersion = null; clearInterval(heartbeat);
       status("● Соединение потеряно", "offline"); render();
       if (event.code === 1008) {
-        toast("Комната или сессия недоступна. Вернитесь на главную и войдите по приглашению.");
+        toast(t("Комната или сессия недоступна. Вернитесь на главную и войдите по приглашению."));
         return;
       }
       retryTimer = setTimeout(() => { if (state?.code === code) connect(code); }, reconnectDelay);
@@ -451,10 +498,20 @@
   }
 
   function send(action) {
-    if (!connected || !socket || socket.readyState !== WebSocket.OPEN) return toast("Дождитесь восстановления соединения.");
+    if (!connected || (!localWorker && socket?.readyState !== WebSocket.OPEN)) return toast(t("Дождитесь восстановления соединения."));
     if (pendingVersion !== null || !state?.game || opponentPresentation) return;
     pendingVersion = state.game.version;
-    socket.send(JSON.stringify({...action, version: pendingVersion}));
+    if (localWorker) {
+      const worker = localWorker;
+      localRequest({type: "action", action, version: pendingVersion}).then(next => {
+        if (localWorker === worker) receive(next);
+      }).catch(error => {
+        if (localWorker !== worker) return;
+        pendingVersion = null;
+        toast(error.message);
+        render();
+      });
+    } else socket.send(JSON.stringify({...action, version: pendingVersion}));
     selected = null;
     render();
   }
@@ -467,13 +524,13 @@
 
   function description(card, faction = renderingFaction()) {
     const parts = [];
-    if (card.hero) parts.push("Герой: иммунитет к погоде, усилению, Казни, Чучелу и возвращению Лекарем.");
-    if (card.description) parts.push(card.description);
-    for (const ability of card.abilities || []) if (EFFECT_TEXT[ability]) parts.push(EFFECT_TEXT[ability]);
-    if (card.rows?.length > 1) parts.push("Можно выбрать ближний или дальний бой при розыгрыше.");
-    if (!parts.length) parts.push("Обычный отряд. Его сила добавляется к вашему счёту.");
+    if (card.hero) parts.push(t("Герой: иммунитет к погоде, усилению, Казни, Чучелу и возвращению Лекарем."));
+    if (card.description) parts.push(t(card.description));
+    for (const ability of card.abilities || []) if (EFFECT_TEXT[ability]) parts.push(t(EFFECT_TEXT[ability]));
+    if (card.rows?.length > 1) parts.push(t("Можно выбрать ближний или дальний бой при розыгрыше."));
+    if (!parts.length) parts.push(t("Обычный отряд. Его сила добавляется к вашему счёту."));
     const text = parts.join(" ");
-    return faction === "skone" ? text.replaceAll("штандартов", "Командных рогов").replaceAll("Штандарт", "Командный рог") : text;
+    return faction === "skone" ? text.replaceAll(t("штандартов"), t("Командных рогов")).replaceAll(t("Штандарт"), t("Командный рог")) : text;
   }
   function glyph(card) {
     if (card.hero) return card.faction === "skone" ? "♛" : catalog.factions[card.faction]?.emblem || "♛";
@@ -504,28 +561,28 @@
     if (card.kind === "unit") badge.append(powerValue(power));
     else badge.append(icon(card.key === "clear" ? "sun" : card.key === "horn" ? "banner" : card.key));
     top.append(badge,
-               node("span", "", card.hero ? "Герой" : card.kind === "unit" ? "Отряд" : card.kind === "weather" ? "Погода" : "Особая"));
+               node("span", "", card.hero ? t("Герой") : card.kind === "unit" ? t("Отряд") : card.kind === "weather" ? t("Погода") : t("Особая")));
     const seals = node("span", "card-seals");
     for (const ability of card.abilities || []) {
       const seal = node("span", "ability-seal");
       seal.dataset.ability = ability;
-      seal.title = ability === "horn" && faction === "skone" ? "Командный рог" : catalog.ability_names[ability];
+      seal.title = ability === "horn" && faction === "skone" ? t("Командный рог") : catalog.ability_names[ability];
       seal.setAttribute("role", "img"); seal.setAttribute("aria-label", seal.title);
       seal.append(icon(ABILITY_ICONS[ability] || "unknown")); seals.append(seal);
     }
     if (card.kind === "unit") {
       const rowIcon = icon(card.rows?.length > 1 ? "agile" : card.rows?.[0], "combat-seal");
-      const label = (card.rows || []).map(row => ROW_NAMES[row]).join(" / ");
+      const label = (card.rows || []).map(row => t(ROW_NAMES[row])).join(" / ");
       rowIcon.setAttribute("aria-hidden", "false"); rowIcon.setAttribute("role", "img");
       rowIcon.setAttribute("aria-label", label);
       const rowTitle = document.createElementNS(rowIcon.namespaceURI, "title");
-      rowTitle.textContent = card.rows.length > 1 ? "Можно сыграть в ближнем или дальнем бою" : label;
+      rowTitle.textContent = card.rows.length > 1 ? t("Можно сыграть в ближнем или дальнем бою") : label;
       rowIcon.prepend(rowTitle);
       seals.append(rowIcon);
     }
     result.append(top, node("span", "card-name", cardName(card, faction)), seals,
-      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && faction === "skone" ? "Командный рог" : catalog.ability_names[ability] || ability).join(" · ")),
-      node("span", "card-row", (card.rows || []).map((row) => ROW_NAMES[row]).join(" / ")));
+      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && faction === "skone" ? t("Командный рог") : catalog.ability_names[ability] || ability).join(" · ")),
+      node("span", "card-row", (card.rows || []).map((row) => t(ROW_NAMES[row])).join(" / ")));
     return result;
   }
   function showInfo(content, kind = "") {
@@ -535,17 +592,17 @@
   }
   function showCard(card, faction = renderingFaction()) {
     const content = node("div", "card-details");
-    const origin = catalog.factions[card.faction]?.name || "Общие карты";
-    content.append(cardNode(card, {faction, onClick: () => {}}), node("p", "eyebrow", `${card.hero ? "Герой" : "Коллекция"} · ${origin}`),
+    const origin = catalog.factions[card.faction]?.name || t("Общие карты");
+    content.append(cardNode(card, {faction, onClick: () => {}}), node("p", "eyebrow", `${card.hero ? t("Герой") : t("Коллекция")} · ${origin}`),
       node("h2", "", cardName(card, faction)), node("p", "", description(card, faction)));
-    if (card.transform_to) content.append(node("p", "muted", `Вторая форма: ${definitions.get(card.transform_to)?.name || card.transform_to}.`));
-    if (card.summon_to) content.append(node("p", "muted", `Призывает: ${definitions.get(card.summon_to)?.name || card.summon_to}.`));
+    if (card.transform_to) content.append(node("p", "muted", t("Вторая форма: {0}.", definitions.get(card.transform_to)?.name || card.transform_to)));
+    if (card.summon_to) content.append(node("p", "muted", t("Призывает: {0}.", definitions.get(card.summon_to)?.name || card.summon_to)));
     showInfo(content);
   }
   function showIntel(cards) {
     const content = node("div", "intel-details");
-    content.append(node("p", "eyebrow", "Шпионские игры"), node("h2", "", "Разведданные"),
-      node("p", "muted", cards.length ? "Открытые карты, которые ещё остаются в руке соперника." : "В руке соперника нет открытых карт."));
+    content.append(node("p", "eyebrow", t("Шпионские игры")), node("h2", "", t("Разведданные")),
+      node("p", "muted", cards.length ? t("Открытые карты, которые ещё остаются в руке соперника.") : t("В руке соперника нет открытых карт.")));
     const list = node("div", "intel-cards");
     list.append(...cards.map(card => cardNode(card, {faction: factionKey(state.game.players[1 - state.me].leader)})));
     content.append(list); showInfo(content, "intel");
@@ -558,7 +615,10 @@
     document.body.classList.toggle("in-room", !!state);
     document.body.classList.toggle("in-lobby", !!state && !active);
     (state ? $("room-status") : document.querySelector(".topbar")).append($("connection"));
-    (state ? document.querySelector(".toolbar-actions") : document.querySelector(".topbar")).append($("fullscreen-button"));
+    const controls = $("display-controls");
+    const toolbar = document.querySelector(state ? ".toolbar-actions" : ".topbar");
+    if (controls.parentElement !== toolbar) toolbar.append(controls);
+    $("language-button").hidden = active;
     if (active && !wasActive) window.scrollTo(0, 0);
     $("landing").hidden = !!state;
     $("room").hidden = !state;
@@ -566,8 +626,8 @@
       closePresentation();
       return;
     }
-    $("room-label").textContent = state.code;
-    $("copy-invite").hidden = active;
+    $("room-label").textContent = localWorker ? t(state.code) : state.code;
+    $("copy-invite").hidden = active || !!localWorker;
     $("match-history").hidden = active;
     $("lobby").hidden = !!active;
     $("arena").hidden = !active;
@@ -597,7 +657,7 @@
       presetSelect.replaceChildren(...Object.entries(catalog.decks).filter(([, item]) => item.faction === faction).map(([key, item]) => {
         const option = node("option", "", item.name); option.value = key; return option;
       }));
-      const custom = node("option", "", "Своя колода"); custom.value = "custom"; presetSelect.append(custom);
+      const custom = node("option", "", t("Своя колода")); custom.value = "custom"; presetSelect.append(custom);
       for (const saved of profile.decks().filter(item => item.faction === faction)) {
         const option = node("option", "", saved.name); option.value = `saved:${saved.id}`; presetSelect.append(option);
       }
@@ -610,8 +670,8 @@
       const item = node("div", `seat ${seat ? "" : "waiting"}`);
       item.append(node("span", "seat-avatar", seat ? seat.name[0].toUpperCase() : "+"));
       const label = node("div");
-      label.append(node("strong", "", seat ? `${seat.name}${index === state.me ? " · вы" : ""}` : "Ждём соперника"),
-        node("small", "", seat ? seat.ready ? "Готов к матчу" : seat.online ? "Выбирает колоду" : "Не в сети" : "Передайте другу приглашение"));
+      label.append(node("strong", "", seat ? `${seat.name}${index === state.me ? t(" · вы") : ""}` : t("Ждём соперника")),
+        node("small", "", seat ? seat.ready ? t("Готов к матчу") : seat.online ? t("Выбирает колоду") : t("Не в сети") : t("Передайте другу приглашение")));
       item.append(label);
       if (seat?.ready) item.append(node("span", "ready-dot", "✓"));
       seats.push(item);
@@ -630,7 +690,7 @@
     const units = deck.filter((key) => definitions.get(key).kind === "unit").length;
     const specials = deck.length - units;
     const valid = units >= 22 && specials <= 10 && deck.length <= 60;
-    $("deck-count").textContent = `${units} отрядов · ${specials} особых`;
+    $("deck-count").textContent = t("{0} отрядов · {1} особых", units, specials);
     $("deck-count").className = `count-badge sr-only ${valid ? "" : "invalid"}`;
     const counts = new Map(); for (const key of deck) counts.set(key, (counts.get(key) || 0) + 1);
     const filter = $("collection-filter").value;
@@ -650,23 +710,25 @@
           deckChanged();
         });
         adjust.disabled = locked || (!inDeck && deck.length >= 60);
-        adjust.setAttribute("aria-label", `${inDeck ? "Убрать" : "Добавить"}: ${cardName(card)}`);
+        adjust.setAttribute("aria-label", `${inDeck ? t("Убрать") : t("Добавить")}: ${cardName(card)}`);
         controls.append(node("span", "", `×${inDeck ? count : card.copies - count}`), adjust);
         item.append(cardNode(card), controls); return item;
       }));
-      if (!cards.length) list.append(node("p", "empty-collection", inDeck ? "В этой категории пока нет карт. Добавьте их из коллекции слева." : "Все карты этой категории уже в вашей колоде."));
+      if (!cards.length) list.append(node("p", "empty-collection", inDeck ? t("В этой категории пока нет карт. Добавьте их из коллекции слева.") : t("Все карты этой категории уже в вашей колоде.")));
       list.scrollTop = position;
     }
-    const stats = [["Карты в колоде", deck.length, ""], ["Карты отрядов", `${units} / 22+`, units < 22 ? "invalid" : ""],
-      ["Особые карты", `${specials} / 10`, specials > 10 ? "invalid" : ""],
-      ["Общая сила отрядов", deck.reduce((sum, key) => sum + definitions.get(key).base_strength, 0), ""],
-      ["Герои", deck.filter((key) => definitions.get(key).hero).length, ""]];
+    const stats = [[t("Карты в колоде"), deck.length, ""], [t("Карты отрядов"), `${units} / 22+`, units < 22 ? "invalid" : ""],
+      [t("Особые карты"), `${specials} / 10`, specials > 10 ? "invalid" : ""],
+      [t("Общая сила отрядов"), deck.reduce((sum, key) => sum + definitions.get(key).base_strength, 0), ""],
+      [t("Герои"), deck.filter((key) => definitions.get(key).hero).length, ""]];
     $("deck-stats").replaceChildren(...stats.map(([label, value, mode]) => {
       const pair = node("div", mode); pair.append(node("dt", "", label), node("dd", "", String(value))); return pair;
     }));
     $("ready-button").disabled = busy || !connected || (!mine.ready && !valid);
-    $("ready-button").textContent = mine.ready ? "Отменить готовность" : state.game ? "Готов к реваншу" : "Готов к матчу";
-    $("ready-hint").textContent = mine.ready ? "Ждём готовности второго игрока." : "Матч начнётся, когда оба игрока будут готовы.";
+    $("ready-button").textContent = localWorker ? (state.game ? t("Реванш с ботом") : t("Начать матч с ботом"))
+      : mine.ready ? t("Отменить готовность") : state.game ? t("Готов к реваншу") : t("Готов к матчу");
+    $("ready-hint").textContent = localWorker ? t("Матч проходит в этом браузере.")
+      : mine.ready ? t("Ждём готовности второго игрока.") : t("Матч начнётся, когда оба игрока будут готовы.");
   }
 
   function matchesFilter(card, filter) {
@@ -676,7 +738,7 @@
   function renderFilterTabs(id, value, change) {
     $(id).replaceChildren(...FILTERS.map(([key, symbol, label]) => {
       const tab = button("", () => change(key), value === key ? "active" : "");
-      tab.title = label; tab.setAttribute("aria-label", label); tab.setAttribute("aria-pressed", String(key === value));
+      tab.title = t(label); tab.setAttribute("aria-label", t(label)); tab.setAttribute("aria-pressed", String(key === value));
       tab.append(icon(symbol)); return tab;
     }));
   }
@@ -687,7 +749,7 @@
     score.append(powerValue(player.score));
     heading.append(node("strong", "", player.name), score);
     const gems = node("div", "gems");
-    gems.setAttribute("aria-label", `Жетонов раунда: ${player.lives}`);
+    gems.setAttribute("aria-label", t("Жетонов раунда: {0}", player.lives));
     for (let index = 0; index < 2; index++) gems.append(node("span", index >= player.lives ? "lost" : "", "◆"));
     const faction = factionInfo(player.leader);
     const emblem = node("div", "player-emblem");
@@ -695,10 +757,10 @@
     emblem.dataset.faction = factionKey(player.leader);
     const details = node("div", "player-details");
     details.append(heading, node("span", "player-faction", faction.name),
-      node("div", "player-meta", `В руке: ${player.hand_count} · Колода: ${player.deck_count}`), gems);
+      node("div", "player-meta", t("В руке: {0} · Колода: {1}", player.hand_count, player.deck_count)), gems);
     const parts = [emblem, details];
-    if (player.passed) parts.push(node("div", "passed-tag", "Пас"));
-    if (!state.seats[side].online) parts.push(node("div", "passed-tag", "Не в сети"));
+    if (player.passed) parts.push(node("div", "passed-tag", t("Пас")));
+    if (!state.seats[side].online) parts.push(node("div", "passed-tag", t("Не в сети")));
     return parts;
   }
   function renderGame() {
@@ -708,21 +770,21 @@
     $("round-label").textContent = game.round;
     $("history").replaceChildren(...game.history.map((round) => node("span", "", `${round.round}: ${round.scores[me]} : ${round.scores[1 - me]}`)));
     let banner;
-    if (game.phase === "finished") banner = "Матч завершён";
-    else if (game.phase === "mulligan") banner = mine.mulligan_done ? "Ждём подтверждения руки соперника" : "Выберите до двух карт для замены";
-    else if (game.pending) banner = game.pending.actor === me ? (game.pending.kind === "levy" ? "Выберите отряд из отбоя соперника" : "Лекарь: выберите отряд из сброса") : "Соперник выбирает цель способности";
-    else banner = game.turn === me ? (game.players[1 - me].passed ? "Соперник спасовал. Вы можете продолжать ходить" : "Ваш ход") : "Ход соперника";
-    if (pendingVersion !== null) banner = "Сервер проверяет ход…";
+    if (game.phase === "finished") banner = t("Матч завершён");
+    else if (game.phase === "mulligan") banner = mine.mulligan_done ? t("Ждём подтверждения руки соперника") : t("Выберите до двух карт для замены");
+    else if (game.pending) banner = game.pending.actor === me ? (game.pending.kind === "levy" ? t("Выберите отряд из отбоя соперника") : t("Лекарь: выберите отряд из сброса")) : t("Соперник выбирает цель способности");
+    else banner = game.turn === me ? (game.players[1 - me].passed ? t("Соперник спасовал. Вы можете продолжать ходить") : t("Ваш ход")) : t("Ход соперника");
+    if (pendingVersion !== null) banner = t("Сервер проверяет ход…");
     $("turn-banner").textContent = banner;
     $("turn-banner").title = banner;
     $("turn-banner").className = `turn-banner ${game.turn === me && game.phase === "playing" ? "your-turn" : ""}`;
     $("enemy-rows").replaceChildren(...[...ROWS].reverse().map((row) => combatRow(1 - me, row)));
     $("own-rows").replaceChildren(...ROWS.map((row) => combatRow(me, row)));
-    $("weather-strip").replaceChildren(...game.weather.map((effect) => node("span", "weather-chip", effect.name)));
+    $("weather-strip").replaceChildren(...game.weather.map((effect) => node("span", "weather-chip", t(effect.name))));
     for (const [id, player] of [["leader-button", mine], ["enemy-leader", game.players[1 - me]]]) {
       const text = node("span", "leader-caption");
       text.append(node("strong", "", factionInfo(player.leader).leader), node("small", "", catalog.leaders[player.leader].name));
-      $(id).replaceChildren(leaderPortrait(player.leader), text, node("span", "leader-availability", player.leader_blocked ? "Заблокирован" : catalog.leaders[player.leader].passive ? "Пассивная способность" : player.leader_used ? "Использован" : id === "leader-button" ? "Использовать лидера" : "Лидер соперника"));
+      $(id).replaceChildren(leaderPortrait(player.leader), text, node("span", "leader-availability", player.leader_blocked ? t("Заблокирован") : catalog.leaders[player.leader].passive ? t("Пассивная способность") : player.leader_used ? t("Использован") : id === "leader-button" ? t("Использовать лидера") : t("Лидер соперника")));
       $(id).classList.toggle("used", player.leader_used || player.leader_blocked);
       $(id).title = catalog.leaders[player.leader].description;
     }
@@ -730,11 +792,11 @@
     $("opponent-score").classList.toggle("active-player", game.turn !== me && game.phase === "playing");
     for (const [prefix, player] of [["own", mine], ["enemy", game.players[1 - me]]]) {
       $(prefix + "-deck").dataset.faction = factionKey(player.leader);
-      $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", "Колода"));
+      $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", t("Колода")));
       const discarded = player.discard.at(-1);
       const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
       preview.append(node("span", "", discarded ? glyph(discarded) : "∅"));
-      $(prefix + "-discard").replaceChildren(preview, node("small", "", `Сброс · ${player.discard.length}`));
+      $(prefix + "-discard").replaceChildren(preview, node("small", "", t("Сброс · {0}", player.discard.length)));
     }
     $("leader-button").title = catalog.leaders[mine.leader].description;
     $("leader-button").disabled = !usableMoves().some((move) => move.type === "leader");
@@ -743,8 +805,8 @@
     const canSwap = game.phase === "mulligan" && !mine.mulligan_done;
     $("mulligan-button").hidden = !canSwap;
     $("mulligan-button").disabled = !connected || pendingVersion !== null;
-    $("mulligan-button").textContent = swaps.size ? `Заменить карт: ${swaps.size}` : "Оставить руку";
-    $("hand-count").textContent = `В руке ${mine.hand.length} · В колоде ${mine.deck_count}`;
+    $("mulligan-button").textContent = swaps.size ? t("Заменить карт: {0}", swaps.size) : t("Оставить руку");
+    $("hand-count").textContent = t("В руке {0} · В колоде {1}", mine.hand.length, mine.deck_count);
     $("hand").replaceChildren(...mine.hand.map((card) => cardNode(card, {
       disabled: !!opponentPresentation,
       selected: canSwap ? swaps.has(card.id) : selected === card.id,
@@ -752,25 +814,25 @@
         if (canSwap && pendingVersion === null) {
           if (swaps.has(card.id)) swaps.delete(card.id);
           else if (swaps.size < 2) swaps.add(card.id);
-          else return toast("Можно заменить только две карты.");
+          else return toast(t("Можно заменить только две карты."));
           renderGame();
         } else if (usableMoves().some((move) => move.type === "play" && move.card_id === card.id)) {
           selected = selected === card.id ? null : card.id; renderGame();
         } else showCard(card);
       },
     })));
-    if (!mine.hand.length) $("hand").append(node("div", "empty-hand", game.phase === "finished" ? "Матч завершён." : "Рука пуста. Можно использовать доступную способность лидера или спасовать."));
+    if (!mine.hand.length) $("hand").append(node("div", "empty-hand", game.phase === "finished" ? t("Матч завершён.") : t("Рука пуста. Можно использовать доступную способность лидера или спасовать.")));
     const chosen = mine.hand.find((card) => card.id === selected);
     const moves = selectedMoves();
     const info = [];
-    if (mine.revealed?.length) info.push(button(`Разведданные · ${mine.revealed.length}`, () => showIntel(mine.revealed), "text-button"));
+    if (mine.revealed?.length) info.push(button(t("Разведданные · {0}", mine.revealed.length), () => showIntel(mine.revealed), "text-button"));
     if (game.phase === "finished") {
-      const reopen = button("Итоги матча", openResult, "primary"); reopen.id = "result-reopen"; info.push(reopen);
+      const reopen = button(t("Итоги матча"), openResult, "primary"); reopen.id = "result-reopen"; info.push(reopen);
     } else if (chosen) {
-      info.push(node("span", "", chosen.key === "horn" ? `Выберите подсвеченное место для ${renderingFaction() === "skone" ? "Командного рога" : "штандарта"} слева` : moves.some((move) => move.target_id) ? "Выберите свой отряд на поле" : moves.length > 1 ? "Выберите подсвеченный ряд" : cardName(chosen)));
-      if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button("Сыграть", () => send(moves[0]), "primary"));
-      info.push(button("О карте", () => showCard(chosen), "text-button"));
-    } else if (!canSwap) info.push(node("span", "", "Нажмите на карту в руке, чтобы выбрать действие"));
+      info.push(node("span", "", chosen.key === "horn" ? t("Выберите подсвеченное место для {0} слева", renderingFaction() === "skone" ? t("Командного рога") : t("штандарта")) : moves.some((move) => move.target_id) ? t("Выберите свой отряд на поле") : moves.length > 1 ? t("Выберите подсвеченный ряд") : cardName(chosen)));
+      if (moves.length === 1 && !moves[0].target_id && chosen.key !== "horn") info.push(button(t("Сыграть"), () => send(moves[0]), "primary"));
+      info.push(button(t("О карте"), () => showCard(chosen), "text-button"));
+    } else if (!canSwap) info.push(node("span", "", t("Нажмите на карту в руке, чтобы выбрать действие")));
     $("selection-info").replaceChildren(...info);
     syncTableCardProportions();
     renderChoices();
@@ -873,14 +935,14 @@
     const targeted = leaderPreview.key === "skone_horn";
     $("leader-rows").hidden = !targeted;
     $("leader-rows").replaceChildren(...(targeted ? ROWS.map(row => {
-      const choice = button(ROW_NAMES[row], () => { leaderPreview.row = row; renderLeaderPreview(); });
+      const choice = button(t(ROW_NAMES[row]), () => { leaderPreview.row = row; renderLeaderPreview(); });
       choice.prepend(icon(row)); choice.dataset.row = row;
       choice.setAttribute("aria-pressed", String(leaderPreview.row === row));
       choice.disabled = !moves.some(move => move.row === row);
       return choice;
     }) : []));
     $("leader-apply").disabled = !moves.some(move => !targeted || move.row === leaderPreview.row);
-    $("leader-confirmation-status").textContent = connected ? "Один раз за матч. Применение завершит ваш ход." : "Соединение потеряно. Дождитесь восстановления связи или отмените выбор.";
+    $("leader-confirmation-status").textContent = connected ? t("Один раз за матч. Применение завершит ваш ход.") : t("Соединение потеряно. Дождитесь восстановления связи или отмените выбор.");
   }
   function openLeaderPreview() {
     if (!usableMoves().some(move => move.type === "leader")) return;
@@ -921,7 +983,7 @@
     if (!card) return;
     if (swaps.has(card.id)) swaps.delete(card.id);
     else if (swaps.size < 2) swaps.add(card.id);
-    else return toast("Можно заменить только две карты. Снимите отметку с одной из выбранных.");
+    else return toast(t("Можно заменить только две карты. Снимите отметку с одной из выбранных."));
     renderMulligan();
   }
   function renderMulligan() {
@@ -931,7 +993,7 @@
     mulliganIndex = Math.max(0, Math.min(hand.length - 1, mulliganIndex));
     const waiting = mine.mulligan_done;
     const blocked = waiting || !connected || pendingVersion !== null;
-    const signature = hand.map(card => card.id).join(",");
+    const signature = `${i18n.language}:${hand.map(card => card.id).join(",")}`;
     for (const [id, thumbnail] of [["mulligan-cards", false], ["mulligan-thumbnails", true]]) {
       const track = $(id);
       // Сохраняем элементы при навигации: CSS плавно перемещает соседние карты.
@@ -954,29 +1016,29 @@
           element.style.setProperty("--opacity", Math.abs(distance) > 2 ? "0" : "1");
           element.style.setProperty("--layer", String(10 - Math.abs(distance)));
           element.hidden = Math.abs(distance) > 2;
-          element.setAttribute("aria-label", `${element.title}${chosen ? " Выбрана для замены." : ""}`);
+          element.setAttribute("aria-label", `${element.title}${chosen ? t(" Выбрана для замены.") : ""}`);
         }
       });
     }
     $("mulligan-dialog").classList.toggle("waiting", waiting);
-    $("mulligan-title").firstChild.textContent = waiting ? "Рука готова. Ждём соперника " : "Выберите карты для замены ";
+    $("mulligan-title").firstChild.textContent = waiting ? t("Рука готова. Ждём соперника ") : t("Выберите карты для замены ");
     $("mulligan-count").textContent = waiting ? "✓" : `${swaps.size}/2`;
     $("mulligan-prev").disabled = mulliganIndex === 0;
     $("mulligan-next").disabled = mulliganIndex === hand.length - 1;
     const focused = hand[mulliganIndex];
-    $("mulligan-card-name").textContent = focused ? cardName(focused) : "Начальная рука";
+    $("mulligan-card-name").textContent = focused ? cardName(focused) : t("Начальная рука");
     $("mulligan-card-description").textContent = focused ? description(focused) : "";
     $("mulligan-select").disabled = blocked || (!swaps.has(focused?.id) && swaps.size === 2);
-    $("mulligan-select").textContent = swaps.has(focused?.id) ? "Оставить эту карту" : "Выбрать для замены";
+    $("mulligan-select").textContent = swaps.has(focused?.id) ? t("Оставить эту карту") : t("Выбрать для замены");
     $("mulligan-select").hidden = waiting;
     $("mulligan-button").disabled = blocked;
     $("mulligan-button").hidden = waiting;
-    $("mulligan-button").textContent = swaps.size ? `Заменить ${swaps.size === 1 ? "1 карту" : "2 карты"}` : "Оставить руку";
+    $("mulligan-button").textContent = swaps.size ? t("Заменить {0}", swaps.size === 1 ? t("1 карту") : t("2 карты")) : t("Оставить руку");
     $("mulligan-concede").disabled = !usableMoves().some(move => move.type === "concede");
-    $("mulligan-hint").textContent = !connected ? "Соединение потеряно. Выбранные карты сохранятся до восстановления связи."
-      : pendingVersion !== null ? "Сервер подтверждает выбор…"
-      : waiting ? "Ваш выбор подтверждён. Матч начнётся, когда соперник оставит свою руку."
-      : "← → — просмотр · Enter — выбор карты · можно заменить до двух карт";
+    $("mulligan-hint").textContent = !connected ? t("Соединение потеряно. Выбранные карты сохранятся до восстановления связи.")
+      : pendingVersion !== null ? t("Сервер подтверждает выбор…")
+      : waiting ? t("Ваш выбор подтверждён. Матч начнётся, когда соперник оставит свою руку.")
+      : t("← → — просмотр · Enter — выбор карты · можно заменить до двух карт");
     if (!$("mulligan-dialog").open) $("mulligan-dialog").showModal();
   }
   function ceremonyEmblem(kind) {
@@ -1071,17 +1133,17 @@
     if (before.phase === "playing") {
       for (const side of [before.turn, 1 - before.turn]) {
         if (!before.players[side].passed && (game.players[side].passed || rounds.length)) {
-          notices.push({type: "pass", kind: "pass", title: side === me ? "Вы спасовали" : "Противник спасовал", detail: game.players[side].name});
+          notices.push({type: "pass", kind: "pass", title: side === me ? t("Вы спасовали") : t("Противник спасовал"), detail: game.players[side].name});
         }
       }
     }
     for (const round of rounds) {
       const kind = round.winner === null ? "round-draw" : round.winner === me ? "round-win" : "round-loss";
-      notices.push({type: "round", kind, title: round.winner === null ? "Ничья в раунде" : round.winner === me ? "Вы выиграли раунд!" : "Вы проиграли раунд",
-        detail: `Раунд ${round.round} · ${round.scores[me]} : ${round.scores[1 - me]}`});
+      notices.push({type: "round", kind, title: round.winner === null ? t("Ничья в раунде") : round.winner === me ? t("Вы выиграли раунд!") : t("Вы проиграли раунд"),
+        detail: t("Раунд {0} · {1} : {2}", round.round, round.scores[me], round.scores[1 - me])});
     }
     if (game.phase === "playing" && (before.phase === "mulligan" || game.turn !== before.turn || rounds.length)) {
-      notices.push({type: "turn", kind: game.turn === me ? "your-turn" : "enemy-turn", title: game.turn === me ? "Ваш ход!" : "Ход противника", detail: `Раунд ${game.round}`});
+      notices.push({type: "turn", kind: game.turn === me ? "your-turn" : "enemy-turn", title: game.turn === me ? t("Ваш ход!") : t("Ход противника"), detail: t("Раунд {0}", game.round)});
     }
     if (!notices.length && game.phase !== "finished") return;
     // Устаревшее объявление хода уступает новому действию; результаты и пас сохраняют порядок.
@@ -1118,17 +1180,17 @@
       const outcome = game.winner === null ? "draw" : game.winner === me ? "victory" : "defeat";
       dialog.dataset.outcome = outcome;
       $("result-emblem").replaceChildren(ceremonyEmblem(outcome));
-      $("result-title").textContent = {victory: "Победа!", defeat: "Поражение", draw: "Ничья"}[outcome];
+      $("result-title").textContent = {victory: t("Победа!"), defeat: t("Поражение"), draw: t("Ничья")}[outcome];
       const conceded = game.players.every(player => player.lives > 0);
-      $("result-subtitle").textContent = conceded ? game.winner === me ? "Соперник сдался." : "Вы сдались." : "Итоги раундов";
+      $("result-subtitle").textContent = conceded ? game.winner === me ? t("Соперник сдался.") : t("Вы сдались.") : t("Итоги раундов");
       const table = node("table", "match-score-table"), head = node("thead"), body = node("tbody"), headers = node("tr");
-      table.append(node("caption", "", "Счёт игроков по раундам"));
-      for (const title of ["Игрок", "Раунд 1", "Раунд 2", "Раунд 3"]) {
+      table.append(node("caption", "", t("Счёт игроков по раундам")));
+      for (const title of [t("Игрок"), t("Раунд 1"), t("Раунд 2"), t("Раунд 3")]) {
         const cell = node("th", "", title); cell.scope = "col"; headers.append(cell);
       }
       head.append(headers);
       for (const side of [me, 1 - me]) {
-        const row = node("tr"), name = node("th", "", `${game.players[side].name}${side === me ? " · вы" : ""}`);
+        const row = node("tr"), name = node("th", "", `${game.players[side].name}${side === me ? t(" · вы") : ""}`);
         name.scope = "row"; row.append(name);
         for (let number = 1; number <= 3; number++) {
           const round = game.history.find(item => item.round === number);
@@ -1188,19 +1250,19 @@
     result.dataset.row = row;
     if (droppable) {
       result.tabIndex = 0; result.setAttribute("role", "button");
-      result.setAttribute("aria-label", `Разыграть карту: ${ROW_NAMES[row]}`);
+      result.setAttribute("aria-label", t("Разыграть карту: {0}", t(ROW_NAMES[row])));
       result.addEventListener("click", () => send(rowMove));
       result.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); send(rowMove); } });
     }
     const label = node("div", "row-info");
-    label.title = ROW_NAMES[row];
+    label.title = t(ROW_NAMES[row]);
     const rowScore = node("strong", "numeric-badge");
     rowScore.append(powerValue(player.rows[row]));
-    label.append(node("span", "row-symbol", ROW_GLYPHS[row]), rowScore, node("span", "", ROW_NAMES[row]));
+    label.append(node("span", "row-symbol", ROW_GLYPHS[row]), rowScore, node("span", "", t(ROW_NAMES[row])));
     for (const card of player.specials.filter((item) => item.row === row)) {
       const marker = button(glyph(card), (event) => { event.stopPropagation(); showCard(card); }, "mobile-row-effect");
-      marker.title = card.name;
-      marker.setAttribute("aria-label", card.name);
+      marker.title = cardName(card);
+      marker.setAttribute("aria-label", cardName(card));
       label.append(marker);
     }
     if (player.leader_horn.includes(row)) label.append(node("span", "mobile-row-effect", "×2"));
@@ -1219,11 +1281,11 @@
     const medallion = node("span", "row-medallion");
     medallion.append(icon(row, "row-watermark"));
     cards.append(medallion);
-    if (cards.children.length === 1) cards.append(node("span", "empty-row", droppable ? "Выложить сюда" : ROW_NAMES[row]));
+    if (cards.children.length === 1) cards.append(node("span", "empty-row", droppable ? t("Выложить сюда") : t(ROW_NAMES[row])));
     const special = node("div", `row-special ${slotMove ? "slot-droppable" : ""}`);
     if (slotMove) {
       special.tabIndex = 0; special.setAttribute("role", "button");
-      special.setAttribute("aria-label", `Установить штандарт: ${ROW_NAMES[row]}`);
+      special.setAttribute("aria-label", t("Установить штандарт: {0}", t(ROW_NAMES[row])));
       special.addEventListener("click", event => { event.stopPropagation(); send(slotMove); });
       special.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); send(slotMove); }
@@ -1252,39 +1314,67 @@
     const moves = usableMoves().filter((move) => move.type === "choose");
     const levy = game.pending.kind === "levy";
     const ownDiscard = game.players[levy ? 1 - state.me : state.me].discard;
-    document.querySelector("#choice-dialog .eyebrow").textContent = levy ? "Посмертная повинность" : "Способность Лекаря";
-    document.querySelector("#choice-dialog h2").textContent = levy ? "Забрать отряд в руку" : "Вернуть отряд на поле";
-    document.querySelector("#choice-dialog .muted").textContent = levy ? "Выберите обычный отряд из отбоя соперника." : "Выберите отряд из сброса. Для подвижного отряда также выберите линию.";
+    document.querySelector("#choice-dialog .eyebrow").textContent = levy ? t("Посмертная повинность") : t("Способность Лекаря");
+    document.querySelector("#choice-dialog h2").textContent = levy ? t("Забрать отряд в руку") : t("Вернуть отряд на поле");
+    document.querySelector("#choice-dialog .muted").textContent = levy ? t("Выберите обычный отряд из отбоя соперника.") : t("Выберите отряд из сброса. Для подвижного отряда также выберите линию.");
     const ids = [...new Set(moves.map((move) => move.card_id))];
     $("choice-cards").replaceChildren(...ids.map((id) => {
       const card = ownDiscard.find((item) => item.id === id), item = node("div", "choice-item");
       const choices = moves.filter((move) => move.card_id === id);
       item.append(cardNode(card, {onClick: () => { if (choices.length === 1) send(choices[0]); }}));
       for (const move of choices) {
-        const choose = button(levy ? "Забрать в руку" : `Вернуть: ${ROW_NAMES[move.row]}`, () => send(move), "primary");
+        const choose = button(levy ? t("Забрать в руку") : t("Вернуть: {0}", t(ROW_NAMES[move.row])), () => send(move), "primary");
         choose.dataset.choiceId = id; choose.dataset.choiceRow = move.row; item.append(choose);
       }
       return item;
     }));
-    if (!ids.length) $("choice-cards").append(node("p", "muted", pendingVersion !== null ? "Сервер применяет выбор…" : "Дождитесь соединения с сервером."));
+    if (!ids.length) $("choice-cards").append(node("p", "muted", pendingVersion !== null ? t("Сервер применяет выбор…") : t("Дождитесь соединения с сервером.")));
     if (!$("choice-dialog").open) $("choice-dialog").showModal();
   }
 
-  async function enterRoom(join) {
+  function disableEntry(disabled) {
+    $("create-room").disabled = $("join-room").disabled = $("play-bot").disabled = disabled;
+  }
+
+  async function enterRoom(join, local = false) {
     if (busy || !$("entry-form").reportValidity()) return;
     const name = $("player-name").value.trim();
     const code = $("room-code").value.trim().toUpperCase();
-    if (join && code.length !== 8) return toast("Введите восьмизначный код комнаты.");
-    busy = true; $("create-room").disabled = $("join-room").disabled = true;
+    if (join && code.length !== 8) return toast(t("Введите восьмизначный код комнаты."));
+    busy = true; disableEntry(true);
     try {
-      const next = await api(join ? `/api/rooms/${encodeURIComponent(code)}/join` : "/api/rooms", {name});
-      writeStorage("frontiers.name", name); dirtyDeck = false; receive(next); connect(next.code);
-    } catch (error) { toast(error.message); }
-    finally { busy = false; $("create-room").disabled = $("join-room").disabled = false; render(); }
+      let next;
+      if (local) {
+        disconnect();
+        status("Загружаем движок для игры с ботом…");
+        openLocalWorker();
+        next = await localRequest({type: "create", name});
+        history.replaceState(null, "", "/");
+        connected = true;
+        status("Локальная игра", "online");
+      } else {
+        next = await api(join ? `/api/rooms/${encodeURIComponent(code)}/join` : "/api/rooms", {name});
+      }
+      writeStorage("frontiers.name", name); dirtyDeck = false; receive(next);
+      if (!local) connect(next.code);
+    } catch (error) {
+      if (local) { disconnect(); status("Карточная дуэль для двоих"); }
+      toast(error.message);
+    } finally { busy = false; disableEntry(false); render(); }
   }
 
   $("entry-form").addEventListener("submit", (event) => { event.preventDefault(); enterRoom(false); });
   $("join-room").addEventListener("click", () => enterRoom(true));
+  $("play-bot").addEventListener("click", () => enterRoom(false, true));
+  $("language-button").addEventListener("click", () => {
+    i18n.toggle();
+    status(connectionText, connectionMode);
+    syncFullscreen();
+    if (catalogSource) localizeCatalog();
+    resultSignature = "";
+    clearAnnouncements();
+    render();
+  });
   $("fullscreen-button").addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", syncFullscreen);
   document.addEventListener("visibilitychange", () => {
@@ -1319,7 +1409,12 @@
     if (busy || !state) return;
     busy = true; renderLobby();
     locally(() => profile.saveDraft(currentDeck()));
-    try { receive(await api(`/api/rooms/${state.code}/ready`, {leader, deck, ready: !state.seats[state.me].ready})); }
+    const worker = localWorker;
+    try {
+      const next = worker ? await localRequest({type: "ready", leader, deck})
+        : await api(`/api/rooms/${state.code}/ready`, {leader, deck, ready: !state.seats[state.me].ready});
+      if (state && localWorker === worker) receive(next);
+    }
     catch (error) { toast(error.message); }
     finally { busy = false; render(); }
   });
@@ -1351,11 +1446,11 @@
     closeLeaderPreview(); send(move);
   });
   $("pass-button").addEventListener("click", () => send({type: "pass"}));
-  $("concede-button").addEventListener("click", () => { if (confirm("Сдаться в этом матче?")) send({type: "concede"}); });
+  $("concede-button").addEventListener("click", () => { if (confirm(t("Сдаться в этом матче?"))) send({type: "concede"}); });
   $("copy-invite").addEventListener("click", async () => {
     const invite = `${location.origin}/?room=${state.code}`;
-    try { await navigator.clipboard.writeText(invite); toast("Приглашение скопировано."); }
-    catch { const content = node("div"); content.append(node("h2", "", "Приглашение другу")); const input = node("input"); input.value = invite; input.readOnly = true; content.append(input); showInfo(content); input.select(); }
+    try { await navigator.clipboard.writeText(invite); toast(t("Приглашение скопировано.")); }
+    catch { const content = node("div"); content.append(node("h2", "", t("Приглашение другу"))); const input = node("input"); input.value = invite; input.readOnly = true; content.append(input); showInfo(content); input.select(); }
   });
   $("leave-view").addEventListener("click", () => {
     disconnect(); state = null; selected = null; swaps.clear(); dirtyDeck = false;
@@ -1363,18 +1458,20 @@
     history.replaceState(null, "", "/"); closeChoice(); status("Карточная дуэль для двоих"); render();
   });
   $("journal-button").addEventListener("click", () => {
-    const content = node("div"); content.append(node("p", "eyebrow", "Хроника дуэли"), node("h2", "", "События матча"));
+    const content = node("div"); content.append(node("p", "eyebrow", t("Хроника дуэли")), node("h2", "", t("События матча")));
     const log = node("ol", "event-log"); log.id = "event-log";
-    log.append(...[...state.game.events].reverse().map((event) => node("li", "", event)));
+    const events = state.game.event_messages?.map(event => t(event.template,
+      ...event.args.map((argument, index) => event.translate.includes(index) ? t(argument) : argument))) ?? state.game.events;
+    log.append(...[...events].reverse().map(event => node("li", "", event)));
     content.append(log); showInfo(content);
   });
   for (const [id, own] of [["own-discard", true], ["enemy-discard", false]]) {
     $(id).addEventListener("click", () => {
       const cards = state.game.players[own ? state.me : 1 - state.me].discard;
-      const content = node("div"); content.append(node("h2", "", own ? "Ваш сброс" : "Сброс соперника"));
+      const content = node("div"); content.append(node("h2", "", own ? t("Ваш сброс") : t("Сброс соперника")));
       const list = node("div", "choice-cards");
       list.append(...cards.map((card) => cardNode(card, {faction: factionKey(state.game.players[own ? state.me : 1 - state.me].leader)})));
-      if (!cards.length) list.append(node("p", "muted", "В сбросе пока нет карт."));
+      if (!cards.length) list.append(node("p", "muted", t("В сбросе пока нет карт.")));
       content.append(list); showInfo(content);
     });
   }
@@ -1383,27 +1480,27 @@
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && selected) { selected = null; if (state?.game) renderGame(); } });
   $("rules-button").addEventListener("click", () => {
     const content = node("div", "rules-copy"), list = node("ol");
-    content.append(node("h2", "", "Как играть"));
-    for (const text of ["Выберите фракцию, способность лидера и соберите колоду. Нажмите «Готов к матчу».",
-      "Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты.",
-      "Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют.",
-      "Пас действует до конца раунда. Когда оба спасовали, побеждает игрок с большей суммарной силой. При равной силе — ничья.",
-      "Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче.",
-      "Герои невосприимчивы к особым картам и умениям. Погода действует на обе стороны.",
-      "После конца раунда поле очищается."])
+    content.append(node("h2", "", t("Как играть")));
+    for (const text of [t("Выберите фракцию, способность лидера и соберите колоду. Нажмите «Готов к матчу»."),
+      t("Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты."),
+      t("Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют."),
+      t("Пас действует до конца раунда. Когда оба спасовали, побеждает игрок с большей суммарной силой. При равной силе — ничья."),
+      t("Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче."),
+      t("Герои невосприимчивы к особым картам и умениям. Погода действует на обе стороны."),
+      t("После конца раунда поле очищается.")])
       list.append(node("li", "", text));
     content.append(list); showInfo(content);
   });
   $("support-button").addEventListener("click", () => {
     const content = node("div", "support-copy");
-    content.append(node("h2", "", "Поддержать проект"), node("p", "", "Если вам понравилась игра, можно скинуть донат на оплату сервера и еду для разработчика. Спасибо за поддержку!"));
-    const contact = node("p", "", "Связаться с разработчиком: ");
+    content.append(node("h2", "", t("Поддержать проект")), node("p", "", t("Если вам понравилась игра, можно скинуть донат на оплату сервера и еду для разработчика. Спасибо за поддержку!")));
+    const contact = node("p", "", t("Связаться с разработчиком: "));
     const telegram = node("a", "", "Tg @Nuber3000");
     telegram.href = "https://t.me/Nuber3000"; telegram.target = "_blank"; telegram.rel = "noopener noreferrer";
     contact.append(telegram); content.append(contact);
     const details = node("dl", "support-details");
     for (const [label, value] of [
-      ["Карта", "2202202178558304"],
+      [t("Карта"), "2202202178558304"],
       ["Bitcoin", "bc1qjp8u5zvx862zsgqnas6tftphzn7s5caevry2hq"],
       ["BNB Smart Chain", "0x53f30C940DCe5D1cB28797a84310dbBf1bDFf85D"],
       ["Ethereum", "0x53f30C940DCe5D1cB28797a84310dbBf1bDFf85D"],
@@ -1413,7 +1510,7 @@
     ]) {
       const row = node("div", "support-detail"), address = node("dd");
       address.append(node("code", "", value));
-      const copy = button("Копировать", async () => {
+      const copy = button(t("Копировать"), async () => {
         let copied = false;
         try { await navigator.clipboard.writeText(value); copied = true; } catch {}
         if (!copied) {
@@ -1423,14 +1520,24 @@
           content.append(field); field.focus({preventScroll: true}); field.select();
           copied = document.execCommand("copy"); field.remove(); copy.focus({preventScroll: true});
         }
-        if (copied) { copy.textContent = "Скопировано"; toast(`${label}: реквизиты скопированы.`); }
-        else { const selection = getSelection(), range = document.createRange(); range.selectNodeContents(address); selection.removeAllRanges(); selection.addRange(range); toast("Реквизиты выделены. Скопируйте их вручную."); }
+        if (copied) { copy.textContent = t("Скопировано"); toast(t("{0}: реквизиты скопированы.", label)); }
+        else { const selection = getSelection(), range = document.createRange(); range.selectNodeContents(address); selection.removeAllRanges(); selection.addRange(range); toast(t("Реквизиты выделены. Скопируйте их вручную.")); }
       });
-      copy.setAttribute("aria-label", `Копировать: ${label}`);
+      copy.setAttribute("aria-label", t("Копировать: {0}", label));
       row.append(node("dt", "", label), address, copy); details.append(row);
     }
     content.append(details); showInfo(content);
   });
+
+  function localizeCatalog() {
+    catalog = i18n.catalog(catalogSource);
+    definitions = new Map(catalog.cards.map(card => [card.key, card]));
+    $("faction-select").replaceChildren(...Object.entries(catalog.factions).filter(([, info]) => info.playable).map(([key, info]) => {
+      const option = node("option", "", info.name); option.value = key; return option;
+    }));
+    delete $("leader-select").dataset.faction;
+    renderLandingBacks();
+  }
 
   async function boot() {
     syncFullscreen();
@@ -1441,23 +1548,16 @@
     const invite = new URLSearchParams(location.search).get("room");
     $("room-code").value = (invite || "").toUpperCase();
     try {
-      catalog = await api("/api/catalog");
-      profile = new window.FrontiersProfile(catalog);
-      renderLandingBacks();
-      definitions = new Map(catalog.cards.map((card) => [card.key, card]));
-      for (const [key, info] of Object.entries(catalog.factions).filter(([, info]) => info.playable)) {
-        const option = node("option", "", info.name); option.value = key; $("faction-select").append(option);
-      }
-      for (const [key, item] of Object.entries(catalog.leaders)) { const option = node("option", "", item.name); option.value = key; $("leader-select").append(option); }
-      for (const [key, item] of Object.entries(catalog.decks)) { const option = node("option", "", item.name); option.value = key; $("deck-preset").append(option); }
-      const custom = node("option", "", "Своя колода"); custom.value = "custom"; $("deck-preset").append(custom);
-      $("create-room").disabled = $("join-room").disabled = false;
+      catalogSource = await api("/api/catalog");
+      profile = new window.FrontiersProfile(catalogSource);
+      localizeCatalog();
+      disableEntry(false);
       const code = (invite || readStorage("frontiers.room") || "").toUpperCase();
       if (code) {
         try { const saved = await api(`/api/rooms/${encodeURIComponent(code)}`); receive(saved); connect(saved.code); }
         catch (error) { if (error.status !== 403) toast(error.message); }
       }
-    } catch { toast("Не удалось загрузить карты. Проверьте соединение и обновите страницу."); }
+    } catch { toast(t("Не удалось загрузить карты. Проверьте соединение и обновите страницу.")); }
   }
   boot();
 })();

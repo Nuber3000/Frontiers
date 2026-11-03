@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#241719">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" sizes="any">
   <title>Frontiers — карточные дуэли</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/cards.css">
@@ -14,6 +15,7 @@
   <link rel="stylesheet" href="/static/shiron.css">
   <link rel="stylesheet" href="/static/skone.css">
   <link rel="stylesheet" href="/static/landing.css">
+  <script src="/static/i18n.js" defer></script>
   <script src="/static/scorch.js" defer></script>
   <script src="/static/opponent-play.js" defer></script>
   <script src="/static/local-profile.js" defer></script>
@@ -23,7 +25,10 @@
   <header class="topbar">
     <a class="brand" href="/" aria-label="Frontiers — главная"><span class="brand-mark">F</span><span>FRONTIERS<small>Карточные дуэли</small></span></a>
     <span id="connection" class="connection">Карточная дуэль для двоих</span>
-    <button id="fullscreen-button" class="fullscreen-button" type="button" aria-label="На весь экран" aria-pressed="false" title="На весь экран" hidden></button>
+    <div id="display-controls" class="display-controls">
+      <button id="language-button" type="button" aria-label="Switch to English">EN</button>
+      <button id="fullscreen-button" class="fullscreen-button" type="button" aria-label="На весь экран" aria-pressed="false" title="На весь экран" hidden></button>
+    </div>
   </header>
   <main>
     <section id="landing" class="landing">
@@ -38,6 +43,7 @@
         <label for="player-name">Ваше имя</label>
         <input id="player-name" name="name" maxlength="32" required autocomplete="nickname" placeholder="Имя">
         <button id="create-room" class="primary wide" type="submit">Создать комнату</button>
+        <button id="play-bot" class="wide" type="button" disabled>Играть с ботом</button>
         <div class="divider"><span>или по приглашению</span></div>
         <label for="room-code">Код комнаты</label>
         <div class="join-fields"><input id="room-code" maxlength="8" autocomplete="off" placeholder="ABCD2345"><button id="join-room" type="button">Войти</button></div>
