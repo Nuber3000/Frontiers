@@ -1,0 +1,6 @@
+Unmodified browser runtime files from the npm release pyodide@0.29.3.
+Source code: https://github.com/pyodide/pyodide/tree/0.29.3
+Original archive: https://registry.npmjs.org/pyodide/-/pyodide-0.29.3.tgz
+Archive integrity: sha512-22UBuhOJawj7vKUnS7/F3xK+515LJdjiMAHoCfuS6/PbHiOrSQVnYwDe+2sbVwiOZ3sMMexdXICew6NqOMQGgA==
+Pyodide is licensed under MPL-2.0 (see LICENSE).
+CPython source and license: https://github.com/python/cpython

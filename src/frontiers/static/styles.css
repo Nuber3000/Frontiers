@@ -138,6 +138,11 @@ a {
   align-items:center;
   border-bottom:1px solid #ffffff0d
 }
+.display-controls {
+  display:flex;
+  align-items:center;
+  gap:8px
+}
 .brand {
   display:flex;
   gap:13px;

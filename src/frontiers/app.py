@@ -25,6 +25,8 @@ from frontiers.rooms import RoomError, RoomStore
 
 COOKIE = "frontiers_session"
 STATIC = Path(__file__).with_name("static")
+LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "shiron.py", "skone.py",
+                      "catalog.py", "engine.py", "rooms.py", "local_match.py")
 logger = logging.getLogger("frontiers")
 
 
@@ -101,11 +103,14 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "same-origin"
+        scripts = "'self' 'wasm-unsafe-eval'" if request.url.path == "/static/local-bot-worker.js" else "'self'"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            f"default-src 'self'; script-src {scripts}; style-src 'self'; "
             "img-src 'self' data:; connect-src 'self'; base-uri 'none'; "
             "frame-ancestors 'none'; form-action 'self'")
         response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/rooms") else "no-cache"
+        if response.status_code in {200, 206, 304} and request.url.path.startswith("/static/pyodide-0.29.3/"):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
 
     @app.exception_handler(RoomError)
@@ -142,6 +147,10 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     @app.get("/api/catalog")
     async def catalog():
         return catalog_view()
+
+    @app.get("/api/local-engine", include_in_schema=False)
+    async def local_engine():
+        return {name: STATIC.with_name(name).read_text(encoding="utf-8") for name in LOCAL_ENGINE_FILES}
 
     @app.post("/api/rooms", status_code=201)
     async def create_room(body: NameBody, request: Request, response: Response):

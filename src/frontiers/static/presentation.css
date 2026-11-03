@@ -35,6 +35,9 @@ dialog.mulligan-dialog, dialog.result-dialog {
   content: 'На замену'; position: absolute; inset: auto 0 24%; z-index: 5; background: #352714ed;
   border-block: 1px solid #d8b365; color: #ffe2a3; padding: 5px 2px; font: 600 14px Georgia,serif;
 }
+:lang(en) .mulligan-cards .card.selected::after, :lang(en) .mulligan-thumbnails .card.selected::after {
+  content: 'To replace';
+}
 .carousel-arrow { position: absolute; top: 50%; z-index: 20; transform: translateY(-50%); width: 46px; height: 64px; padding: 0; border: 1px solid #ad894e55; background: #080907ab; color: #e7c581; font: 48px/1 Georgia,serif; }
 .carousel-arrow:hover:not(:disabled), .carousel-arrow:active:not(:disabled) { transform: translateY(-50%); background: #302213; }
 #mulligan-prev { left: max(12px, 6vw); }
