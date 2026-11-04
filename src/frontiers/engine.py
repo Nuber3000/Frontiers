@@ -39,6 +39,7 @@ class Game:
     phase: str = "mulligan"
     turn: int = 0
     round_starter: int = 0
+    starter_chooser: int | None = None
     round_number: int = 1
     version: int = 0
     weather: list[WeatherEffect] = field(default_factory=list)
@@ -70,10 +71,19 @@ class Game:
         for player, keys in zip(game.players, decks):
             player.deck = [game._new_card(key) for key in keys]
             rng.shuffle(player.deck)
-            game._draw(player, 10)
+            game._draw(player, 11 if game._is_ellifarn(player) else 10)
         game.turn = game.round_starter = rng.randrange(2)
-        game._log("Матч начался. Каждый игрок может заменить до двух карт.")
+        # The first draw of initiative is also the tiebreaker for two councils.
+        for side in (game.turn, 1 - game.turn):
+            if game._is_ellifarn(game.players[side]):
+                game.starter_chooser = side
+                break
+        game._log("Матч начался. Подтвердите начальную руку.")
         return game
+
+    @staticmethod
+    def _is_ellifarn(player: MatchPlayer) -> bool:
+        return LEADERS[player.leader]["faction"] == "ellifarn"
 
     @staticmethod
     def _new_card(key: str) -> CardInstance:
@@ -123,8 +133,10 @@ class Game:
         if self.phase == "mulligan":
             if kind != "mulligan":
                 raise RuleError("Сначала подтвердите начальную руку.")
-            self._mulligan(actor, action.get("card_ids", []))
+            self._mulligan(actor, action.get("card_ids", []), action.get("starter"))
             return
+        if action.get("starter") is not None:
+            raise RuleError("Первый ход выбирают перед первым раундом.")
         if actor != self.turn or self.players[actor].passed:
             raise RuleError("Сейчас ход другого игрока.")
         if self.pending_levy:
@@ -150,18 +162,24 @@ class Game:
             raise RuleError("Неизвестное действие.")
         self._finish_action(actor)
 
-    def _mulligan(self, actor: int, card_ids: list[str]) -> None:
+    def _mulligan(self, actor: int, card_ids: list[str], starter: int | None) -> None:
         player = self.players[actor]
         if player.mulligan_done:
             raise RuleError("Начальная рука уже подтверждена.")
-        if not isinstance(card_ids, list) or len(card_ids) > 2 or len(set(card_ids)) != len(card_ids):
-            raise RuleError("Можно заменить не более двух разных карт.")
+        limit = 4 if self._is_ellifarn(player) else 2
+        if not isinstance(card_ids, list) or len(card_ids) > limit or len(set(card_ids)) != len(card_ids):
+            raise RuleError("Можно заменить не более четырёх разных карт." if limit == 4
+                            else "Можно заменить не более двух разных карт.")
+        if starter is not None and (self.starter_chooser != actor or type(starter) is not int or starter not in (0, 1)):
+            raise RuleError("Вы не можете сделать такой выбор первого хода.")
         selected = [self._find(player.hand, card_id) for card_id in card_ids]
         player.hand = [card for card in player.hand if card.id not in card_ids]
         self._draw(player, len(selected))
         player.deck.extend(selected)
         self.rng.shuffle(player.deck)
         player.mulligan_done = True
+        if actor == self.starter_chooser:
+            self.turn = self.round_starter = actor if starter is None else starter
         self._log("{0} подтверждает начальную руку.", player.name)
         if all(player.mulligan_done for player in self.players):
             self.phase = "playing"
@@ -254,7 +272,7 @@ class Game:
             count = self._draw(self.players[actor], 2)
             self._log("Шпион: {0} добирает карт: {1}.", self.players[actor].name, count)
         if "muster" in definition.abilities:
-            self._muster(actor, definition.group)
+            self._muster(actor, definition.group, row)
         for row_name in ("melee", "ranged", "siege"):
             if f"scorch_{row_name}" in definition.abilities:
                 target_row = Row(row_name)
@@ -264,7 +282,7 @@ class Game:
             self.pending.append(definition.name)
             self.pending_actors.append(actor)
 
-    def _muster(self, actor: int, group: str) -> None:
+    def _muster(self, actor: int, group: str, row: Row) -> None:
         player = self.players[actor]
         summoned = []
         for zone in (player.hand, player.deck):
@@ -275,7 +293,8 @@ class Game:
             summoned.extend(matches)
         for card in summoned:
             self._log("Призыв: «{0}» выходит на поле.", CATALOG[card.key].name, translate=(0,))
-            self._place_unit(actor, card, CATALOG[card.key].rows[0])
+            allowed_rows = CATALOG[card.key].rows
+            self._place_unit(actor, card, row if row in allowed_rows else allowed_rows[0])
 
     def _transform(self, instant_side: int | None = None, instant_row: Row | None = None) -> None:
         for side, player in enumerate(self.players):
@@ -431,10 +450,32 @@ class Game:
                 owner.deck.extend(owner.discard)
                 owner.discard.clear()
                 self.rng.shuffle(owner.deck)
+        elif player.leader == "ellifarn_trade":
+            if not player.deck:
+                raise RuleError("В вашей колоде не осталось карт.")
+            self._draw(player, 1)
+        elif player.leader == "ellifarn_aim":
+            if Row.RANGED in player.leader_horn or not self._slot_free(actor, Row.RANGED):
+                raise RuleError("Место усиления выбранной линии уже занято.")
+            player.leader_horn.add(Row.RANGED)
+        elif player.leader == "ellifarn_fury":
+            self._scorch(1 - actor, Row.MELEE)
+        elif player.leader == "ellifarn_logistics":
+            for item in self._agile_units(player):
+                original = item.row
+                strength = self.strengths(actor)[item.card.id]
+                item.row = next(row for row in CATALOG[item.card.key].rows if row != original)
+                if self.strengths(actor)[item.card.id] <= strength:
+                    item.row = original
         elif LEADERS[player.leader].get("passive"):
             raise RuleError("Эта способность лидера действует пассивно с начала матча.")
         player.leader_used = True
         self._log("{0}: {1}.", player.name, LEADERS[player.leader]['name'], translate=(1,))
+
+    @staticmethod
+    def _agile_units(player: MatchPlayer) -> list[PlacedCard]:
+        return [item for item in player.board
+                if not CATALOG[item.card.key].hero and len(CATALOG[item.card.key].rows) == 2]
 
     def _finish_action(self, actor: int) -> None:
         if self._resolve_pending():
@@ -573,7 +614,12 @@ class Game:
         concede = [{"type": "concede"}]
         player = self.players[actor]
         if self.phase == "mulligan":
-            return concede if player.mulligan_done else [{"type": "mulligan", "card_ids": []}, *concede]
+            if player.mulligan_done:
+                return concede
+            move = {"type": "mulligan", "card_ids": []}
+            if actor == self.starter_chooser:
+                return [{**move, "starter": side} for side in (actor, 1 - actor)] + concede
+            return [move, *concede]
         if actor != self.turn or player.passed:
             return concede
         if self.pending_levy:
@@ -585,8 +631,14 @@ class Game:
         moves = self._play_moves(actor)
         blocked_horn = player.leader == "academy" and (Row.SIEGE in player.leader_horn or any(
             item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials))
+        blocked_horn = blocked_horn or (player.leader == "ellifarn_aim" and (
+            Row.RANGED in player.leader_horn or not self._slot_free(actor, Row.RANGED)))
         no_target = (player.leader == "shiron_hand" and not self._medic_targets(actor)) or (
             player.leader == "shiron_levy" and not self._medic_targets(1 - actor))
+        no_target = no_target or (
+            (player.leader == "ellifarn_trade" and not player.deck)
+            or (player.leader == "ellifarn_logistics" and not self._agile_units(player))
+        )
         if not player.leader_used and not player.leader_blocked and not blocked_horn and not no_target and not LEADERS[player.leader].get("passive"):
             if player.leader == "skone_horn":
                 moves.extend({"type": "leader", "row": row.value} for row in ROWS
@@ -620,6 +672,8 @@ class Game:
                 "score": sum(powers.values()),
             }
             if side == viewer:
+                data["mulligan_limit"] = 4 if self._is_ellifarn(player) else 2
+                data["can_choose_starter"] = self.phase == "mulligan" and side == self.starter_chooser and not player.mulligan_done
                 data["hand"] = [self._card_view(card) for card in player.hand]
                 data["revealed"] = [self._card_view(card) for card in player.revealed
                                     if any(other.id == card.id for other in self.players[1 - side].hand)]

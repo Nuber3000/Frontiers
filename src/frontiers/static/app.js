@@ -111,7 +111,7 @@
     return svg;
   }
   function artClass(card, faction = renderingFaction()) {
-    return card.key === "horn" && ["shiron", "skone"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
+    return card.key === "horn" && ["shiron", "skone", "ellifarn"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
   }
   function renderLandingBacks() {
     const factions = Object.entries(catalog.factions).filter(([, info]) => info.playable);
@@ -122,7 +122,7 @@
       back.style.setProperty("--fan-offset", String(offset));
       back.style.setProperty("--fan-depth", String(Math.abs(offset)));
       back.style.setProperty("--fan-angle", `${offset * 17}deg`);
-      back.style.zIndex = String(10 - Math.round(Math.abs(offset) * 3));
+      back.style.zIndex = String(key === "ellifarn" ? 11 : 10 - Math.round(Math.abs(offset) * 3));
       back.append(factionMark(key, "pile-crest"));
       return back;
     }));
@@ -136,7 +136,7 @@
     return mark;
   }
   function cardName(card, faction = renderingFaction()) {
-    return card.key === "horn" && faction === "skone" ? t("Командный рог") : t(card.name);
+    return card.key === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : t(card.name);
   }
   function factionInfo(key = leader) {
     return catalog.factions[catalog.leaders[key]?.faction || "burgundy"];
@@ -154,7 +154,8 @@
     svg.setAttribute("preserveAspectRatio", "xMidYMid slice");
     svg.setAttribute("aria-hidden", "true");
     const image = document.createElementNS(svg.namespaceURI, "image");
-    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.webp`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: "xMidYMid slice"})) image.setAttribute(attribute, value);
+    const portraitAlign = key.startsWith("ellifarn_") ? "xMidYMin slice" : "xMidYMid slice";
+    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.webp`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: portraitAlign})) image.setAttribute(attribute, value);
     svg.append(image); return svg;
   }
 
@@ -771,7 +772,7 @@
     $("history").replaceChildren(...game.history.map((round) => node("span", "", `${round.round}: ${round.scores[me]} : ${round.scores[1 - me]}`)));
     let banner;
     if (game.phase === "finished") banner = t("Матч завершён");
-    else if (game.phase === "mulligan") banner = mine.mulligan_done ? t("Ждём подтверждения руки соперника") : t("Выберите до двух карт для замены");
+    else if (game.phase === "mulligan") banner = mine.mulligan_done ? t("Ждём подтверждения руки соперника") : t("Выберите карты для замены");
     else if (game.pending) banner = game.pending.actor === me ? (game.pending.kind === "levy" ? t("Выберите отряд из отбоя соперника") : t("Лекарь: выберите отряд из сброса")) : t("Соперник выбирает цель способности");
     else banner = game.turn === me ? (game.players[1 - me].passed ? t("Соперник спасовал. Вы можете продолжать ходить") : t("Ваш ход")) : t("Ход соперника");
     if (pendingVersion !== null) banner = t("Сервер проверяет ход…");
@@ -812,9 +813,7 @@
       selected: canSwap ? swaps.has(card.id) : selected === card.id,
       onClick: () => {
         if (canSwap && pendingVersion === null) {
-          if (swaps.has(card.id)) swaps.delete(card.id);
-          else if (swaps.size < 2) swaps.add(card.id);
-          else return toast(t("Можно заменить только две карты."));
+          toggleMulligan(mine.hand.indexOf(card));
           renderGame();
         } else if (usableMoves().some((move) => move.type === "play" && move.card_id === card.id)) {
           selected = selected === card.id ? null : card.id; renderGame();
@@ -892,7 +891,7 @@
         {offset: .6, opacity: 1, filter: "brightness(.4) sepia(.5) saturate(.2)", clipPath: scorchFire.clip(burn, .6)},
         {offset: 1, opacity: 0, filter: "brightness(.1) sepia(.5) saturate(0)", clipPath: scorchFire.clip(burn, 1)},
       ];
-      burn.duration = reduced ? 220 : 2400;
+      burn.duration = reduced ? 220 : window.FrontiersFire.duration;
       const animation = burn.image.animate(frames, {duration: burn.duration, easing: "linear", fill: "both"});
       animation.pause(); animation.currentTime = 0;
       animation.finished.catch(() => {});
@@ -982,14 +981,15 @@
     const card = game.players[state.me].hand[index];
     if (!card) return;
     if (swaps.has(card.id)) swaps.delete(card.id);
-    else if (swaps.size < 2) swaps.add(card.id);
-    else return toast(t("Можно заменить только две карты. Снимите отметку с одной из выбранных."));
+    else if (swaps.size < (game.players[state.me].mulligan_limit ?? 2)) swaps.add(card.id);
+    else return toast(t("Снимите отметку с одной из выбранных карт."));
     renderMulligan();
   }
   function renderMulligan() {
     const game = state?.game;
     if (!game || game.phase !== "mulligan") return closeMulligan();
     const mine = game.players[state.me], hand = mine.hand;
+    const limit = mine.mulligan_limit ?? 2;
     mulliganIndex = Math.max(0, Math.min(hand.length - 1, mulliganIndex));
     const waiting = mine.mulligan_done;
     const blocked = waiting || !connected || pendingVersion !== null;
@@ -1022,23 +1022,26 @@
     }
     $("mulligan-dialog").classList.toggle("waiting", waiting);
     $("mulligan-title").firstChild.textContent = waiting ? t("Рука готова. Ждём соперника ") : t("Выберите карты для замены ");
-    $("mulligan-count").textContent = waiting ? "✓" : `${swaps.size}/2`;
+    $("mulligan-count").textContent = waiting ? "✓" : `${swaps.size}/${limit}`;
     $("mulligan-prev").disabled = mulliganIndex === 0;
     $("mulligan-next").disabled = mulliganIndex === hand.length - 1;
     const focused = hand[mulliganIndex];
     $("mulligan-card-name").textContent = focused ? cardName(focused) : t("Начальная рука");
     $("mulligan-card-description").textContent = focused ? description(focused) : "";
-    $("mulligan-select").disabled = blocked || (!swaps.has(focused?.id) && swaps.size === 2);
+    $("mulligan-select").disabled = blocked || (!swaps.has(focused?.id) && swaps.size >= limit);
     $("mulligan-select").textContent = swaps.has(focused?.id) ? t("Оставить эту карту") : t("Выбрать для замены");
     $("mulligan-select").hidden = waiting;
     $("mulligan-button").disabled = blocked;
     $("mulligan-button").hidden = waiting;
-    $("mulligan-button").textContent = swaps.size ? t("Заменить {0}", swaps.size === 1 ? t("1 карту") : t("2 карты")) : t("Оставить руку");
+    $("mulligan-button").textContent = swaps.size ? t("Заменить карт: {0}", swaps.size) : t("Оставить руку");
+    $("mulligan-starter-label").hidden = !mine.can_choose_starter;
+    $("mulligan-starter").disabled = blocked || !mine.can_choose_starter;
+    if (!mine.can_choose_starter) $("mulligan-starter").value = "me";
     $("mulligan-concede").disabled = !usableMoves().some(move => move.type === "concede");
     $("mulligan-hint").textContent = !connected ? t("Соединение потеряно. Выбранные карты сохранятся до восстановления связи.")
       : pendingVersion !== null ? t("Сервер подтверждает выбор…")
       : waiting ? t("Ваш выбор подтверждён. Матч начнётся, когда соперник оставит свою руку.")
-      : t("← → — просмотр · Enter — выбор карты · можно заменить до двух карт");
+      : t("← → — просмотр · Enter — выбор карты · лимит замены: {0}", limit);
     if (!$("mulligan-dialog").open) $("mulligan-dialog").showModal();
   }
   function ceremonyEmblem(kind) {
@@ -1418,7 +1421,12 @@
     catch (error) { toast(error.message); }
     finally { busy = false; render(); }
   });
-  $("mulligan-button").addEventListener("click", () => send({type: "mulligan", card_ids: [...swaps]}));
+  $("mulligan-button").addEventListener("click", () => {
+    const mine = state?.game?.players[state.me];
+    const move = {type: "mulligan", card_ids: [...swaps]};
+    if (mine?.can_choose_starter) move.starter = $("mulligan-starter").value === "me" ? state.me : 1 - state.me;
+    send(move);
+  });
   $("mulligan-select").addEventListener("click", () => toggleMulligan(mulliganIndex));
   $("mulligan-prev").addEventListener("click", () => focusMulligan(mulliganIndex - 1));
   $("mulligan-next").addEventListener("click", () => focusMulligan(mulliganIndex + 1));
@@ -1482,7 +1490,7 @@
     const content = node("div", "rules-copy"), list = node("ol");
     content.append(node("h2", "", t("Как играть")));
     for (const text of [t("Выберите фракцию, способность лидера и соберите колоду. Нажмите «Готов к матчу»."),
-      t("Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты."),
+      t("Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты. Способность фракции может изменить эти условия."),
       t("Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют."),
       t("Пас действует до конца раунда. Когда оба спасовали, побеждает игрок с большей суммарной силой. При равной силе — ничья."),
       t("Поражение в раунде отнимает один из двух жетонов. Ничья отнимает жетон у обоих. Если жетоны закончились у обоих — ничья в матче."),

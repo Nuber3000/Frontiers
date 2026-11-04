@@ -63,7 +63,7 @@
         if (scorch) {
           layer.dataset.stage = "burn";
           if (!this.fire) this.fire = new window.FrontiersFire("opponent-fire-effects");
-          const burn = {element: wrapper, image: card, elapsed: 0, duration: 900, started: true, reduced: false};
+          const burn = {element: wrapper, image: card, elapsed: 0, duration: window.FrontiersFire.duration, started: true, reduced: false};
           this.fire.prepare(burn, card.dataset.cardId || "played-scorch");
           const animation = this.animate(card, [
             {offset: 0, opacity: 1, filter: "brightness(1)", clipPath: this.fire.clip(burn, 0)},

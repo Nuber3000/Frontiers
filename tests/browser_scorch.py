@@ -97,10 +97,9 @@ def run(channel, output):
                 def verify(move, victims, *, screenshot=None, terminal=False, reduced=False):
                     before = snapshot(first, code)['game']['version']
                     click_move(first, move)
-                    for page in pages:
-                        wait_version(page, before)
                     expected = {card.id for card in victims}
-                    for page in pages:
+                    for side, page in enumerate(pages):
+                        wait_version(page, before)
                         assert set(snapshot(page, code)['game']['scorched']) == expected
                         if not reduced:
                             assert set(page.locator('.scorch-burn').evaluate_all('items => items.map(item => item.dataset.burnId)')) == expected
@@ -119,12 +118,11 @@ def run(channel, output):
                             assert page.locator(f'.row-cards [data-card-id="{card_id}"]').count() == 0
                         if terminal:
                             assert page.locator('#result-dialog').is_hidden()
-                    if screenshot:
-                        for side, page in enumerate(pages):
+                        if screenshot:
                             page.wait_for_function('''() => {
                               const burn = document.querySelector('.scorch-burn > .card');
                               const animation = burn?.getAnimations()[0];
-                              return animation && animation.currentTime > 900 && animation.currentTime < 2100;
+                              return animation && animation.currentTime > animation.effect.getTiming().duration * .35;
                             }''')
                             name = screenshot if side == 0 else screenshot.replace('.png', '-opponent.png')
                             page.screenshot(path=str(output / name))
@@ -188,8 +186,9 @@ def run(channel, output):
                 for page in pages:
                     wait_version(page, 1)
                 for page in pages:
-                    assert set(page.evaluate('window.burnObservations.map(item => item.id)')) == {own.id, *(card.id for card in enemies)}
-                    assert page.locator(f'.scorch-burn[data-burn-id="{own.id}"]').count() == 1
+                    observed = page.evaluate('window.burnObservations.map(item => item.id)')
+                    assert set(observed) == {own.id, *(card.id for card in enemies)}
+                    assert observed.count(own.id) == 1
                 for page in pages:
                     page.wait_for_selector('.scorch-burn', state='detached', timeout=5000)
                     assert len(page.evaluate('window.burnObservations')) == 3
@@ -244,7 +243,10 @@ def run(channel, output):
                 second.wait_for_selector('#opponent-play', state='detached')
                 assert second.locator(f'.scorch-burn[data-burn-id="{victim.id}"]').count() == 1
                 second.locator('#scorch-effects').wait_for(state='visible')
-                second.wait_for_function("() => document.querySelector('.scorch-burn > .card').getAnimations()[0].currentTime > 800")
+                second.wait_for_function("""() => {
+                  const animation = document.querySelector('.scorch-burn > .card')?.getAnimations()[0];
+                  return animation && animation.currentTime > animation.effect.getTiming().duration * .35;
+                }""")
                 second.screenshot(path=str(output / 'scorch-returned-tab.png'))
                 second.wait_for_selector('.scorch-burn', state='detached', timeout=5000)
                 assert len(second.evaluate('window.burnObservations')) == 1

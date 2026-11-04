@@ -1,0 +1,22 @@
+body[data-faction='ellifarn'] .faction-crest, .player-emblem[data-faction='ellifarn'], .deck-pile[data-faction='ellifarn'] { background: repeating-linear-gradient(45deg,#c9ac611c 0 2px,transparent 2px 6px), #203c29; color: #e6c487; }
+.card[data-faction='ellifarn'] .card-ribbon { background: repeating-linear-gradient(45deg,#b8dba126 0 1px,transparent 1px 4px),linear-gradient(90deg,#193222,#43603a,#142c1d); color: #e6c487; border-color: #a99d65; }
+.art-ellifarn_horn { background-image: url('/static/ellifarn_horn.webp'); }
+.art-ellifarn_healer { background-image: url('/static/ellifarn_healer.webp'); }
+.art-ellifarn_scout { background-image: url('/static/ellifarn_scout.webp'); }
+.art-ellifarn_archers { background-image: url('/static/ellifarn_archers.webp'); }
+.art-ellifarn_sappers { background-image: url('/static/ellifarn_sappers.webp'); }
+.art-ellifarn_shield { background-image: url('/static/ellifarn_shield.webp'); }
+.art-ellifarn_escort { background-image: url('/static/ellifarn_escort.webp'); }
+.art-ellifarn_riders { background-image: url('/static/ellifarn_riders.webp'); }
+.art-ellifarn_tracker { background-image: url('/static/ellifarn_tracker.webp'); }
+.art-ellifarn_marksman { background-image: url('/static/ellifarn_marksman.webp'); }
+.art-ellifarn_captain { background-image: url('/static/ellifarn_captain.webp'); }
+.art-ellifarn_warden { background-image: url('/static/ellifarn_warden.webp'); }
+.art-ellifarn_engine { background-image: url('/static/ellifarn_engine.webp'); }
+.art-ellifarn_outrider { background-image: url('/static/ellifarn_outrider.webp'); }
+.art-ellifarn_fire { background-image: url('/static/ellifarn_fire.webp'); }
+.art-ellifarn_hero_ember { background-image: url('/static/ellifarn_hero_ember.webp'); }
+.art-ellifarn_hero_grove { background-image: url('/static/ellifarn_hero_grove.webp'); }
+.art-ellifarn_hero_langins { background-image: url('/static/ellifarn_hero_langins.webp'); }
+.art-ellifarn_hero_mirinorm { background-image: url('/static/ellifarn_hero_mirinorm.webp'); }
+[class*='art-ellifarn_'] { background-size: cover; background-position: center top; }
