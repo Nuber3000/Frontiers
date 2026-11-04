@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/static/presentation.css">
   <link rel="stylesheet" href="/static/shiron.css">
   <link rel="stylesheet" href="/static/skone.css">
+  <link rel="stylesheet" href="/static/ellifarn.css">
   <link rel="stylesheet" href="/static/landing.css">
   <script src="/static/i18n.js" defer></script>
   <script src="/static/scorch.js" defer></script>
@@ -95,6 +96,7 @@
     <section class="mulligan-details" aria-live="polite"><h3 id="mulligan-card-name"></h3><p id="mulligan-card-description"></p></section>
     <div id="mulligan-thumbnails" class="mulligan-thumbnails" role="group" aria-label="Просмотр начальной руки"></div>
     <div class="mulligan-actions"><button id="mulligan-home" class="text-button" type="button">На главную</button><button id="mulligan-concede" class="text-button" type="button">Сдаться</button><button id="mulligan-select" type="button">Выбрать для замены</button><button id="mulligan-button" class="primary" type="button">Оставить руку</button></div>
+    <label id="mulligan-starter-label" class="mulligan-starter" hidden><span>Кто ходит первым?</span> <select id="mulligan-starter"><option value="me">Я</option><option value="opponent">Соперник</option></select></label>
     <p id="mulligan-hint" class="mulligan-hint">Можно заменить до двух карт. Остальные останутся в руке.</p>
   </dialog>
   <div id="match-announcement" class="match-announcement" role="status" aria-live="polite" aria-atomic="true" hidden><div id="announcement-emblem" class="announcement-emblem" aria-hidden="true"></div><div class="announcement-copy"><p id="announcement-title"></p><span id="announcement-detail"></span></div></div>

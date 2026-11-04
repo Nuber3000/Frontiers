@@ -74,14 +74,15 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(game.played["card"]["key"], "scorch")
         self.assertEqual(game.scorched, [target.id])
 
-    def test_templates_are_valid_and_deal_ten(self):
+    def test_templates_are_valid_and_deal_faction_opening_hand(self):
         for template in DECKS.values():
             with self.subTest(template=template["name"]):
                 leader = FACTIONS[template["faction"]]["default_leader"]
                 validate_deck(template["cards"], leader)
                 game = Game.create(["A", "B"], [template["cards"], STARTER_DECK], [leader, "fog"], seed=1)
-                self.assertEqual(len(game.players[0].hand), 10)
-                self.assertEqual(len(game.players[0].deck), len(template["cards"]) - 10)
+                hand_size = 11 if template["faction"] == "ellifarn" else 10
+                self.assertEqual(len(game.players[0].hand), hand_size)
+                self.assertEqual(len(game.players[0].deck), len(template["cards"]) - hand_size)
 
     def test_mulligan_excludes_returned_cards_from_replacements(self):
         game = Game.create(["A", "B"], [STARTER_DECK, STARTER_DECK], ["sun", "sun"], seed=2)

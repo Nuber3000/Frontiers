@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import replace
 
 from frontiers.cards import CombatRow as Row
+from frontiers.ellifarn import ELLIFARN_DECK, ELLIFARN_LEADERS, ELLIFARN_UNITS
 from frontiers.models import CardDefinition
 from frontiers.shiron import SHIRON_CARDS, SHIRON_DECK
 from frontiers.skone import SKONE_UNITS, SKONE_DECK
@@ -105,6 +106,7 @@ for key, name, description in [
 
 _CARDS.extend(SHIRON_CARDS)
 _CARDS.extend(SKONE_UNITS)
+_CARDS.extend(ELLIFARN_UNITS)
 
 # Ключи ранее отложенных карт сохраняются для существующих коллекций.
 SKONE_CARDS = frozenset({
@@ -127,6 +129,12 @@ FACTIONS["shiron"] = {
     "name": "Империя Широн", "leader": "Император Альбрехт Тироль", "playable": True,
     "ability": "При равной силе побеждает в раунде. Если оба игрока выбрали Широн, раунд заканчивается ничьей.",
     "emblem": "✹", "default_leader": "shiron_hand",
+}
+FACTIONS["ellifarn"] = {
+    "name": "Союз Эллифарн", "leader": "Совет четырёх", "playable": True,
+    "description": "Союз дварфов Эмбера, эльфов Миринорма, зверолюдей Великого Леса и людей торгового Лангинса.",
+    "ability": "Начинает матч с 11 картами. Перед первым раундом может заменить до четырёх карт и выбрать, кто ходит первым. Если оба игрока выбрали Эллифарн, право выбора определяется случайно.",
+    "emblem": "✧", "default_leader": "ellifarn_trade",
 }
 
 LEADERS = {
@@ -169,10 +177,12 @@ STARTER_DECK = (
     + ["champion", "regent", "healer_hero", "banner_bearer"]
     + ["horn"] * 2 + ["decoy"] * 2 + ["clear", "scorch"]
 )
+LEADERS.update(ELLIFARN_LEADERS)
 DECKS = {
     "guard": {"name": "Королевская гвардия", "cards": STARTER_DECK, "faction": "burgundy"},
     "imperial": {"name": "Императорский легион", "cards": SHIRON_DECK, "faction": "shiron"},
     "clans": {"name": "Союз северных кланов", "cards": SKONE_DECK, "faction": "skone"},
+    "four_realms": {"name": "Договор четырёх земель", "cards": ELLIFARN_DECK, "faction": "ellifarn"},
 }
 
 

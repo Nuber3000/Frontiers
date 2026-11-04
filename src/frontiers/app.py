@@ -25,7 +25,7 @@ from frontiers.rooms import RoomError, RoomStore
 
 COOKIE = "frontiers_session"
 STATIC = Path(__file__).with_name("static")
-LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "shiron.py", "skone.py",
+LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "shiron.py", "skone.py", "ellifarn.py",
                       "catalog.py", "engine.py", "rooms.py", "local_match.py")
 logger = logging.getLogger("frontiers")
 
@@ -57,7 +57,8 @@ class ActionBody(BaseModel):
     card_id: str | None = Field(default=None, max_length=64)
     row: Literal["melee", "ranged", "siege"] | None = None
     target_id: str | None = Field(default=None, max_length=64)
-    card_ids: list[str] = Field(default_factory=list, max_length=2)
+    card_ids: list[str] = Field(default_factory=list, max_length=4)
+    starter: int | None = Field(default=None, ge=0, le=1, strict=True)
 
 
 def digest(token: str) -> str:

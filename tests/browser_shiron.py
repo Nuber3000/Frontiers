@@ -181,11 +181,15 @@ def run(channel, output):
                 second.wait_for_selector('#opponent-play[data-stage="burn"]')
                 second.locator('#opponent-fire-effects').wait_for(state='visible')
                 second.wait_for_function("() => document.querySelector('#opponent-play .card').getAnimations()[0].currentTime > 250")
+                preview_duration = second.locator('#opponent-play .card').evaluate(
+                    "card => card.getAnimations()[0].effect.getTiming().duration")
                 assert second.locator(f'#own-rows [data-card-id="{victim.id}"]').count() == 1
                 second.screenshot(path=str(output / 'opponent-scorch-preview.png'))
                 wait_version(second, 0)
                 second.locator('#opponent-play').wait_for(state='detached')
                 assert second.locator(f'.scorch-burn[data-burn-id="{victim.id}"]').count() == 1
+                assert second.locator('.scorch-burn > .card').evaluate(
+                    "card => card.getAnimations()[0].effect.getTiming().duration") == preview_duration == 900
 
                 game = fixture(['shiron_eck'], ['knight'], 'shiron_rain')
                 load(game)

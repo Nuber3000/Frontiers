@@ -4,7 +4,7 @@ import random
 import unittest
 
 from frontiers.cards import CombatRow as Row
-from frontiers.catalog import CATALOG, LEADERS, STARTER_DECK, catalog_view, validate_deck
+from frontiers.catalog import CATALOG, DECKS, LEADERS, STARTER_DECK, catalog_view, validate_deck
 from frontiers.engine import Game, RuleError, WeatherEffect
 from frontiers.skone import SKONE_DECK
 from frontiers.shiron import SHIRON_DECK
@@ -366,7 +366,7 @@ class SkoneTests(unittest.TestCase):
         self.assertEqual(game.players[0].board[0].card.key, "skone_ancestor")
 
     def test_one_hundred_matches_with_all_factions_and_card_conservation(self):
-        presets = {"burgundy": STARTER_DECK, "skone": SKONE_DECK, "shiron": SHIRON_DECK}
+        presets = {preset["faction"]: preset["cards"] for preset in DECKS.values()}
         keys = list(LEADERS)
         for seed in range(100):
             rng = random.Random(seed)
