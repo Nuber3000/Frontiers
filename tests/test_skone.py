@@ -90,7 +90,7 @@ class SkoneTests(unittest.TestCase):
         game.turn = 0
         with self.assertRaises(RuleError):
             self.leader(game)
-        plain = put(game, 0, "skone_heir")
+        plain = put(game, 0, "skone_shieldmaidens")
         odd = put(game, 0, "knight")
         zero = put(game, 0, "skone_rooster")
         hero = put(game, 0, "skone_shieldhero")
@@ -240,21 +240,22 @@ class SkoneTests(unittest.TestCase):
         self.assertIn(rolf.id, game.scorched)
         self.assertNotIn(weaker.id, game.scorched)
 
-    def test_yara_and_harald_are_stormborn_on_ranged_and_melee_lines(self):
+    def test_stormborn_units_ignore_weather_and_gain_storm_bonus_in_all_rows(self):
         self.assertEqual(CATALOG["ranger"].name, "Воительница Яра")
         self.assertEqual(CATALOG["young_berserker"].name, "Воительница Сконе")
         self.assertEqual(CATALOG["skone_raider"].name, "Торстен")
         self.assertEqual(CATALOG["young_berserker"].transform_to, "young_bear")
         game = fixture(["skone_heir"], ["knight"], "skone_storm")
-        cards = [put(game, 0, key) for key in ("ranger", "skone_jarl", "skone_sailor")]
+        cards = [put(game, 0, key) for key in ("ranger", "skone_jarl", "skone_sailor",
+                                              "skone_redaxe", "skone_heir", "skone_smith", "skone_raider")]
         for card in cards:
             self.assertIn("stormborn", CATALOG[card.key].abilities)
         game.weather = [WeatherEffect(1, key) for key in ("frost", "fog", "rain")]
-        self.assertEqual([game.strengths(0)[c.id] for c in cards], [6, 4, 4])
+        self.assertEqual([game.strengths(0)[c.id] for c in cards], [6, 4, 4, 6, 4, 4, 4])
         game.weather.append(WeatherEffect(1, "storm"))
-        self.assertEqual([game.strengths(0)[c.id] for c in cards], [12, 8, 8])
+        self.assertEqual([game.strengths(0)[c.id] for c in cards], [12, 8, 8, 12, 8, 8, 8])
         game.players[0].leader_horn.update(Row)
-        self.assertEqual([game.strengths(0)[c.id] for c in cards], [24, 16, 16])
+        self.assertEqual([game.strengths(0)[c.id] for c in cards], [24, 16, 16, 24, 16, 16, 16])
 
     def test_chaos_returns_all_discards_including_heroes_and_specials(self):
         game = fixture(["skone_heir"], ["knight"], "skone_chaos")
@@ -353,14 +354,12 @@ class SkoneTests(unittest.TestCase):
         self.assertFalse(game.players[0].board)
         self.assertEqual(len(game.players[0].deck), 1)
 
-    def test_avenger_summons_noncollectible_hero_on_scorch_or_round_end(self):
-        game = fixture(["scorch"], ["knight"], "skone_storm")
+    def test_hero_raven_survives_scorch_and_summons_ancestor_at_round_end(self):
+        game = fixture(["scorch", "skone_heir"], ["knight"], "skone_storm")
         raven = put(game, 0, "skone_rooster")
         game = play(game, 0, "scorch")
-        self.assertIn(raven.id, game.scorched)
-        self.assertEqual(game.players[0].board[0].card.key, "skone_ancestor")
-        game = fixture(["skone_heir"], ["knight"], "skone_storm")
-        put(game, 0, "skone_rooster")
+        self.assertNotIn(raven.id, game.scorched)
+        self.assertEqual(game.players[0].board[0].card.id, raven.id)
         game.players[0].passed = game.players[1].passed = True
         game._end_round()
         self.assertEqual(game.players[0].board[0].card.key, "skone_ancestor")

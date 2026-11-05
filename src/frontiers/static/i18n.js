@@ -2,6 +2,14 @@
 
 window.FrontiersI18n = (() => {
   const english = Object.freeze({
+  "Найти соперника": "Find an opponent",
+  "Отменить поиск": "Cancel search",
+  "Ищем соперника…": "Looking for an opponent…",
+  "Поиск завершён. Запустите его снова.": "The search ended. Start a new search.",
+  "Связь прервалась. Повторяем запрос…": "Connection lost. Retrying…",
+  "Не удалось связаться с сервером поиска.": "Could not reach the matchmaking server.",
+  "Не удалось отменить поиск. Проверьте соединение.": "Could not cancel the search. Check your connection.",
+  "Очередь поиска заполнена. Попробуйте позже.": "The matchmaking queue is full. Try again later.",
   "Союз Эллифарн": "Ellifarn Alliance",
   "Совет четырёх": "Council of Four",
   "Договор четырёх земель": "Treaty of the Four Lands",

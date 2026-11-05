@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 from frontiers.catalog import STARTER_DECK, catalog_view
 from frontiers.engine import RuleError, StaleState
+from frontiers.matchmaking import Matchmaking
 from frontiers.rooms import RoomError, RoomStore
 
 
@@ -76,6 +77,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
     room_store = store if store is not None else RoomStore(
         max_rooms=int(os.getenv("FRONTIERS_MAX_ROOMS", "128")),
         disconnected_ttl=float(os.getenv("FRONTIERS_DISCONNECTED_ROOM_TTL", "120")))
+    matchmaking = Matchmaking(room_store)
     cookie_secure = (os.getenv("FRONTIERS_SECURE_COOKIES", "0").lower() in {"1", "true", "yes"}
                      if secure_cookies is None else secure_cookies)
 
@@ -85,6 +87,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
             while True:
                 await asyncio.sleep(10)
                 await room_store.cleanup()
+                matchmaking.cleanup()
         task = asyncio.create_task(clean_rooms())
         try:
             yield
@@ -109,7 +112,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
             f"default-src 'self'; script-src {scripts}; style-src 'self'; "
             "img-src 'self' data:; connect-src 'self'; base-uri 'none'; "
             "frame-ancestors 'none'; form-action 'self'")
-        response.headers["Cache-Control"] = "no-store" if request.url.path.startswith("/api/rooms") else "no-cache"
+        response.headers["Cache-Control"] = "no-store" if request.url.path.startswith(("/api/rooms", "/api/matchmaking")) else "no-cache"
         if response.status_code in {200, 206, 304} and request.url.path.startswith("/static/pyodide-0.29.3/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
@@ -158,6 +161,18 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
         await room_store.cleanup()
         room = room_store.create(session(request, response), body.name)
         return room.view(0)
+
+    @app.post("/api/matchmaking")
+    async def start_search(body: NameBody, request: Request, response: Response):
+        return matchmaking.start(session(request, response), body.name)
+
+    @app.get("/api/matchmaking")
+    async def search_status(request: Request):
+        return matchmaking.status(session(request))
+
+    @app.post("/api/matchmaking/cancel")
+    async def cancel_search(request: Request):
+        return matchmaking.cancel(session(request))
 
     @app.post("/api/rooms/{code}/join")
     async def join_room(code: str, body: NameBody, request: Request, response: Response):
@@ -215,6 +230,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
                 return
             await socket.accept()
             room.connect(side, socket)
+            matchmaking.arrived(room.seats[side].session, room)
             await room.broadcast()
         times = deque()
         try:

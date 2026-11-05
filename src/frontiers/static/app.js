@@ -282,11 +282,12 @@
       syncFullscreen();
     }
   }
-  async function api(path, body) {
+  async function api(path, body, signal) {
     const response = await fetch(path, {
       method: body === undefined ? "GET" : "POST", credentials: "same-origin",
       headers: body === undefined ? {} : {"Content-Type": "application/json"},
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
     });
     const data = await response.json();
     if (!response.ok) {
@@ -1335,12 +1336,87 @@
     if (!$("choice-dialog").open) $("choice-dialog").showModal();
   }
 
+  const matchmakingPath = "/api/matchmaking";
+  let matchSearch = null;
+
   function disableEntry(disabled) {
-    $("create-room").disabled = $("join-room").disabled = $("play-bot").disabled = disabled;
+    $("create-room").disabled = $("join-room").disabled = $("play-bot").disabled = disabled || !!matchSearch;
+    $("player-name").disabled = !!matchSearch;
+    $("find-match").disabled = disabled || !!matchSearch?.cancelling;
+  }
+
+  function renderMatchSearch() {
+    $("find-match").textContent = t(matchSearch ? "Отменить поиск" : "Найти соперника");
+    const message = $("matchmaking-status");
+    message.hidden = !matchSearch;
+    message.textContent = matchSearch ? t(matchSearch.message) : "";
+  }
+
+  function closeMatchSearch() {
+    clearTimeout(matchSearch?.timer);
+    matchSearch = null;
+    disableEntry(false);
+    renderMatchSearch();
+  }
+
+  function applyMatchSearch(task, result) {
+    if (result.status === "matched") {
+      closeMatchSearch();
+      writeStorage("frontiers.name", task.name);
+      dirtyDeck = false;
+      receive(result.room);
+      connect(result.room.code);
+    } else if (result.status === "waiting") {
+      task.message = "Ищем соперника…";
+      renderMatchSearch();
+      task.timer = setTimeout(() => pollMatchSearch(task), 2000);
+    } else {
+      closeMatchSearch();
+      toast(t("Поиск завершён. Запустите его снова."));
+    }
+  }
+
+  async function pollMatchSearch(task, body) {
+    if (task !== matchSearch || task.cancelling) return;
+    const pending = api(matchmakingPath, body, AbortSignal.timeout(6000));
+    task.pending = pending;
+    try {
+      const result = await pending;
+      if (!task.cancelling && task === matchSearch) applyMatchSearch(task, result);
+    } catch (error) {
+      if (task.cancelling || task !== matchSearch) return;
+      if (body !== undefined || (error.status && error.status < 500)) {
+        closeMatchSearch();
+        toast(error.status ? error.message : t("Не удалось связаться с сервером поиска."));
+      } else {
+        task.message = "Связь прервалась. Повторяем запрос…";
+        renderMatchSearch();
+        task.timer = setTimeout(() => pollMatchSearch(task), 2000);
+      }
+    } finally {
+      if (task.pending === pending) task.pending = null;
+    }
+  }
+
+  async function cancelMatchSearch(task) {
+    task.cancelling = true;
+    clearTimeout(task.timer);
+    disableEntry(false);
+    try {
+      await task.pending?.catch(() => {});
+      const result = await api(`${matchmakingPath}/cancel`, {}, AbortSignal.timeout(6000));
+      if (result.status === "matched") applyMatchSearch(task, result);
+      else closeMatchSearch();
+    } catch (error) {
+      task.cancelling = false;
+      disableEntry(false);
+      toast(t("Не удалось отменить поиск. Проверьте соединение."));
+      pollMatchSearch(task);
+    }
   }
 
   async function enterRoom(join, local = false) {
-    if (busy || !$("entry-form").reportValidity()) return;
+    if (busy || matchSearch || !$("entry-form").reportValidity()) return;
     const name = $("player-name").value.trim();
     const code = $("room-code").value.trim().toUpperCase();
     if (join && code.length !== 8) return toast(t("Введите восьмизначный код комнаты."));
@@ -1369,10 +1445,20 @@
   $("entry-form").addEventListener("submit", (event) => { event.preventDefault(); enterRoom(false); });
   $("join-room").addEventListener("click", () => enterRoom(true));
   $("play-bot").addEventListener("click", () => enterRoom(false, true));
+  $("find-match").addEventListener("click", () => {
+    if (matchSearch) return cancelMatchSearch(matchSearch);
+    if (busy || state || !$("entry-form").reportValidity()) return;
+    const name = $("player-name").value.trim();
+    matchSearch = {name, message: "Ищем соперника…"};
+    disableEntry(false);
+    renderMatchSearch();
+    pollMatchSearch(matchSearch, {name});
+  });
   $("language-button").addEventListener("click", () => {
     i18n.toggle();
     status(connectionText, connectionMode);
     syncFullscreen();
+    renderMatchSearch();
     if (catalogSource) localizeCatalog();
     resultSignature = "";
     clearAnnouncements();

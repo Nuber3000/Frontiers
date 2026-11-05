@@ -18,7 +18,7 @@ ELLIFARN_UNITS = [
     unit("scout", "Дозорный Миринорма", 1, Row.RANGED, ability="medic"),
     unit("archers", "Стрелки Серебряной рощи", 2, (Row.RANGED, Row.MELEE), copies=3, ability="muster"),
     unit("sappers", "Сапёры Эмбера", 3, Row.MELEE, copies=3, ability="muster"),
-    unit("shield", "Добровольцы Медного щита", 5, Row.MELEE, copies=5),
+    unit("shield", "Добровольцы Медного щита", 5, Row.MELEE, copies=5, ability="muster"),
     unit("escort", "Караванный эскорт Лангинса", 5, Row.MELEE, copies=3, ability="muster"),
     unit("riders", "Всадники Миринорма", 5, (Row.MELEE, Row.RANGED), copies=2),
     unit("tracker", "Рысьи следопыты", 6, (Row.MELEE, Row.RANGED), copies=3),

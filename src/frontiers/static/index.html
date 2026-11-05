@@ -43,8 +43,12 @@
         <h2>Начать игру</h2>
         <label for="player-name">Ваше имя</label>
         <input id="player-name" name="name" maxlength="32" required autocomplete="nickname" placeholder="Имя">
-        <button id="create-room" class="primary wide" type="submit">Создать комнату</button>
-        <button id="play-bot" class="wide" type="button" disabled>Играть с ботом</button>
+        <button id="find-match" class="primary wide" type="button" disabled>Найти соперника</button>
+        <div class="entry-modes">
+          <button id="create-room" type="submit">Создать комнату</button>
+          <button id="play-bot" type="button" disabled>Играть с ботом</button>
+        </div>
+        <p id="matchmaking-status" role="status" hidden></p>
         <div class="divider"><span>или по приглашению</span></div>
         <label for="room-code">Код комнаты</label>
         <div class="join-fields"><input id="room-code" maxlength="8" autocomplete="off" placeholder="ABCD2345"><button id="join-room" type="button">Войти</button></div>

@@ -140,11 +140,13 @@ class RoomStore:
         self.match_ttl = match_ttl
         self.disconnected_ttl = disconnected_ttl
 
+    def can_host(self, session: str) -> bool:
+        return sum(room.seats[0].session == session for room in self.rooms.values()) < 8
+
     def create(self, session: str, name: str) -> Room:
         if len(self.rooms) >= self.max_rooms:
             raise RoomError("Сервер заполнен. Попробуйте создать комнату позже.", 503)
-        owned = sum(room.seats[0].session == session for room in self.rooms.values())
-        if owned >= 8:
+        if not self.can_host(session):
             raise RoomError("Вы уже создали несколько комнат. Используйте существующее приглашение.", 429)
         alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
         while True:
