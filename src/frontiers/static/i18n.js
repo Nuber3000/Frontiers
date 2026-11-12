@@ -2,6 +2,23 @@
 
 window.FrontiersI18n = (() => {
   const english = Object.freeze({
+  "Игра с ботом": "Bot match",
+  "Выберите сложность": "Choose difficulty",
+  "Сложность": "Difficulty",
+  "Лёгкая": "Easy",
+  "Обычная": "Normal",
+  "Сложная": "Hard",
+  "Простые решения. Подойдёт для знакомства с игрой.": "Simple decisions. A good way to learn the game.",
+  "Учитывает комбинации, запас карт и момент для паса.": "Considers combinations, remaining cards and when to pass.",
+  "Просчитывает возможный ответ соперника и свой следующий ход.": "Looks ahead to a possible opponent reply and its next move.",
+  "Бот играет в вашем браузере и не видит ваши закрытые карты.": "The bot runs in your browser and cannot see your hidden cards.",
+  "Первый запуск может занять больше времени. Затем вы выберете фракцию и соберёте колоду.": "The first launch may take longer. Next, choose your faction and build a deck.",
+  "Загрузка игры": "Loading game",
+  "Подготавливаем правила и карты…": "Preparing the rules and cards…",
+  "Открываем выбор колоды…": "Opening deck selection…",
+  "Продолжить": "Continue",
+  "Неизвестная сложность бота.": "Unknown bot difficulty.",
+  "Загрузка заняла слишком много времени. Повторите попытку.": "Loading took too long. Please try again.",
   "Найти соперника": "Find an opponent",
   "Отменить поиск": "Cancel search",
   "Ищем соперника…": "Looking for an opponent…",

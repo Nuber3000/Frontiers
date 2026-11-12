@@ -94,6 +94,25 @@
   </main>
   <footer>Frontiers <span>·</span> Собственные знамёна. Ваша стратегия.</footer>
   <div id="toast" class="toast" role="alert" hidden></div>
+  <dialog id="bot-setup-dialog" class="bot-setup-dialog" aria-labelledby="bot-setup-title">
+    <p class="eyebrow">Локальная игра</p>
+    <h2 id="bot-setup-title">Игра с ботом</h2>
+    <div id="bot-setup-options">
+      <fieldset class="bot-difficulties"><legend>Выберите сложность</legend>
+        <label><input type="radio" name="bot-difficulty" value="easy"><span><strong>Лёгкая</strong><small>Простые решения. Подойдёт для знакомства с игрой.</small></span></label>
+        <label><input type="radio" name="bot-difficulty" value="normal" checked><span><strong>Обычная</strong><small>Учитывает комбинации, запас карт и момент для паса.</small></span></label>
+        <label><input type="radio" name="bot-difficulty" value="hard"><span><strong>Сложная</strong><small>Просчитывает возможный ответ соперника и свой следующий ход.</small></span></label>
+      </fieldset>
+      <p class="muted small">Бот играет в вашем браузере и не видит ваши закрытые карты.</p>
+    </div>
+    <div id="bot-loading" hidden aria-live="polite" aria-busy="true">
+      <div class="bot-loading-mark" aria-hidden="true">F</div>
+      <p id="bot-loading-stage"></p>
+      <progress aria-label="Загрузка игры"></progress>
+      <p class="muted small">Первый запуск может занять больше времени. Затем вы выберете фракцию и соберёте колоду.</p>
+    </div>
+    <div class="bot-setup-actions"><button id="bot-setup-cancel" type="button">Отмена</button><button id="bot-setup-start" class="primary" type="button">Продолжить</button></div>
+  </dialog>
   <dialog id="mulligan-dialog" class="mulligan-dialog" aria-labelledby="mulligan-title">
     <header class="mulligan-heading"><p class="eyebrow">Начальная рука</p><h2 id="mulligan-title">Выберите карты для замены <span id="mulligan-count">0/2</span></h2></header>
     <div class="mulligan-stage"><button id="mulligan-prev" class="carousel-arrow" type="button" aria-label="Предыдущая карта">‹</button><div id="mulligan-cards" class="mulligan-cards" aria-label="Карты начальной руки"></div><button id="mulligan-next" class="carousel-arrow" type="button" aria-label="Следующая карта">›</button></div>

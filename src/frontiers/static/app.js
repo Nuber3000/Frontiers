@@ -26,6 +26,8 @@
   let catalogSource, catalog, definitions = new Map(), state = null, socket = null;
   let connectionText = "Карточная дуэль для двоих", connectionMode = "";
   let localWorker = null, localReply = null, localRequestId = 0;
+  let botLaunch = null;
+  const BOT_LOADING_STAGES = {runtime: "Загружаем движок для игры с ботом…", rules: "Подготавливаем правила и карты…", ready: "Открываем выбор колоды…"};
   let profile = null, activeSavedDeck = null, storageWarningShown = false;
   let selected = null, swaps = new Set(), deck = [], leader = "sun", dirtyDeck = false;
   let connected = false, busy = false, pendingVersion = null, reconnectDelay = 700;
@@ -440,6 +442,10 @@
     localWorker = worker;
     worker.onmessage = ({data}) => {
       if (localWorker !== worker) return;
+      if (data.type === "loading") {
+        if (botLaunch && BOT_LOADING_STAGES[data.stage]) $("bot-loading-stage").textContent = t(BOT_LOADING_STAGES[data.stage]);
+        return;
+      }
       if (localReply && localReply.id === data.id) {
         const reply = localReply;
         localReply = null;
@@ -729,7 +735,7 @@
     $("ready-button").disabled = busy || !connected || (!mine.ready && !valid);
     $("ready-button").textContent = localWorker ? (state.game ? t("Реванш с ботом") : t("Начать матч с ботом"))
       : mine.ready ? t("Отменить готовность") : state.game ? t("Готов к реваншу") : t("Готов к матчу");
-    $("ready-hint").textContent = localWorker ? t("Матч проходит в этом браузере.")
+    $("ready-hint").textContent = localWorker ? `${t("Матч проходит в этом браузере.")} ${t("Сложность")} · ${t({easy: "Лёгкая", normal: "Обычная", hard: "Сложная"}[state.bot_difficulty] || "Обычная")}`
       : mine.ready ? t("Ждём готовности второго игрока.") : t("Матч начнётся, когда оба игрока будут готовы.");
   }
 
@@ -1421,13 +1427,31 @@
     const code = $("room-code").value.trim().toUpperCase();
     if (join && code.length !== 8) return toast(t("Введите восьмизначный код комнаты."));
     busy = true; disableEntry(true);
+    const launch = local ? {cancelled: false} : null;
+    let loadingTimeout;
+    if (local) {
+      botLaunch = launch;
+      $("bot-setup-options").hidden = true;
+      $("bot-setup-start").hidden = true;
+      $("bot-loading").hidden = false;
+      $("bot-loading-stage").textContent = t(BOT_LOADING_STAGES.runtime);
+    }
     try {
       let next;
       if (local) {
         disconnect();
         status("Загружаем движок для игры с ботом…");
         openLocalWorker();
-        next = await localRequest({type: "create", name});
+        const difficulty = document.querySelector('input[name="bot-difficulty"]:checked').value;
+        writeStorage("frontiers.bot-difficulty", difficulty);
+        loadingTimeout = setTimeout(() => {
+          if (botLaunch !== launch) return;
+          if (localReply) localReply.reject(new Error(t("Загрузка заняла слишком много времени. Повторите попытку.")));
+          localReply = null;
+          disconnect();
+        }, 90000);
+        next = await localRequest({type: "create", name, difficulty});
+        $("bot-setup-dialog").close();
         history.replaceState(null, "", "/");
         connected = true;
         status("Локальная игра", "online");
@@ -1438,13 +1462,33 @@
       if (!local) connect(next.code);
     } catch (error) {
       if (local) { disconnect(); status("Карточная дуэль для двоих"); }
-      toast(error.message);
-    } finally { busy = false; disableEntry(false); render(); }
+      if (!launch?.cancelled) toast(error.message);
+    } finally {
+      clearTimeout(loadingTimeout);
+      if (local) { botLaunch = null; $("bot-setup-dialog").close(); }
+      busy = false; disableEntry(false); render();
+    }
   }
 
   $("entry-form").addEventListener("submit", (event) => { event.preventDefault(); enterRoom(false); });
   $("join-room").addEventListener("click", () => enterRoom(true));
-  $("play-bot").addEventListener("click", () => enterRoom(false, true));
+  $("play-bot").addEventListener("click", () => {
+    if (busy || matchSearch || !$("entry-form").reportValidity()) return;
+    const saved = readStorage("frontiers.bot-difficulty");
+    const difficulty = ["easy", "normal", "hard"].includes(saved) ? saved : "normal";
+    document.querySelector(`input[name="bot-difficulty"][value="${difficulty}"]`).checked = true;
+    $("bot-setup-options").hidden = false;
+    $("bot-setup-start").hidden = false;
+    $("bot-loading").hidden = true;
+    $("bot-setup-dialog").showModal();
+  });
+  function cancelBotSetup() {
+    if (botLaunch) { botLaunch.cancelled = true; disconnect(); }
+    $("bot-setup-dialog").close();
+  }
+  $("bot-setup-cancel").addEventListener("click", cancelBotSetup);
+  $("bot-setup-dialog").addEventListener("cancel", event => { event.preventDefault(); cancelBotSetup(); });
+  $("bot-setup-start").addEventListener("click", () => enterRoom(false, true));
   $("find-match").addEventListener("click", () => {
     if (matchSearch) return cancelMatchSearch(matchSearch);
     if (busy || state || !$("entry-form").reportValidity()) return;
