@@ -2,8 +2,10 @@
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import mimetypes
 import time
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
@@ -55,6 +57,24 @@ class APITests(unittest.TestCase):
             if path.endswith(".webp"):
                 self.assertEqual(response.headers["content-type"], "image/webp")
         self.assertEqual(self.client.get("/api/catalog").json()["faction"], "Королевство Бургундия")
+
+    def test_ogg_type_without_system_mime_database(self):
+        # A slim runtime may not have the system's /etc/mime.types file.
+        mimetypes.init()
+        with patch.dict(mimetypes.types_map):
+            mimetypes.types_map.pop(".ogg", None)
+            with TestClient(create_app(secure_cookies=False)) as client:
+                for name in ("sound-victory.ogg", "music-background.ogg"):
+                    path = "/static/audio/" + name
+                    with self.subTest(file=name):
+                        head = client.head(path)
+                        self.assertEqual(head.status_code, 200)
+                        self.assertEqual(head.headers["content-type"], "audio/ogg")
+                        response = client.get(path, headers={"Range": "bytes=0-127"})
+                        self.assertEqual(response.status_code, 206)
+                        self.assertEqual(response.headers["content-type"], "audio/ogg")
+                        self.assertEqual(len(response.content), 128)
+                        self.assertTrue(response.content.startswith(b"OggS"))
 
     def test_cookie_is_http_only_and_not_exposed_in_room(self):
         response = self.request(0, "POST", "/api/rooms", {"name": "Alice"})

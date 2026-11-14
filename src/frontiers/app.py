@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager, suppress
 import hashlib
 import json
 import logging
+import mimetypes
 import os
 from pathlib import Path
 import secrets
@@ -74,6 +75,8 @@ def same_origin(origin: str | None, host: str | None) -> bool:
 
 
 def create_app(store: RoomStore | None = None, secure_cookies: bool | None = None) -> FastAPI:
+    # Slim containers may lack /etc/mime.types; keep audio serving consistent.
+    mimetypes.add_type("audio/ogg", ".ogg")
     room_store = store if store is not None else RoomStore(
         max_rooms=int(os.getenv("FRONTIERS_MAX_ROOMS", "128")),
         disconnected_ttl=float(os.getenv("FRONTIERS_DISCONNECTED_ROOM_TTL", "120")))
