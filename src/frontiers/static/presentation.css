@@ -97,16 +97,23 @@ dialog.mulligan-dialog, dialog.result-dialog {
 @keyframes result-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 /* Исчезновение подтверждённых жертв Казни: обугливание, фронт огня и искры. */
 .opponent-play { position: fixed; inset: 0; z-index: 36; pointer-events: none; }
-.opponent-play-card { position: absolute; right: clamp(14px, 2.5vw, 60px); top: 50%; height: min(64dvh, 460px); aspect-ratio: .61; transform: translateY(-50%); transform-origin: center; filter: drop-shadow(0 10px 28px #000c); }
+.opponent-play-card { position: absolute; right: clamp(14px, 2.5vw, 60px); top: 50%; height: min(51.2dvh, 368px); aspect-ratio: 3 / 4; transform: translateY(-50%); transform-origin: center; filter: drop-shadow(0 10px 28px #000c); }
 .opponent-play-card > .card { width: 100%; height: 100%; opacity: 1; }
-.opponent-play-card .card-art { background-color: #19160f; }
-.opponent-play-card .card.unit .card-art, .opponent-play-card .card.special .card-art, .opponent-play-card .art-rain { background-size: contain; }
-.opponent-play-card .card-power { width: 25cqw; height: 25cqw; font: 600 17cqw/1 Georgia,serif; }
-.opponent-play-card :is(.ability-seal, .combat-seal) { width: 17cqw; height: 17cqw; }
+.opponent-play-card .card-art { inset: 0; }
+.opponent-play-card .card-name { display: none; }
+.opponent-play-card .card-ribbon { bottom: 0; padding-bottom: 9%; }
+.opponent-play-card .card-power { width: var(--table-power-size, 26cqw); height: var(--table-power-size, 26cqw); font: 600 var(--table-power-font, 19cqw)/1 Georgia,serif; border-width: var(--table-badge-border, 1.5cqw); }
+.opponent-play-card .card-seals { bottom: 5%; right: 4%; gap: var(--table-seal-gap, 3cqw); }
+.opponent-play-card :is(.ability-seal, .combat-seal) { width: var(--table-seal-size, 27cqw); height: var(--table-seal-size, 27cqw); border-width: var(--table-badge-border, 1.5cqw); }
+.opponent-play-card .combat-seal { padding: var(--table-seal-padding, 3cqw); }
+.opponent-leader-card .leader-preview-caption { padding: 28px 10px 14px; font-size: 14px; }
+.opponent-leader-card .leader-preview-caption strong { font-size: 20px; }
+.opponent-leader-rule { position: absolute; top: 100%; left: 0; right: 0; max-height: 22dvh; overflow: auto; margin: 10px 0 0; padding: 12px; border: 1px solid #9c793e88; background: #0c0d09ed; color: #e8deca; font: 13px/1.4 Georgia,serif; }
+@media (max-height: 540px) and (min-width: 650px) { .opponent-leader-rule { top: 0; left: auto; right: calc(100% + 12px); width: 230px; max-height: 75dvh; margin: 0; } }
 .opponent-play-card > .card:disabled { opacity: 1; cursor: default; }
 .opponent-arrival { visibility: hidden; }
 #opponent-fire-effects { z-index: 37; }
-@media (max-width: 600px) { .opponent-play-card { height: min(58dvh, 340px); right: 12px; } }
+@media (max-width: 600px) { .opponent-play-card { height: min(46.4dvh, 272px); right: 12px; } }
 .scorch-burn { position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; pointer-events: none; isolation: isolate; }
 .in-match .scorch-burn > .card.small { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; will-change: clip-path, filter, opacity; }
 .scorch-effects { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 28; }

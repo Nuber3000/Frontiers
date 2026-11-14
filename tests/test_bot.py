@@ -73,7 +73,13 @@ class BotTests(unittest.TestCase):
         put(game, BOT, "knight")
         put(game, 0, "knight")
         for difficulty in ("normal", "hard"):
-            self.assertEqual(choose_bot_move(game, difficulty)["type"], "play")
+            move = choose_bot_move(game, difficulty)
+            self.assertNotEqual(move["type"], "pass")
+            if move["type"] == "leader":
+                # A no-effect leader is now a legal tempo move; it must still
+                # be followed by a scoring card rather than a losing pass.
+                after = game.act(BOT, move, game.version)
+                self.assertEqual(choose_bot_move(after, difficulty)["type"], "play")
 
     def test_medic_resolves_best_target_and_agile_row_avoids_weather(self):
         game = self.game(["field_medic"])

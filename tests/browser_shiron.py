@@ -275,8 +275,13 @@ def run(channel, output):
                 game = Game.create(['Император', 'Король'], [SHIRON_DECK, STARTER_DECK], ['shiron_nullify', 'sun'], seed=5)
                 game.phase, game.turn = 'playing', 0
                 load(game)
-                assert first.locator('#leader-button').is_disabled()
-                assert second.locator('#leader-button').is_disabled()
+                assert first.locator('#leader-button').is_enabled()
+                assert second.locator('#leader-button').is_enabled()
+                for page in pages:
+                    page.locator('#leader-button').click()
+                    assert page.locator('#leader-rule').inner_text()
+                    assert page.locator('#leader-apply').is_hidden()
+                    page.locator('#leader-cancel').click()
                 assert first.locator('#enemy-leader .leader-availability').text_content() == 'Заблокирован'
                 assert second.locator('#enemy-leader .leader-availability').text_content() == 'Пассивная способность'
                 first.screenshot(path=str(output / 'shiron-passive.png'))

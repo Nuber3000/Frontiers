@@ -27,7 +27,7 @@ function handle(request, id) {
     postMessage({id, ...result});
     if (!result.error) {
       clearTimeout(botTimer);
-      if (result.bot_turn) botTimer = setTimeout(() => handle({type: "bot"}), 700);
+      if (result.bot_turn) botTimer = setTimeout(() => handle({type: "bot"}), 2000);
     }
   } catch (error) {
     console.error(error);

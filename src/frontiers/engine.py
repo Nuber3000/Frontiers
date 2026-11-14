@@ -408,10 +408,7 @@ class Game:
         if player.leader_used or player.leader_blocked:
             raise RuleError("Способность лидера использована или заблокирована.")
         if player.leader == "academy":
-            if Row.SIEGE in player.leader_horn or any(
-                    item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials):
-                raise RuleError("Осадный ряд уже усилен штандартом.")
-            player.leader_horn.add(Row.SIEGE)
+            self._leader_boost(actor, Row.SIEGE)
         elif player.leader == "sun":
             self._clear_weather()
         elif player.leader in {"mortar", "war"}:
@@ -424,25 +421,20 @@ class Game:
             self.weather.append(WeatherEffect(actor, "rain"))
         elif player.leader == "shiron_hand":
             targets = self._medic_targets(actor)
-            if not targets:
-                raise RuleError("В вашем отбое нет обычных отрядов для воскрешения.")
-            card = self.rng.choice(targets)
-            player.discard.remove(card)
-            self._place_unit(actor, card, CATALOG[card.key].rows[0])
+            if targets:
+                card = self.rng.choice(targets)
+                player.discard.remove(card)
+                self._place_unit(actor, card, CATALOG[card.key].rows[0])
         elif player.leader == "shiron_spy":
             hand = self.players[1 - actor].hand
             player.revealed = self.rng.sample(hand, min(3, len(hand)))
         elif player.leader == "shiron_levy":
-            if not self._medic_targets(1 - actor):
-                raise RuleError("В отбое соперника нет обычных отрядов.")
-            self.pending_levy = True
+            self.pending_levy = bool(self._medic_targets(1 - actor))
         elif player.leader == "skone_storm":
             self.weather.append(WeatherEffect(actor, "storm"))
         elif player.leader == "skone_horn":
             row = self._row(action.get("row"))
-            if row in player.leader_horn or not self._slot_free(actor, row):
-                raise RuleError("Место усиления выбранной линии уже занято.")
-            player.leader_horn.add(row)
+            self._leader_boost(actor, row)
         elif player.leader == "skone_rage":
             self._transform(instant_side=actor)
         elif player.leader == "skone_chaos":
@@ -451,13 +443,9 @@ class Game:
                 owner.discard.clear()
                 self.rng.shuffle(owner.deck)
         elif player.leader == "ellifarn_trade":
-            if not player.deck:
-                raise RuleError("В вашей колоде не осталось карт.")
             self._draw(player, 1)
         elif player.leader == "ellifarn_aim":
-            if Row.RANGED in player.leader_horn or not self._slot_free(actor, Row.RANGED):
-                raise RuleError("Место усиления выбранной линии уже занято.")
-            player.leader_horn.add(Row.RANGED)
+            self._leader_boost(actor, Row.RANGED)
         elif player.leader == "ellifarn_fury":
             self._scorch(1 - actor, Row.MELEE)
         elif player.leader == "ellifarn_logistics":
@@ -471,6 +459,11 @@ class Game:
             raise RuleError("Эта способность лидера действует пассивно с начала матча.")
         player.leader_used = True
         self._log("{0}: {1}.", player.name, LEADERS[player.leader]['name'], translate=(1,))
+
+    def _leader_boost(self, actor: int, row: Row) -> None:
+        # An occupied slot makes the effect a no-op, but the leader is still spent.
+        if self._slot_free(actor, row):
+            self.players[actor].leader_horn.add(row)
 
     @staticmethod
     def _agile_units(player: MatchPlayer) -> list[PlacedCard]:
@@ -629,20 +622,9 @@ class Game:
             return [{"type": "choose", "card_id": card.id, "row": row.value}
                     for card in self._medic_targets(actor) for row in CATALOG[card.key].rows] + concede
         moves = self._play_moves(actor)
-        blocked_horn = player.leader == "academy" and (Row.SIEGE in player.leader_horn or any(
-            item.row == Row.SIEGE and item.card.key == "horn" for item in player.specials))
-        blocked_horn = blocked_horn or (player.leader == "ellifarn_aim" and (
-            Row.RANGED in player.leader_horn or not self._slot_free(actor, Row.RANGED)))
-        no_target = (player.leader == "shiron_hand" and not self._medic_targets(actor)) or (
-            player.leader == "shiron_levy" and not self._medic_targets(1 - actor))
-        no_target = no_target or (
-            (player.leader == "ellifarn_trade" and not player.deck)
-            or (player.leader == "ellifarn_logistics" and not self._agile_units(player))
-        )
-        if not player.leader_used and not player.leader_blocked and not blocked_horn and not no_target and not LEADERS[player.leader].get("passive"):
+        if not player.leader_used and not player.leader_blocked and not LEADERS[player.leader].get("passive"):
             if player.leader == "skone_horn":
-                moves.extend({"type": "leader", "row": row.value} for row in ROWS
-                             if self._slot_free(actor, row) and row not in player.leader_horn)
+                moves.extend({"type": "leader", "row": row.value} for row in ROWS)
             else:
                 moves.append({"type": "leader"})
         return moves + [{"type": "pass"}, *concede]

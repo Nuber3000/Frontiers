@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#241719">
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="icon" href="/static/images/common/favicon.svg" type="image/svg+xml" sizes="any">
   <title>Frontiers — карточные дуэли</title>
   <link rel="stylesheet" href="/static/styles.css">
   <link rel="stylesheet" href="/static/cards.css">
@@ -18,8 +18,11 @@
   <link rel="stylesheet" href="/static/landing.css">
   <script src="/static/i18n.js" defer></script>
   <script src="/static/scorch.js" defer></script>
+  <script src="/static/weather.js" defer></script>
   <script src="/static/opponent-play.js" defer></script>
   <script src="/static/local-profile.js" defer></script>
+  <script src="/static/card-scroll.js" defer></script>
+  <script src="/static/sound.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -27,6 +30,7 @@
     <a class="brand" href="/" aria-label="Frontiers — главная"><span class="brand-mark">F</span><span>FRONTIERS<small>Карточные дуэли</small></span></a>
     <span id="connection" class="connection">Карточная дуэль для двоих</span>
     <div id="display-controls" class="display-controls">
+      <button id="sound-button" type="button" aria-label="Настройки звука" aria-haspopup="dialog" title="Настройки звука"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4 5 9H2v6h3l6 5Z"/><path class="sound-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path class="sound-muted" d="m16 9 6 6m0-6-6 6"/></svg></button>
       <button id="language-button" type="button" aria-label="Switch to English">EN</button>
       <button id="fullscreen-button" class="fullscreen-button" type="button" aria-label="На весь экран" aria-pressed="false" title="На весь экран" hidden></button>
     </div>
@@ -68,7 +72,7 @@
         </section>
         <aside class="commander-panel">
           <p class="eyebrow">Лидер фракции</p>
-          <div class="leader-portrait"><span class="card-art art-king"></span><span class="portrait-crown" aria-hidden="true">♛</span><div>Франциск II<span>Мудрый</span></div></div>
+          <button id="lobby-leader" class="leader-portrait" type="button"><span class="card-art art-king"></span><span class="portrait-crown" aria-hidden="true">♛</span><div>Франциск II<span>Мудрый</span></div></button>
           <label class="sr-only" for="leader-select">Способность лидера</label><select id="leader-select"></select>
           <p id="leader-description" class="leader-description"></p>
           <dl id="deck-stats" class="deck-stats"></dl><span id="deck-count" class="count-badge sr-only"></span>
@@ -84,7 +88,7 @@
       </section>
       <section id="arena" hidden>
         <div class="match-layout">
-          <aside class="match-sidebar"><div id="enemy-leader" class="leader-button opponent-leader"></div><div id="opponent-score" class="player-panel"></div><div class="round-panel"><div class="round-status"><div class="round-heading"><span class="eyebrow">Раунд</span><strong id="round-label">1</strong></div><div id="turn-banner" class="turn-banner" aria-live="polite"></div></div><div id="history" class="round-history"></div><div class="weather-tray"><span class="weather-label">Погодные эффекты</span><div id="weather-strip"></div></div></div><div class="match-actions"><button id="pass-button" class="primary" type="button">Спасовать</button><button id="concede-button" type="button">Сдаться</button></div><div id="my-score" class="player-panel own"></div><button id="leader-button" class="leader-button" type="button"></button></aside>
+          <aside class="match-sidebar"><button id="enemy-leader" class="leader-button opponent-leader" type="button"></button><div id="opponent-score" class="player-panel"></div><div class="round-panel"><div class="round-status"><div class="round-heading"><span class="eyebrow">Раунд</span><strong id="round-label">1</strong></div><div id="turn-banner" class="turn-banner" aria-live="polite"></div></div><div id="history" class="round-history"></div><div class="weather-tray"><span class="weather-label">Погодные эффекты</span><div id="weather-strip"></div></div></div><div class="match-actions"><button id="pass-button" class="primary" type="button">Спасовать</button><button id="concede-button" type="button">Сдаться</button></div><div id="my-score" class="player-panel own"></div><button id="leader-button" class="leader-button" type="button"></button></aside>
           <div class="battlefield"><div id="enemy-rows"></div><div class="frontier-line"><span>FRONTIERS</span></div><div id="own-rows"></div></div>
           <aside class="table-piles"><div class="player-piles"><div id="enemy-deck" class="deck-pile enemy-pile" aria-label="Колода соперника"></div><button id="enemy-discard" class="discard-pile" type="button">Сброс соперника</button></div><button id="journal-button" class="journal-toggle" type="button">Хроника</button><div class="player-piles"><button id="own-discard" class="discard-pile" type="button">Ваш сброс</button><div id="own-deck" class="deck-pile" aria-label="Ваша колода"></div></div></aside>
         </div>
@@ -94,6 +98,15 @@
   </main>
   <footer>Frontiers <span>·</span> Собственные знамёна. Ваша стратегия.</footer>
   <div id="toast" class="toast" role="alert" hidden></div>
+  <dialog id="sound-dialog" class="sound-dialog" aria-labelledby="sound-title">
+    <h2 id="sound-title">Настройки звука</h2>
+    <label class="sound-enabled"><input id="sound-enabled" type="checkbox" checked><span>Звуковые эффекты</span></label>
+    <label class="sound-volume-label" for="sound-volume"><span>Громкость</span><output id="sound-level" for="sound-volume">25%</output></label>
+    <input id="sound-volume" type="range" min="0" max="100" value="25">
+    <label class="sound-volume-label" for="music-volume"><span>Музыка</span><output id="music-level" for="music-volume">20%</output></label>
+    <input id="music-volume" type="range" min="0" max="100" value="20">
+    <div class="sound-actions"><button id="sound-preview" type="button">Проверить звук</button><button id="sound-close" class="primary" type="button">Готово</button></div>
+  </dialog>
   <dialog id="bot-setup-dialog" class="bot-setup-dialog" aria-labelledby="bot-setup-title">
     <p class="eyebrow">Локальная игра</p>
     <h2 id="bot-setup-title">Игра с ботом</h2>

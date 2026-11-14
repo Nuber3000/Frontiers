@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from frontiers.cards import CombatRow as Row
 from frontiers.ellifarn import ELLIFARN_DECK, ELLIFARN_LEADERS, ELLIFARN_UNITS
+from frontiers.media import image_path
 from frontiers.models import CardDefinition
 from frontiers.shiron import SHIRON_CARDS, SHIRON_DECK
 from frontiers.skone import SKONE_UNITS, SKONE_DECK
@@ -178,6 +179,9 @@ STARTER_DECK = (
     + ["horn"] * 2 + ["decoy"] * 2 + ["clear", "scorch"]
 )
 LEADERS.update(ELLIFARN_LEADERS)
+
+for _key, _leader in LEADERS.items():
+    _leader["portrait"] = image_path(f"leader_{_key}.webp")
 DECKS = {
     "guard": {"name": "Королевская гвардия", "cards": STARTER_DECK, "faction": "burgundy"},
     "imperial": {"name": "Императорский легион", "cards": SHIRON_DECK, "faction": "shiron"},

@@ -178,10 +178,11 @@ class ShironTests(unittest.TestCase):
         self.assertNotIn(target.id, [c.id for c in game.players[1].discard])
         self.assertEqual(game.turn, 1)
 
-    def test_empty_discard_has_no_leader_move_and_rejects_forged_action(self):
+    def test_empty_discard_still_allows_spending_leader_without_choice(self):
         for leader in ("shiron_hand", "shiron_levy"):
             game = fixture([], [], leader)
-            self.assertNotIn({"type": "leader"}, game.legal_moves(0))
-            with self.assertRaises(RuleError):
-                game.act(0, {"type": "leader"}, 0)
-            self.assertFalse(game.players[0].leader_used)
+            self.assertIn({"type": "leader"}, game.legal_moves(0))
+            game = game.act(0, {"type": "leader"}, 0)
+            self.assertTrue(game.players[0].leader_used)
+            self.assertFalse(game.pending or game.pending_levy)
+            self.assertEqual(game.turn, 1)

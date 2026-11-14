@@ -1,0 +1,147 @@
+{
+  "preset": {
+    "codec": "libopus",
+    "bitrate_kbps": 96,
+    "vbr": "on",
+    "compression_level": 10,
+    "application": "audio",
+    "sample_rate": 48000,
+    "bitrate_overrides_kbps": {
+      "scorch-fire": 32,
+      "sound-defeat": 24
+    },
+    "vbr_overrides": {
+      "sound-defeat": "constrained"
+    }
+  },
+  "source_bytes": 22801043,
+  "delivery_bytes": 10158923,
+  "files": [
+    {
+      "file": "music-background.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 21900672,
+      "delivery_bytes": 9805616,
+      "source_sha256": "c5068256bacdf49f41da45fdeba7302b46203dfeea2518c91af35e9077f06d54"
+    },
+    {
+      "file": "scorch-fire.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 32,
+      "vbr": "on",
+      "source_bytes": 23946,
+      "delivery_bytes": 9233,
+      "source_sha256": "b6bf26ae107ffa7f6281329bc2f323c369d449e0092f714e767d7418bc088638"
+    },
+    {
+      "file": "sound-clear.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 127623,
+      "delivery_bytes": 39907,
+      "source_sha256": "d6823713e00511a4048ae9eeac70072daf641f2ec62af2440e1f5f9897bb4ffc"
+    },
+    {
+      "file": "sound-defeat.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 24,
+      "vbr": "constrained",
+      "source_bytes": 10865,
+      "delivery_bytes": 8558,
+      "source_sha256": "a5a7cb1b7bcd87d992108ee27b236c1d5376099f8b80c4639463b9c612d14c63"
+    },
+    {
+      "file": "sound-draw.ogg",
+      "mode": "copied",
+      "bitrate_kbps": null,
+      "vbr": null,
+      "source_bytes": 14120,
+      "delivery_bytes": 14120,
+      "source_sha256": "34d672dd368deb841319892869445e68bd519743ec9a3e964bf711b04f929e01"
+    },
+    {
+      "file": "sound-fog.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 119117,
+      "delivery_bytes": 32369,
+      "source_sha256": "ead67cd9ecdb216d82a0831f5188524e57205c5291f72ea15536c17b4cbccb52"
+    },
+    {
+      "file": "sound-frost.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 72097,
+      "delivery_bytes": 23572,
+      "source_sha256": "a025460333714a48eadc4bfb93319bad70147db9981678223c15f0a0bba3b394"
+    },
+    {
+      "file": "sound-horn.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 74604,
+      "delivery_bytes": 59146,
+      "source_sha256": "b75c206d2b7112d661de6f6d4b5184d0a2a542fff099272fa8b3e288edc83c9f"
+    },
+    {
+      "file": "sound-round-draw.ogg",
+      "mode": "copied",
+      "bitrate_kbps": null,
+      "vbr": null,
+      "source_bytes": 9602,
+      "delivery_bytes": 9602,
+      "source_sha256": "8b9db36b8bad64d3b11fcbd6579aef6360b00a83d001b4c3cb484009e24f5b89"
+    },
+    {
+      "file": "sound-round-loss.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 83693,
+      "delivery_bytes": 28650,
+      "source_sha256": "d57896bc5f409e9237801824cbcc5440a03b072c09ad7e1a08499ae981e3e467"
+    },
+    {
+      "file": "sound-round-win.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 35520,
+      "delivery_bytes": 27463,
+      "source_sha256": "5fa556d6ad2870239a757092fa57f00e64140df10f5d77d2a0b4cb0b59be9ce7"
+    },
+    {
+      "file": "sound-storm.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 128521,
+      "delivery_bytes": 35464,
+      "source_sha256": "202c0a33b8a4add966b5152af1b5846234555b9516a68a01d5dc1a4b71cea3d5"
+    },
+    {
+      "file": "sound-turn.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 52289,
+      "delivery_bytes": 19347,
+      "source_sha256": "e872741c73798cb5a48178f8c81ae6937f598fdee99f6f5daaec7289c12ab24e"
+    },
+    {
+      "file": "sound-victory.ogg",
+      "mode": "encoded",
+      "bitrate_kbps": 96,
+      "vbr": "on",
+      "source_bytes": 148374,
+      "delivery_bytes": 45876,
+      "source_sha256": "77b709349c834fe19b168c755a79be50a28f50afd5ebada0721c4df0093609e6"
+    }
+  ]
+}

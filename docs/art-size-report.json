@@ -6,7 +6,7 @@
   "webp_bytes": 42269962,
   "files": [
     {
-      "file": "archivist.webp",
+      "file": "images/burgundy/archivist.webp",
       "dimensions": [
         1086,
         1448
@@ -15,7 +15,7 @@
       "webp_bytes": 404150
     },
     {
-      "file": "avenger.webp",
+      "file": "images/burgundy/avenger.webp",
       "dimensions": [
         1086,
         1448
@@ -24,7 +24,7 @@
       "webp_bytes": 427550
     },
     {
-      "file": "ballista.webp",
+      "file": "images/burgundy/ballista.webp",
       "dimensions": [
         1086,
         1448
@@ -33,7 +33,7 @@
       "webp_bytes": 388090
     },
     {
-      "file": "banner_bearer.webp",
+      "file": "images/burgundy/banner_bearer.webp",
       "dimensions": [
         1086,
         1448
@@ -42,7 +42,7 @@
       "webp_bytes": 497674
     },
     {
-      "file": "berserker.webp",
+      "file": "images/skone/berserker.webp",
       "dimensions": [
         1086,
         1448
@@ -51,7 +51,7 @@
       "webp_bytes": 493798
     },
     {
-      "file": "blue_guard.webp",
+      "file": "images/burgundy/blue_guard.webp",
       "dimensions": [
         1086,
         1448
@@ -60,7 +60,7 @@
       "webp_bytes": 327888
     },
     {
-      "file": "card-art.webp",
+      "file": "images/common/card-art.webp",
       "dimensions": [
         1254,
         1254
@@ -69,7 +69,7 @@
       "webp_bytes": 646024
     },
     {
-      "file": "catapult.webp",
+      "file": "images/burgundy/catapult.webp",
       "dimensions": [
         1086,
         1448
@@ -78,7 +78,7 @@
       "webp_bytes": 515468
     },
     {
-      "file": "champion.webp",
+      "file": "images/burgundy/champion.webp",
       "dimensions": [
         1086,
         1448
@@ -87,7 +87,7 @@
       "webp_bytes": 397796
     },
     {
-      "file": "company_captain.webp",
+      "file": "images/burgundy/company_captain.webp",
       "dimensions": [
         1086,
         1448
@@ -96,7 +96,7 @@
       "webp_bytes": 324988
     },
     {
-      "file": "crossbow.webp",
+      "file": "images/burgundy/crossbow.webp",
       "dimensions": [
         1086,
         1448
@@ -105,7 +105,7 @@
       "webp_bytes": 411180
     },
     {
-      "file": "decoy.webp",
+      "file": "images/common/decoy.webp",
       "dimensions": [
         1086,
         1448
@@ -114,7 +114,7 @@
       "webp_bytes": 454406
     },
     {
-      "file": "demolitionist.webp",
+      "file": "images/burgundy/demolitionist.webp",
       "dimensions": [
         1086,
         1448
@@ -123,7 +123,7 @@
       "webp_bytes": 337582
     },
     {
-      "file": "druid.webp",
+      "file": "images/skone/druid.webp",
       "dimensions": [
         1086,
         1448
@@ -132,7 +132,7 @@
       "webp_bytes": 492536
     },
     {
-      "file": "field_medic.webp",
+      "file": "images/burgundy/field_medic.webp",
       "dimensions": [
         1086,
         1448
@@ -141,7 +141,7 @@
       "webp_bytes": 328590
     },
     {
-      "file": "fire_hunter.webp",
+      "file": "images/burgundy/fire_hunter.webp",
       "dimensions": [
         1086,
         1448
@@ -150,7 +150,7 @@
       "webp_bytes": 312946
     },
     {
-      "file": "fire_walker.webp",
+      "file": "images/burgundy/fire_walker.webp",
       "dimensions": [
         1086,
         1448
@@ -159,7 +159,7 @@
       "webp_bytes": 382550
     },
     {
-      "file": "healer_hero.webp",
+      "file": "images/burgundy/healer_hero.webp",
       "dimensions": [
         1086,
         1448
@@ -168,7 +168,7 @@
       "webp_bytes": 398842
     },
     {
-      "file": "herald.webp",
+      "file": "images/burgundy/herald.webp",
       "dimensions": [
         1086,
         1448
@@ -177,7 +177,7 @@
       "webp_bytes": 396056
     },
     {
-      "file": "horn.webp",
+      "file": "images/common/horn.webp",
       "dimensions": [
         1086,
         1448
@@ -186,7 +186,7 @@
       "webp_bytes": 394522
     },
     {
-      "file": "infantry.webp",
+      "file": "images/burgundy/infantry.webp",
       "dimensions": [
         1086,
         1448
@@ -195,7 +195,7 @@
       "webp_bytes": 346966
     },
     {
-      "file": "knight.webp",
+      "file": "images/burgundy/knight.webp",
       "dimensions": [
         1086,
         1448
@@ -204,7 +204,7 @@
       "webp_bytes": 545174
     },
     {
-      "file": "leader_academy.webp",
+      "file": "images/burgundy/leader_academy.webp",
       "dimensions": [
         1086,
         1448
@@ -213,7 +213,7 @@
       "webp_bytes": 373664
     },
     {
-      "file": "leader_fog.webp",
+      "file": "images/burgundy/leader_fog.webp",
       "dimensions": [
         1086,
         1448
@@ -222,7 +222,7 @@
       "webp_bytes": 295018
     },
     {
-      "file": "leader_mortar.webp",
+      "file": "images/burgundy/leader_mortar.webp",
       "dimensions": [
         1086,
         1448
@@ -231,7 +231,7 @@
       "webp_bytes": 424076
     },
     {
-      "file": "leader_shiron_hand.webp",
+      "file": "images/shiron/leader_shiron_hand.webp",
       "dimensions": [
         1086,
         1448
@@ -240,7 +240,7 @@
       "webp_bytes": 318508
     },
     {
-      "file": "leader_shiron_levy.webp",
+      "file": "images/shiron/leader_shiron_levy.webp",
       "dimensions": [
         1086,
         1448
@@ -249,7 +249,7 @@
       "webp_bytes": 360018
     },
     {
-      "file": "leader_shiron_nullify.webp",
+      "file": "images/shiron/leader_shiron_nullify.webp",
       "dimensions": [
         1086,
         1448
@@ -258,7 +258,7 @@
       "webp_bytes": 407742
     },
     {
-      "file": "leader_shiron_rain.webp",
+      "file": "images/shiron/leader_shiron_rain.webp",
       "dimensions": [
         1086,
         1448
@@ -267,7 +267,7 @@
       "webp_bytes": 488274
     },
     {
-      "file": "leader_shiron_spy.webp",
+      "file": "images/shiron/leader_shiron_spy.webp",
       "dimensions": [
         1086,
         1448
@@ -276,7 +276,7 @@
       "webp_bytes": 326568
     },
     {
-      "file": "leader_skone_chaos.webp",
+      "file": "images/skone/leader_skone_chaos.webp",
       "dimensions": [
         1024,
         1536
@@ -285,7 +285,7 @@
       "webp_bytes": 390462
     },
     {
-      "file": "leader_skone_horn.webp",
+      "file": "images/skone/leader_skone_horn.webp",
       "dimensions": [
         1024,
         1536
@@ -294,7 +294,7 @@
       "webp_bytes": 404886
     },
     {
-      "file": "leader_skone_rage.webp",
+      "file": "images/skone/leader_skone_rage.webp",
       "dimensions": [
         1024,
         1536
@@ -303,7 +303,7 @@
       "webp_bytes": 435900
     },
     {
-      "file": "leader_skone_resilience.webp",
+      "file": "images/skone/leader_skone_resilience.webp",
       "dimensions": [
         1024,
         1536
@@ -312,7 +312,7 @@
       "webp_bytes": 456518
     },
     {
-      "file": "leader_skone_storm.webp",
+      "file": "images/skone/leader_skone_storm.webp",
       "dimensions": [
         1024,
         1536
@@ -321,7 +321,7 @@
       "webp_bytes": 404866
     },
     {
-      "file": "leader_sun.webp",
+      "file": "images/burgundy/leader_sun.webp",
       "dimensions": [
         1086,
         1448
@@ -330,7 +330,7 @@
       "webp_bytes": 366314
     },
     {
-      "file": "leader_war.webp",
+      "file": "images/burgundy/leader_war.webp",
       "dimensions": [
         1086,
         1448
@@ -339,7 +339,7 @@
       "webp_bytes": 461344
     },
     {
-      "file": "mushroom.webp",
+      "file": "images/skone/mushroom.webp",
       "dimensions": [
         1086,
         1448
@@ -348,7 +348,7 @@
       "webp_bytes": 360656
     },
     {
-      "file": "rain.webp",
+      "file": "images/common/rain.webp",
       "dimensions": [
         1086,
         1448
@@ -357,7 +357,7 @@
       "webp_bytes": 430436
     },
     {
-      "file": "ranger.webp",
+      "file": "images/skone/ranger.webp",
       "dimensions": [
         1024,
         1536
@@ -366,7 +366,7 @@
       "webp_bytes": 445782
     },
     {
-      "file": "regent.webp",
+      "file": "images/burgundy/regent.webp",
       "dimensions": [
         1086,
         1448
@@ -375,7 +375,7 @@
       "webp_bytes": 434144
     },
     {
-      "file": "road_company.webp",
+      "file": "images/burgundy/road_company.webp",
       "dimensions": [
         1086,
         1448
@@ -384,7 +384,7 @@
       "webp_bytes": 463914
     },
     {
-      "file": "scorch.webp",
+      "file": "images/common/scorch.webp",
       "dimensions": [
         1086,
         1448
@@ -393,7 +393,7 @@
       "webp_bytes": 283958
     },
     {
-      "file": "scout.webp",
+      "file": "images/burgundy/scout.webp",
       "dimensions": [
         1086,
         1448
@@ -402,7 +402,7 @@
       "webp_bytes": 429752
     },
     {
-      "file": "shiron_ambassador.webp",
+      "file": "images/shiron/shiron_ambassador.webp",
       "dimensions": [
         1086,
         1448
@@ -411,7 +411,7 @@
       "webp_bytes": 317756
     },
     {
-      "file": "shiron_amber.webp",
+      "file": "images/shiron/shiron_amber.webp",
       "dimensions": [
         1086,
         1448
@@ -420,7 +420,7 @@
       "webp_bytes": 296774
     },
     {
-      "file": "shiron_archer_medic.webp",
+      "file": "images/shiron/shiron_archer_medic.webp",
       "dimensions": [
         1086,
         1448
@@ -429,7 +429,7 @@
       "webp_bytes": 337648
     },
     {
-      "file": "shiron_archers.webp",
+      "file": "images/shiron/shiron_archers.webp",
       "dimensions": [
         1086,
         1448
@@ -438,7 +438,7 @@
       "webp_bytes": 388600
     },
     {
-      "file": "shiron_cadet.webp",
+      "file": "images/shiron/shiron_cadet.webp",
       "dimensions": [
         1086,
         1448
@@ -447,7 +447,7 @@
       "webp_bytes": 342882
     },
     {
-      "file": "shiron_captain.webp",
+      "file": "images/shiron/shiron_captain.webp",
       "dimensions": [
         1086,
         1448
@@ -456,7 +456,7 @@
       "webp_bytes": 330036
     },
     {
-      "file": "shiron_chancellor.webp",
+      "file": "images/shiron/shiron_chancellor.webp",
       "dimensions": [
         1086,
         1448
@@ -465,7 +465,7 @@
       "webp_bytes": 287900
     },
     {
-      "file": "shiron_duke.webp",
+      "file": "images/shiron/shiron_duke.webp",
       "dimensions": [
         1086,
         1448
@@ -474,7 +474,7 @@
       "webp_bytes": 329838
     },
     {
-      "file": "shiron_eck.webp",
+      "file": "images/shiron/shiron_eck.webp",
       "dimensions": [
         1086,
         1448
@@ -483,7 +483,7 @@
       "webp_bytes": 355704
     },
     {
-      "file": "shiron_envoys.webp",
+      "file": "images/shiron/shiron_envoys.webp",
       "dimensions": [
         1086,
         1448
@@ -492,7 +492,7 @@
       "webp_bytes": 373454
     },
     {
-      "file": "shiron_executioner.webp",
+      "file": "images/shiron/shiron_executioner.webp",
       "dimensions": [
         1086,
         1448
@@ -501,7 +501,7 @@
       "webp_bytes": 360008
     },
     {
-      "file": "shiron_fire_advisor.webp",
+      "file": "images/shiron/shiron_fire_advisor.webp",
       "dimensions": [
         1086,
         1448
@@ -510,7 +510,7 @@
       "webp_bytes": 395034
     },
     {
-      "file": "shiron_grand_scorpion.webp",
+      "file": "images/shiron/shiron_grand_scorpion.webp",
       "dimensions": [
         1086,
         1448
@@ -519,7 +519,7 @@
       "webp_bytes": 408868
     },
     {
-      "file": "shiron_guard.webp",
+      "file": "images/shiron/shiron_guard.webp",
       "dimensions": [
         1086,
         1448
@@ -528,7 +528,7 @@
       "webp_bytes": 373828
     },
     {
-      "file": "shiron_horn.webp",
+      "file": "images/shiron/shiron_horn.webp",
       "dimensions": [
         1086,
         1448
@@ -537,7 +537,7 @@
       "webp_bytes": 296834
     },
     {
-      "file": "shiron_knight.webp",
+      "file": "images/shiron/shiron_knight.webp",
       "dimensions": [
         1086,
         1448
@@ -546,7 +546,7 @@
       "webp_bytes": 514544
     },
     {
-      "file": "shiron_mangonel.webp",
+      "file": "images/shiron/shiron_mangonel.webp",
       "dimensions": [
         1086,
         1448
@@ -555,7 +555,7 @@
       "webp_bytes": 398056
     },
     {
-      "file": "shiron_marksman.webp",
+      "file": "images/shiron/shiron_marksman.webp",
       "dimensions": [
         1086,
         1448
@@ -564,7 +564,7 @@
       "webp_bytes": 411392
     },
     {
-      "file": "shiron_marshal.webp",
+      "file": "images/shiron/shiron_marshal.webp",
       "dimensions": [
         1086,
         1448
@@ -573,7 +573,7 @@
       "webp_bytes": 378200
     },
     {
-      "file": "shiron_pioneer.webp",
+      "file": "images/shiron/shiron_pioneer.webp",
       "dimensions": [
         1086,
         1448
@@ -582,7 +582,7 @@
       "webp_bytes": 437384
     },
     {
-      "file": "shiron_pyromancer.webp",
+      "file": "images/shiron/shiron_pyromancer.webp",
       "dimensions": [
         1086,
         1448
@@ -591,7 +591,7 @@
       "webp_bytes": 372746
     },
     {
-      "file": "shiron_regent.webp",
+      "file": "images/shiron/shiron_regent.webp",
       "dimensions": [
         1086,
         1448
@@ -600,7 +600,7 @@
       "webp_bytes": 314114
     },
     {
-      "file": "shiron_riders.webp",
+      "file": "images/shiron/shiron_riders.webp",
       "dimensions": [
         1086,
         1448
@@ -609,7 +609,7 @@
       "webp_bytes": 458982
     },
     {
-      "file": "shiron_ruby.webp",
+      "file": "images/shiron/shiron_ruby.webp",
       "dimensions": [
         1086,
         1448
@@ -618,7 +618,7 @@
       "webp_bytes": 378152
     },
     {
-      "file": "shiron_scorpion.webp",
+      "file": "images/shiron/shiron_scorpion.webp",
       "dimensions": [
         1086,
         1448
@@ -627,7 +627,7 @@
       "webp_bytes": 380230
     },
     {
-      "file": "shiron_siege_medic.webp",
+      "file": "images/shiron/shiron_siege_medic.webp",
       "dimensions": [
         1086,
         1448
@@ -636,7 +636,7 @@
       "webp_bytes": 365496
     },
     {
-      "file": "shiron_sorceress.webp",
+      "file": "images/shiron/shiron_sorceress.webp",
       "dimensions": [
         1086,
         1448
@@ -645,7 +645,7 @@
       "webp_bytes": 291576
     },
     {
-      "file": "shiron_spy.webp",
+      "file": "images/shiron/shiron_spy.webp",
       "dimensions": [
         1086,
         1448
@@ -654,7 +654,7 @@
       "webp_bytes": 274466
     },
     {
-      "file": "shiron_spy_hero.webp",
+      "file": "images/shiron/shiron_spy_hero.webp",
       "dimensions": [
         1086,
         1448
@@ -663,7 +663,7 @@
       "webp_bytes": 271084
     },
     {
-      "file": "shiron_viscount.webp",
+      "file": "images/shiron/shiron_viscount.webp",
       "dimensions": [
         1086,
         1448
@@ -672,7 +672,7 @@
       "webp_bytes": 336960
     },
     {
-      "file": "shiron_warden.webp",
+      "file": "images/shiron/shiron_warden.webp",
       "dimensions": [
         1086,
         1448
@@ -681,7 +681,7 @@
       "webp_bytes": 388518
     },
     {
-      "file": "siege_expert.webp",
+      "file": "images/burgundy/siege_expert.webp",
       "dimensions": [
         1086,
         1448
@@ -690,7 +690,7 @@
       "webp_bytes": 361920
     },
     {
-      "file": "siege_tower.webp",
+      "file": "images/burgundy/siege_tower.webp",
       "dimensions": [
         1086,
         1448
@@ -699,7 +699,7 @@
       "webp_bytes": 462878
     },
     {
-      "file": "skone_ancestor.webp",
+      "file": "images/skone/skone_ancestor.webp",
       "dimensions": [
         1024,
         1536
@@ -708,7 +708,7 @@
       "webp_bytes": 354284
     },
     {
-      "file": "skone_bard.webp",
+      "file": "images/skone/skone_bard.webp",
       "dimensions": [
         1024,
         1536
@@ -717,7 +717,7 @@
       "webp_bytes": 288742
     },
     {
-      "file": "skone_bear.webp",
+      "file": "images/skone/skone_bear.webp",
       "dimensions": [
         1024,
         1536
@@ -726,7 +726,7 @@
       "webp_bytes": 408432
     },
     {
-      "file": "skone_clan.webp",
+      "file": "images/skone/skone_clan.webp",
       "dimensions": [
         1024,
         1536
@@ -735,7 +735,7 @@
       "webp_bytes": 435560
     },
     {
-      "file": "skone_ghost.webp",
+      "file": "images/skone/skone_ghost.webp",
       "dimensions": [
         1024,
         1536
@@ -744,7 +744,7 @@
       "webp_bytes": 388472
     },
     {
-      "file": "skone_heir.webp",
+      "file": "images/skone/skone_heir.webp",
       "dimensions": [
         1024,
         1536
@@ -753,7 +753,7 @@
       "webp_bytes": 272346
     },
     {
-      "file": "skone_hero_archer.webp",
+      "file": "images/skone/skone_hero_archer.webp",
       "dimensions": [
         1024,
         1536
@@ -762,7 +762,7 @@
       "webp_bytes": 375998
     },
     {
-      "file": "skone_horn.webp",
+      "file": "images/skone/skone_horn.webp",
       "dimensions": [
         1024,
         1536
@@ -771,7 +771,7 @@
       "webp_bytes": 399984
     },
     {
-      "file": "skone_jarl.webp",
+      "file": "images/skone/skone_jarl.webp",
       "dimensions": [
         1024,
         1536
@@ -780,7 +780,7 @@
       "webp_bytes": 393792
     },
     {
-      "file": "skone_lightship.webp",
+      "file": "images/skone/skone_lightship.webp",
       "dimensions": [
         1024,
         1536
@@ -789,7 +789,7 @@
       "webp_bytes": 420320
     },
     {
-      "file": "skone_medic.webp",
+      "file": "images/skone/skone_medic.webp",
       "dimensions": [
         1024,
         1536
@@ -798,7 +798,7 @@
       "webp_bytes": 320092
     },
     {
-      "file": "skone_pirate.webp",
+      "file": "images/skone/skone_pirate.webp",
       "dimensions": [
         1024,
         1536
@@ -807,7 +807,7 @@
       "webp_bytes": 382574
     },
     {
-      "file": "skone_raider.webp",
+      "file": "images/skone/skone_raider.webp",
       "dimensions": [
         1024,
         1536
@@ -816,7 +816,7 @@
       "webp_bytes": 381262
     },
     {
-      "file": "skone_redaxe.webp",
+      "file": "images/skone/skone_redaxe.webp",
       "dimensions": [
         1024,
         1536
@@ -825,7 +825,7 @@
       "webp_bytes": 391704
     },
     {
-      "file": "skone_rooster.webp",
+      "file": "images/skone/skone_rooster.webp",
       "dimensions": [
         1024,
         1536
@@ -834,7 +834,7 @@
       "webp_bytes": 323310
     },
     {
-      "file": "skone_sailor.webp",
+      "file": "images/skone/skone_sailor.webp",
       "dimensions": [
         1024,
         1536
@@ -843,7 +843,7 @@
       "webp_bytes": 501232
     },
     {
-      "file": "skone_shieldhero.webp",
+      "file": "images/skone/skone_shieldhero.webp",
       "dimensions": [
         1024,
         1536
@@ -852,7 +852,7 @@
       "webp_bytes": 374516
     },
     {
-      "file": "skone_shieldmaidens.webp",
+      "file": "images/skone/skone_shieldmaidens.webp",
       "dimensions": [
         1024,
         1536
@@ -861,7 +861,7 @@
       "webp_bytes": 473160
     },
     {
-      "file": "skone_skald.webp",
+      "file": "images/skone/skone_skald.webp",
       "dimensions": [
         1024,
         1536
@@ -870,7 +870,7 @@
       "webp_bytes": 446240
     },
     {
-      "file": "skone_smith.webp",
+      "file": "images/skone/skone_smith.webp",
       "dimensions": [
         1024,
         1536
@@ -879,7 +879,7 @@
       "webp_bytes": 439740
     },
     {
-      "file": "skone_warship.webp",
+      "file": "images/skone/skone_warship.webp",
       "dimensions": [
         1024,
         1536
@@ -888,7 +888,7 @@
       "webp_bytes": 524256
     },
     {
-      "file": "spy_cartographer.webp",
+      "file": "images/burgundy/spy_cartographer.webp",
       "dimensions": [
         1086,
         1448
@@ -897,7 +897,7 @@
       "webp_bytes": 352848
     },
     {
-      "file": "spy_hero.webp",
+      "file": "images/burgundy/spy_hero.webp",
       "dimensions": [
         1086,
         1448
@@ -906,7 +906,7 @@
       "webp_bytes": 263106
     },
     {
-      "file": "spy_port.webp",
+      "file": "images/burgundy/spy_port.webp",
       "dimensions": [
         1086,
         1448
@@ -915,7 +915,7 @@
       "webp_bytes": 281086
     },
     {
-      "file": "spy_scribe.webp",
+      "file": "images/burgundy/spy_scribe.webp",
       "dimensions": [
         1086,
         1448
@@ -924,7 +924,7 @@
       "webp_bytes": 244590
     },
     {
-      "file": "ting.webp",
+      "file": "images/skone/ting.webp",
       "dimensions": [
         1024,
         1536
@@ -933,7 +933,7 @@
       "webp_bytes": 347514
     },
     {
-      "file": "trebuchet.webp",
+      "file": "images/burgundy/trebuchet.webp",
       "dimensions": [
         1086,
         1448
@@ -942,7 +942,7 @@
       "webp_bytes": 303614
     },
     {
-      "file": "veteran.webp",
+      "file": "images/burgundy/veteran.webp",
       "dimensions": [
         1086,
         1448
@@ -951,7 +951,7 @@
       "webp_bytes": 397074
     },
     {
-      "file": "war_bear.webp",
+      "file": "images/skone/war_bear.webp",
       "dimensions": [
         1086,
         1448
@@ -960,7 +960,7 @@
       "webp_bytes": 568990
     },
     {
-      "file": "watchman.webp",
+      "file": "images/burgundy/watchman.webp",
       "dimensions": [
         1086,
         1448
@@ -969,7 +969,7 @@
       "webp_bytes": 326788
     },
     {
-      "file": "young_bear.webp",
+      "file": "images/skone/young_bear.webp",
       "dimensions": [
         1086,
         1448
@@ -978,7 +978,7 @@
       "webp_bytes": 483586
     },
     {
-      "file": "young_berserker.webp",
+      "file": "images/skone/young_berserker.webp",
       "dimensions": [
         1024,
         1536

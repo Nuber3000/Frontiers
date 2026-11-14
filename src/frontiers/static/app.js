@@ -4,6 +4,7 @@
   const $ = (id) => document.getElementById(id);
   const i18n = window.FrontiersI18n;
   const {t} = i18n;
+  const audio = window.FrontiersAudio;
   const ROWS = ["melee", "ranged", "siege"];
   const ROW_NAMES = {melee: "Ближний бой", ranged: "Дальний бой", siege: "Осада"};
   const ROW_GLYPHS = {melee: "⚔", ranged: "➶", siege: "♜"};
@@ -40,6 +41,7 @@
   let leaderPreview = null, leaderPreviewAnimation = null;
   const burningCards = new Map();
   const scorchFire = new window.FrontiersFire();
+  const weatherEffects = new window.FrontiersWeather();
   let scorchFrame = null, scorchTick = null;
   const opponentPlayer = new window.FrontiersOpponentPlay();
   let opponentPresentation = null, lastPresentedPlay = "";
@@ -67,7 +69,10 @@
     bear: ["M3 2 7 1l3 3h4l3-3 4 1 2 4-3 4 2 5-3 5-7 3-7-3-3-5 2-5-3-4 2-4Z M4 5l2-1 1 2-2 1-1-2Z M17 6l1-2 2 1-1 2-2-1Z M5 9l5 2-3 1-2-3Z M14 11l5-2-2 3-3-1Z M5 13l4 2-1 2 3 3-4-1-2-6Z M15 15l4-2-2 6-4 1 3-3-1-2Z M9 16l3 1 3-1-1 3-2 2-2-2-1-3Z", "M9 12h6l-3 3-3-3Z"],
     avenger: ["M3 22V10a9 9 0 0 1 18 0v12l-3-2-3 2-3-2-3 2-3-2-3 2Z", "M6.5 10.5l4 1.5-1 2-2-1-1-2.5ZM17.5 10.5l-4 1.5 1 2 2-1 1-2.5Z"],
     unknown: ["M12 2 22 12 12 22 2 12 12 2Z", "M9 9a3 3 0 1 1 4 3v3M13 18h.1"],
-    frost: ["M12 2v20M3 7l18 10M3 17 21 7M9 4l3 3 3-3M9 20l3-3 3 3"],
+    frost: ["M12 1v22M2.47 6.5 21.53 17.5M2.47 17.5 21.53 6.5",
+      "M8 2.5 12 6.5 16 2.5M8 21.5 12 17.5 16 21.5",
+      "M18.23 3.79 16.76 9.25 22.23 10.71M5.77 20.21 7.24 14.75 1.77 13.29",
+      "M5.77 3.79 7.24 9.25 1.77 10.71M18.23 20.21 16.76 14.75 22.23 13.29"],
     fog: ["M3 6h18M1 10h17M6 14h17M3 18h16"],
     rain: ["M4 12a3.5 3.5 0 0 1 0-7 5 5 0 0 1 9-1 4 4 0 0 1 5 8H4Z", "m6 16-2 4m8-4-2 4m8-4-2 4"],
     storm: ["M13 2 5 14h7l-1 8 8-13h-7l1-7Z"],
@@ -91,6 +96,7 @@
     if (key === "agile") svg.classList.add("agile-icon");
     if (key === "avenger") svg.classList.add("ghost-icon");
     if (key === "bear") svg.classList.add("bear-icon");
+    if (key === "frost") svg.classList.add("frost-icon");
     svg.dataset.icon = key;
     svg.setAttribute("aria-hidden", "true");
     function paths(parent, shapes) {
@@ -157,7 +163,7 @@
     svg.setAttribute("aria-hidden", "true");
     const image = document.createElementNS(svg.namespaceURI, "image");
     const portraitAlign = key.startsWith("ellifarn_") ? "xMidYMin slice" : "xMidYMid slice";
-    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `leader_${key}.webp`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: portraitAlign})) image.setAttribute(attribute, value);
+    for (const [attribute, value] of Object.entries({href: `/static/${catalog?.leaders[key]?.portrait || `images/burgundy/leader_${key}.webp`}`, x: "0", y: "0", width: "300", height: "400", preserveAspectRatio: portraitAlign})) image.setAttribute(attribute, value);
     svg.append(image); return svg;
   }
 
@@ -314,8 +320,9 @@
     receive(opponentStates.shift());
     if (!opponentPresentation) drainOpponentStates();
   }
-  async function presentOpponentPlay(next) {
+  async function presentOpponentPlay(next, leaderSide = null) {
     const played = next.game.played;
+    const leaderKey = leaderSide === null ? null : next.game.players[leaderSide].leader;
     const presentation = {code: next.code, version: next.game.version};
     opponentPresentation = presentation;
     lastPresentedPlay = `${next.code}:${next.game.version}`;
@@ -330,15 +337,26 @@
     const commit = () => {
       if (!committed) {
         committed = true;
-        if (played.card.key !== "scorch") presentation.arrivingCard = played.card.id;
+        if (!leaderKey && played.card.key !== "scorch") presentation.arrivingCard = played.card.id;
         receive(next, true);
       }
     };
-    const card = cardNode(played.card, {faction: factionKey(next.game.players[played.actor].leader), onClick: () => {}});
+    let card;
+    if (leaderKey) {
+      card = node("div", "card opponent-leader-card");
+      card.dataset.leader = leaderKey;
+      const caption = node("div", "leader-preview-caption");
+      caption.append(node("strong", "", factionInfo(leaderKey).leader), node("span", "", catalog.leaders[leaderKey].name));
+      const rule = node("p", "opponent-leader-rule", catalog.leaders[leaderKey].description);
+      card.append(leaderPortrait(leaderKey), caption, rule);
+    } else {
+      card = cardNode(played.card, {faction: factionKey(next.game.players[played.actor].leader), onClick: () => {}});
+    }
     try {
       await opponentPlayer.play(card, {
-        scorch: played.card.key === "scorch", commit,
-        destination: () => document.querySelector(`#arena [data-card-id="${CSS.escape(played.card.id)}"]`)
+        scorch: !leaderKey && played.card.key === "scorch", leader: !!leaderKey, commit,
+        onBurn: duration => audio.burn(next.game.match_id, next.game.version, duration, "preview"),
+        destination: () => leaderKey ? $("enemy-leader") : document.querySelector(`#arena [data-card-id="${CSS.escape(played.card.id)}"]`)
           || (played.row ? document.querySelector(`.combat-row[data-side="${played.side === next.me ? "own" : "enemy"}"][data-row="${played.row}"] ${played.card.key === "horn" ? ".row-special" : ".row-cards"}`) : null)
           || (played.card.kind === "weather" && next.game.weather.length ? $("weather-strip") : $("enemy-discard")),
       });
@@ -366,10 +384,14 @@
       }
     }
     const played = next.game?.played;
-    if (!skipPresentation && !freshRoom && state.game?.phase === "playing" && played?.actor !== next.me && played?.card
+    const enemy = 1 - next.me;
+    const leaderUsed = !freshRoom && state.game && next.game
+      && !state.game.players[enemy].leader_used && next.game.players[enemy].leader_used;
+    if (!skipPresentation && !freshRoom && state.game?.phase === "playing" && next.game?.match_id === state.game.match_id
+        && ((played?.actor !== next.me && played?.card) || leaderUsed)
         && next.game.version === state.game.version + 1 && lastPresentedPlay !== `${next.code}:${next.game.version}`
         && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      presentOpponentPlay(next); return;
+      presentOpponentPlay(next, leaderUsed ? enemy : null); return;
     }
     const previous = state;
     const oldPhase = state?.game?.phase;
@@ -400,6 +422,8 @@
     if (pendingVersion !== null && next.game?.version > pendingVersion) pendingVersion = null;
     if (!freshRoom) collectScorchedCards(previous, next);
     state = next;
+    audio.observe(freshRoom ? null : previous, next);
+    weatherEffects.observe(freshRoom ? null : previous, next);
     locally(() => profile.record(next));
     document.body.dataset.revision = String(next.revision);
     document.body.dataset.gameVersion = String(next.game?.version ?? -1);
@@ -417,6 +441,7 @@
   }
 
   function disconnect() {
+    audio.stop();
     cancelOpponentPlayback();
     clearTimeout(retryTimer); clearInterval(heartbeat);
     const previous = socket; socket = null;
@@ -552,6 +577,7 @@
   function cardNode(card, options = {}) {
     const result = button("", (event) => {
       event.stopPropagation();
+      audio.play("select");
       if (options.onClick) options.onClick(); else showCard(card, options.faction);
     }, `card ${card.kind} ${card.hero ? "hero" : ""} ${options.small ? "small" : ""} ${options.selected ? "selected" : ""} ${options.targetable ? "targetable" : ""}`);
     if (card.id) result.dataset.cardId = card.id;
@@ -607,6 +633,37 @@
     if (card.summon_to) content.append(node("p", "muted", t("Призывает: {0}.", definitions.get(card.summon_to)?.name || card.summon_to)));
     showInfo(content);
   }
+  function showLeaderInfo(key) {
+    if (!catalog?.leaders[key]) return;
+    const ability = catalog.leaders[key], faction = factionInfo(key);
+    const content = node("div", "card-details leader-details");
+    const portrait = node("div", "card leader-detail-card"), art = node("span", "card-art");
+    portrait.dataset.leader = key;
+    portrait.dataset.faction = factionKey(key);
+    art.append(leaderPortrait(key));
+    portrait.append(art, factionMark(factionKey(key), "card-ribbon"), node("span", "card-name", faction.leader));
+    content.append(portrait, node("p", "eyebrow", faction.name), node("h2", "", ability.name), node("p", "", ability.description));
+    showInfo(content);
+  }
+  function dismissOutside(dialog, panel, close) {
+    let startedOutside = false;
+    const outside = event => {
+      const bounds = panel.getBoundingClientRect();
+      return event.clientX < bounds.left || event.clientX > bounds.right
+        || event.clientY < bounds.top || event.clientY > bounds.bottom;
+    };
+    dialog.addEventListener("pointerdown", event => {
+      startedOutside = event.isPrimary && event.button === 0 && outside(event);
+    });
+    dialog.addEventListener("pointercancel", () => { startedOutside = false; });
+    dialog.addEventListener("close", () => { startedOutside = false; });
+    dialog.addEventListener("click", event => {
+      const dismiss = startedOutside && event.detail > 0 && outside(event);
+      startedOutside = false;
+      if (!dismiss) return;
+      event.preventDefault(); event.stopPropagation(); close();
+    });
+  }
   function showIntel(cards) {
     const content = node("div", "intel-details");
     content.append(node("p", "eyebrow", t("Шпионские игры")), node("h2", "", t("Разведданные")),
@@ -622,6 +679,7 @@
     document.body.classList.toggle("in-match", active);
     document.body.classList.toggle("in-room", !!state);
     document.body.classList.toggle("in-lobby", !!state && !active);
+    if (!active) weatherEffects.clear();
     (state ? $("room-status") : document.querySelector(".topbar")).append($("connection"));
     const controls = $("display-controls");
     const toolbar = document.querySelector(state ? ".toolbar-actions" : ".topbar");
@@ -687,6 +745,8 @@
     $("seats").replaceChildren(...seats);
     $("leader-select").value = leader;
     document.querySelector(".leader-portrait .leader-art").replaceWith(leaderPortrait(leader));
+    $("lobby-leader").title = `${info.leader}. ${catalog.leaders[leader].name}`;
+    $("lobby-leader").setAttribute("aria-label", $("lobby-leader").title);
     $("leader-select").disabled = locked;
     $("leader-description").textContent = catalog.leaders[leader].description;
     $("deck-preset").disabled = locked;
@@ -772,6 +832,7 @@
     return parts;
   }
   function renderGame() {
+    const scrollPositions = window.FrontiersCardScroll.remember();
     const game = state.game, me = state.me, mine = game.players[me];
     $("opponent-score").replaceChildren(...playerPanel(game.players[1 - me], 1 - me));
     $("my-score").replaceChildren(...playerPanel(mine, me));
@@ -788,7 +849,8 @@
     $("turn-banner").className = `turn-banner ${game.turn === me && game.phase === "playing" ? "your-turn" : ""}`;
     $("enemy-rows").replaceChildren(...[...ROWS].reverse().map((row) => combatRow(1 - me, row)));
     $("own-rows").replaceChildren(...ROWS.map((row) => combatRow(me, row)));
-    $("weather-strip").replaceChildren(...game.weather.map((effect) => node("span", "weather-chip", t(effect.name))));
+    const activeWeather = new Map(game.weather.map(effect => [effect.key, effect]));
+    $("weather-strip").replaceChildren(...[...activeWeather.values()].map(effect => node("span", "weather-chip", t(effect.name))));
     for (const [id, player] of [["leader-button", mine], ["enemy-leader", game.players[1 - me]]]) {
       const text = node("span", "leader-caption");
       text.append(node("strong", "", factionInfo(player.leader).leader), node("small", "", catalog.leaders[player.leader].name));
@@ -803,11 +865,11 @@
       $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", t("Колода")));
       const discarded = player.discard.at(-1);
       const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
-      preview.append(node("span", "", discarded ? glyph(discarded) : "∅"));
+      preview.append(discarded?.key === "frost" ? icon("frost") : node("span", "", discarded ? glyph(discarded) : "∅"));
       $(prefix + "-discard").replaceChildren(preview, node("small", "", t("Сброс · {0}", player.discard.length)));
     }
     $("leader-button").title = catalog.leaders[mine.leader].description;
-    $("leader-button").disabled = !usableMoves().some((move) => move.type === "leader");
+    $("leader-button").disabled = false;
     $("pass-button").disabled = !usableMoves().some((move) => move.type === "pass");
     $("concede-button").disabled = !usableMoves().some((move) => move.type === "concede");
     const canSwap = game.phase === "mulligan" && !mine.mulligan_done;
@@ -841,10 +903,12 @@
     } else if (!canSwap) info.push(node("span", "", t("Нажмите на карту в руке, чтобы выбрать действие")));
     $("selection-info").replaceChildren(...info);
     syncTableCardProportions();
+    window.FrontiersCardScroll.restore(scrollPositions);
     renderChoices();
     renderMulligan();
     renderLeaderPreview();
     startScorchAnimations();
+    weatherEffects.update();
   }
   function collectScorchedCards(previous, next) {
     const before = previous?.game, game = next.game;
@@ -865,7 +929,7 @@
         element.dataset.burnId = card.id; element.setAttribute("aria-hidden", "true"); element.inert = true;
         element.append(image);
         const order = board.filter(item => item.row === card.row).map(item => item.id);
-        const burn = {element, image, side, row: card.row, elapsed: 0,
+        const burn = {element, image, side, row: card.row, elapsed: 0, match: game.match_id, version: game.version,
           following: order.slice(order.indexOf(card.id) + 1), animations: [], started: false};
         scorchFire.prepare(burn, key); burningCards.set(key, burn);
       }
@@ -917,6 +981,10 @@
     scorchTick = time;
     for (const [id, burn] of burningCards) {
       if (!burn.started) continue;
+      if (!burn.sounded) {
+        burn.sounded = true;
+        audio.burn(burn.match, burn.version, burn.duration, "table");
+      }
       burn.elapsed = Math.min(burn.duration, burn.elapsed + delta);
       burn.animations[0].currentTime = burn.elapsed;
       if (burn.elapsed >= burn.duration) {
@@ -935,10 +1003,13 @@
   function renderLeaderPreview() {
     if (!leaderPreview) return;
     const game = state?.game;
-    if (state?.code !== leaderPreview.code || game?.phase !== "playing" || game.version !== leaderPreview.version ||
-        game.players[state.me].leader !== leaderPreview.key || game.players[state.me].leader_used) return closeLeaderPreview();
-    const moves = usableMoves().filter(move => move.type === "leader");
-    const targeted = leaderPreview.key === "skone_horn";
+    if (state?.code !== leaderPreview.code || !game || game.match_id !== leaderPreview.match ||
+        game.players[leaderPreview.side]?.leader !== leaderPreview.key) return closeLeaderPreview();
+    const player = game.players[leaderPreview.side], own = leaderPreview.side === state.me;
+    const passive = catalog.leaders[leaderPreview.key].passive;
+    const available = own && game.phase === "playing" && !player.leader_used && !player.leader_blocked && !passive;
+    const moves = available ? usableMoves().filter(move => move.type === "leader") : [];
+    const targeted = available && leaderPreview.key === "skone_horn";
     $("leader-rows").hidden = !targeted;
     $("leader-rows").replaceChildren(...(targeted ? ROWS.map(row => {
       const choice = button(t(ROW_NAMES[row]), () => { leaderPreview.row = row; renderLeaderPreview(); });
@@ -948,13 +1019,20 @@
       return choice;
     }) : []));
     $("leader-apply").disabled = !moves.some(move => !targeted || move.row === leaderPreview.row);
-    $("leader-confirmation-status").textContent = connected ? t("Один раз за матч. Применение завершит ваш ход.") : t("Соединение потеряно. Дождитесь восстановления связи или отмените выбор.");
+    $("leader-apply").hidden = !available;
+    $("leader-cancel").textContent = t(available ? "Отмена" : "Закрыть");
+    const status = player.leader_blocked ? "Заблокирован" : passive ? "Пассивная способность" : player.leader_used ? "Использован"
+      : !own ? "Лидер соперника" : game.phase === "finished" ? "Матч завершён"
+      : !connected ? "Соединение потеряно. Дождитесь восстановления связи или отмените выбор."
+      : game.turn !== state.me ? "Ход соперника" : pendingVersion !== null || opponentPresentation ? "Сервер проверяет ход…"
+      : "Один раз за матч. Применение завершит ваш ход.";
+    $("leader-confirmation-status").textContent = t(status);
   }
-  function openLeaderPreview() {
-    if (!usableMoves().some(move => move.type === "leader")) return;
+  function openLeaderPreview(side = state?.me) {
+    if (!state?.game || !state.game.players[side]) return;
     selected = null; renderGame();
-    const game = state.game, key = game.players[state.me].leader;
-    leaderPreview = {code: state.code, version: game.version, key};
+    const game = state.game, key = game.players[side].leader;
+    leaderPreview = {code: state.code, match: game.match_id, side, key};
     const preview = $("leader-preview"), caption = node("div", "leader-preview-caption");
     caption.append(node("strong", "", factionInfo(key).leader), node("span", "", catalog.leaders[key].name));
     preview.replaceChildren(leaderPortrait(key), caption);
@@ -964,7 +1042,7 @@
     renderLeaderPreview();
     $("leader-dialog").showModal();
     if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      const source = $("leader-button").getBoundingClientRect(), target = preview.getBoundingClientRect();
+      const source = $(side === state.me ? "leader-button" : "enemy-leader").getBoundingClientRect(), target = preview.getBoundingClientRect();
       const x = source.left + source.width / 2 - target.left - target.width / 2;
       const y = source.top + source.height / 2 - target.top - target.height / 2;
       const scale = Math.min(source.width / target.width, source.height / target.height);
@@ -1119,6 +1197,7 @@
     $("announcement-title").textContent = next.title;
     $("announcement-detail").textContent = next.detail || "";
     layer.hidden = false;
+    audio.notice(next.kind);
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const animation = layer.animate([
       {opacity: 0, transform: reduced ? "none" : "translateY(8px)", offset: 0},
@@ -1218,7 +1297,10 @@
     }
     closeMulligan(); closeChoice(); closeLeaderPreview();
     if ($("info-dialog").open) $("info-dialog").close();
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) {
+      dialog.showModal();
+      audio.result(game.match_id, dialog.dataset.outcome);
+    }
   }
   function syncTableCardProportions() {
     const reference = $("hand").querySelector(".card.unit:not(.hero), .card:not(.hero)") || $("hand").querySelector(".card");
@@ -1248,21 +1330,28 @@
   }
   function combatRow(side, row) {
     const game = state.game, player = game.players[side];
+    const faction = factionKey(player.leader);
     const own = side === state.me;
     const chosen = game.players[state.me].hand.find((card) => card.id === selected);
     const targetSide = chosen?.abilities?.includes("spy") ? 1 - state.me : state.me;
     const rowMove = selectedMoves().find((move) => move.row === row && !move.target_id);
     const slotMove = own && chosen?.key === "horn" && rowMove;
     const droppable = side === targetSide && !!rowMove && chosen?.key !== "horn";
-    const weathered = game.weather.some((effect) => WEATHER[effect.key]?.includes(row));
+    const weather = [...new Set(game.weather.filter(effect => WEATHER[effect.key]?.includes(row)).map(effect => effect.key))];
+    const weathered = weather.length > 0;
     const result = node("div", `combat-row ${own ? "own" : "enemy"} ${droppable ? "droppable" : ""} ${weathered ? "weathered" : ""}`);
     result.dataset.side = own ? "own" : "enemy";
     result.dataset.row = row;
+    result.dataset.weather = weather.join(" ");
     if (droppable) {
       result.tabIndex = 0; result.setAttribute("role", "button");
       result.setAttribute("aria-label", t("Разыграть карту: {0}", t(ROW_NAMES[row])));
       result.addEventListener("click", () => send(rowMove));
-      result.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); send(rowMove); } });
+      result.addEventListener("keydown", (event) => {
+        if (event.target === result && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault(); send(rowMove);
+        }
+      });
     }
     const label = node("div", "row-info");
     label.title = t(ROW_NAMES[row]);
@@ -1270,16 +1359,17 @@
     rowScore.append(powerValue(player.rows[row]));
     label.append(node("span", "row-symbol", ROW_GLYPHS[row]), rowScore, node("span", "", t(ROW_NAMES[row])));
     for (const card of player.specials.filter((item) => item.row === row)) {
-      const marker = button(glyph(card), (event) => { event.stopPropagation(); showCard(card); }, "mobile-row-effect");
-      marker.title = cardName(card);
-      marker.setAttribute("aria-label", cardName(card));
+      const marker = button(glyph(card), (event) => { event.stopPropagation(); showCard(card, faction); }, "mobile-row-effect");
+      marker.title = cardName(card, faction);
+      marker.setAttribute("aria-label", marker.title);
       label.append(marker);
     }
     if (player.leader_horn.includes(row)) label.append(node("span", "mobile-row-effect", "×2"));
     const cards = node("div", "row-cards"), liveCards = new Map();
     for (const card of player.board.filter((item) => item.row === row)) {
       const move = own ? selectedMoves().find((option) => option.target_id === card.id) : null;
-      const element = cardNode(card, {small: true, targetable: !!move, onClick: () => move ? send(move) : showCard(card)});
+      const element = cardNode(card, {small: true, faction, targetable: !!move,
+        onClick: () => move ? send(move) : droppable ? send(rowMove) : showCard(card, faction)});
       liveCards.set(card.id, element); cards.append(element);
     }
     // Занимаем прежние места сгорающих карт, чтобы оставшиеся отряды не прыгали под огонь.
@@ -1301,7 +1391,7 @@
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); send(slotMove); }
       });
     }
-    for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true, faction: factionKey(player.leader)}));
+    for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true, faction}));
     if (player.leader_horn.includes(row) && !special.children.length) {
       const standard = cardNode(definitions.get("horn"), {small: true, faction: factionKey(player.leader), onClick: () => {
         const content = node("div");
@@ -1500,6 +1590,7 @@
   });
   $("language-button").addEventListener("click", () => {
     i18n.toggle();
+    audio.syncControls();
     status(connectionText, connectionMode);
     syncFullscreen();
     renderMatchSearch();
@@ -1574,11 +1665,13 @@
       focusMulligan(mulliganIndex + (event.key === "ArrowLeft" ? -1 : 1), true);
     }
   });
-  $("leader-button").addEventListener("click", openLeaderPreview);
+  $("leader-button").addEventListener("click", () => openLeaderPreview(state?.me));
+  $("enemy-leader").addEventListener("click", () => openLeaderPreview(1 - state?.me));
+  $("lobby-leader").addEventListener("click", () => showLeaderInfo(leader));
   $("leader-cancel").addEventListener("click", closeLeaderPreview);
   $("leader-dialog").addEventListener("cancel", event => { event.preventDefault(); closeLeaderPreview(); });
   $("leader-apply").addEventListener("click", () => {
-    if (!leaderPreview) return;
+    if (!leaderPreview || leaderPreview.side !== state?.me) return;
     const move = usableMoves().find(move => move.type === "leader" && (leaderPreview.key !== "skone_horn" || move.row === leaderPreview.row));
     if (!move) return;
     closeLeaderPreview(); send(move);
@@ -1614,6 +1707,8 @@
     });
   }
   $("close-info").addEventListener("click", () => $("info-dialog").close());
+  dismissOutside($("info-dialog"), $("info-dialog"), () => $("info-dialog").close());
+  dismissOutside($("leader-dialog"), document.querySelector(".leader-confirmation"), closeLeaderPreview);
   $("choice-dialog").addEventListener("cancel", (event) => event.preventDefault());
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && selected) { selected = null; if (state?.game) renderGame(); } });
   $("rules-button").addEventListener("click", () => {
@@ -1678,6 +1773,7 @@
   }
 
   async function boot() {
+    audio.bindControls();
     syncFullscreen();
     new ResizeObserver(syncTableCardProportions).observe($("hand"));
     document.querySelector(".leader-portrait .card-art").replaceWith(leaderPortrait());

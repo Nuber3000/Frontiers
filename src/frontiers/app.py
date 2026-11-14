@@ -26,7 +26,7 @@ from frontiers.rooms import RoomError, RoomStore
 
 COOKIE = "frontiers_session"
 STATIC = Path(__file__).with_name("static")
-LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "shiron.py", "skone.py", "ellifarn.py",
+LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "media.py", "shiron.py", "skone.py", "ellifarn.py",
                       "catalog.py", "engine.py", "rooms.py", "bot.py", "local_match.py")
 logger = logging.getLogger("frontiers")
 

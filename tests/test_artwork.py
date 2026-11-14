@@ -5,6 +5,7 @@ import unittest
 
 from frontiers.catalog import CATALOG, LEADERS
 from frontiers.app import STATIC
+from frontiers.media import image_path
 
 
 class ArtworkTests(unittest.TestCase):
@@ -14,7 +15,7 @@ class ArtworkTests(unittest.TestCase):
         fingerprints = {}
         for key in keys:
             with self.subTest(card=key):
-                path = STATIC / f"{key}.webp"
+                path = STATIC / image_path(f"{key}.webp")
                 self.assertTrue(path.is_file(), str(path))
                 data = path.read_bytes()
                 self.assertTrue(data.startswith(b"RIFF") and data[8:12] == b"WEBP", key)

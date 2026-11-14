@@ -1,0 +1,15 @@
+{
+  "codec": "libopus",
+  "bitrate_kbps": 96,
+  "vbr": "on",
+  "compression_level": 10,
+  "application": "audio",
+  "sample_rate": 48000,
+  "bitrate_overrides_kbps": {
+    "scorch-fire": 32,
+    "sound-defeat": 24
+  },
+  "vbr_overrides": {
+    "sound-defeat": "constrained"
+  }
+}

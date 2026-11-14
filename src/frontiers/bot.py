@@ -164,16 +164,6 @@ class _Search:
                 break
             self.remaining -= 1
             after = game.act(side, move, game.version)
-            if move["type"] == "leader" and (
-                game.weather == after.weather
-                and all(before.hand == updated.hand and before.board == updated.board
-                        and before.discard == updated.discard and before.deck == updated.deck
-                        and before.leader_horn == updated.leader_horn and before.revealed == updated.revealed
-                        for before, updated in zip(game.players, after.players))
-                and not after.pending_levy and not after.pending
-            ):
-                # Do not burn a leader merely to stall for a turn.
-                continue
             ranked.append((_evaluate(after), move, after))
         ranked.sort(key=lambda item: item[0], reverse=side == BOT)
         return ranked

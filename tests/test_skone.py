@@ -127,7 +127,7 @@ class SkoneTests(unittest.TestCase):
         self.assertEqual(game.strengths(0)[hero.id], 8)
         self.assertTrue(game.players[0].leader_used)
 
-    def test_battlecry_requires_free_chosen_row_and_does_not_stack(self):
+    def test_battlecry_requires_chosen_row_and_does_not_stack(self):
         for row in Row:
             game = fixture(["horn", "skone_heir"], ["knight"], "skone_horn")
             ordinary = put(game, 0, "skone_heir", row)
@@ -145,8 +145,12 @@ class SkoneTests(unittest.TestCase):
         game = fixture(["horn", "skone_heir"], ["knight"], "skone_horn")
         game = play(game, 0, "horn", Row.SIEGE)
         game.turn = 0
-        with self.assertRaises(RuleError):
-            self.leader(game, Row.SIEGE)
+        self.assertIn({"type": "leader", "row": "siege"}, game.legal_moves(0))
+        special = list(game.players[0].specials)
+        game = self.leader(game, Row.SIEGE)
+        self.assertTrue(game.players[0].leader_used)
+        self.assertEqual(game.players[0].specials, special)
+        self.assertNotIn(Row.SIEGE, game.players[0].leader_horn)
         self.assertNotIn({"type": "leader", "row": "siege"}, game.legal_moves(0))
 
     def test_rage_transforms_only_own_berserkers_on_all_lines(self):

@@ -308,7 +308,7 @@ def save_artwork_gallery(browser, url, catalog, output):
         tiles.append(f'<article><div class="gallery-art card-art art-{card["key"]}"></div>'
                      f'<p>{html.escape(card["name"])}</p></article>')
     for key, leader in catalog['leaders'].items():
-        tiles.append(f'<article><img src="{url}/static/leader_{key}.webp">'
+        tiles.append(f'<article><img src="{url}/static/{leader["portrait"]}">'
                      f'<p>{html.escape(catalog["factions"][leader["faction"]]["leader"])} · {html.escape(leader["name"])}</p></article>')
     gallery = browser.new_page(viewport={'width': 1540, 'height': 1200})
     try:

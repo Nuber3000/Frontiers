@@ -17,9 +17,11 @@ from frontiers.app import STATIC
 assert os.getuid() == 10001
 assert not Path("/app/src").exists(), "Runtime contains a second source copy"
 assert shutil.which("uv") is None, "Build tooling leaked into runtime"
-webp_count = len(list(STATIC.glob("*.webp")))
-assert (STATIC / "ting.webp").is_file()
-assert not list(STATIC.glob("*.png"))
+webp_count = len(list(STATIC.rglob("*.webp")))
+assert (STATIC / "images/skone/ting.webp").is_file()
+assert not list(STATIC.rglob("*.png"))
+assert len(list((STATIC / "audio").glob("*.ogg"))) == 14
+assert not list((STATIC / "audio").glob("*.mp3"))
 
 base = "http://127.0.0.1:8000"
 server = subprocess.Popen([sys.executable, "-m", "frontiers", "--host", "127.0.0.1", "--port", "8000"],
@@ -39,7 +41,8 @@ try:
     with urllib.request.urlopen(base + "/api/catalog") as response:
         catalog = json.load(response)
     for path, mime in [("/", "text/html"), ("/static/local-profile.js", "javascript"),
-                       ("/static/scorch.webp", "image/webp"), ("/static/valknut.svg", "image/svg+xml")]:
+                       ("/static/images/common/scorch.webp", "image/webp"), ("/static/images/skone/valknut.svg", "image/svg+xml"),
+                       ("/static/audio/sound-victory.ogg", "audio/ogg")]:
         with urllib.request.urlopen(base + path) as response:
             assert mime in response.headers["Content-Type"], (path, response.headers["Content-Type"])
     for key, leader in catalog["leaders"].items():
@@ -59,7 +62,7 @@ try:
         room = post(client, f"/api/rooms/{code}/ready", {"leader": room["my_leader"], "deck": room["my_deck"], "ready": True})
     assert room["game"]["phase"] == "mulligan"
     print(json.dumps({"runtime": "healthy", "uid": os.getuid(), "webp": webp_count,
-                      "static_bytes": sum(path.stat().st_size for path in STATIC.iterdir() if path.is_file()),
+                      "static_bytes": sum(path.stat().st_size for path in STATIC.rglob("*") if path.is_file()),
                       "all_leader_assets": "ok", "two_player_match": "ok", "no_duplicate_source": True}))
 finally:
     server.terminate()

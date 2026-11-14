@@ -2,6 +2,12 @@
 
 window.FrontiersI18n = (() => {
   const english = Object.freeze({
+  "Настройки звука": "Sound settings",
+  "Звуковые эффекты": "Sound effects",
+  "Громкость": "Volume",
+  "Музыка": "Music",
+  "Проверить звук": "Test sound",
+  "Готово": "Done",
   "Игра с ботом": "Bot match",
   "Выберите сложность": "Choose difficulty",
   "Сложность": "Difficulty",

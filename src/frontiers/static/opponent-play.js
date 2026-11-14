@@ -43,13 +43,16 @@
       this.target?.classList.remove("opponent-arrival"); this.target = null;
       this.layer?.remove(); this.layer = null; this.fire?.clear();
     }
-    async play(card, {scorch, commit, destination}) {
+    async play(card, {scorch, leader = false, commit, destination, onBurn}) {
       this.clear();
       const token = {}; this.token = token;
       const layer = document.createElement("section"), wrapper = document.createElement("div");
       layer.id = "opponent-play"; layer.className = "opponent-play";
-      layer.setAttribute("aria-label", window.FrontiersI18n.t("Карта соперника")); layer.setAttribute("aria-live", "polite");
+      layer.dataset.kind = leader ? "leader" : "card";
+      layer.setAttribute("aria-label", window.FrontiersI18n.t(leader ? "Лидер соперника" : "Карта соперника")); layer.setAttribute("aria-live", "polite");
       wrapper.className = "opponent-play-card"; wrapper.append(card); layer.append(wrapper);
+      const rule = leader ? card.querySelector(".opponent-leader-rule") : null;
+      if (rule) wrapper.append(rule);
       card.disabled = true; card.tabIndex = -1;
       document.body.append(layer); this.layer = layer;
       try {
@@ -59,7 +62,7 @@
           {opacity: 1, transform: "translate(0,-50%) scale(1)"},
         ], 250, "ease-out");
         if (!await this.stage(250, time => { reveal.currentTime = time; })) return false;
-        if (!await this.stage(450, () => {})) return false;
+        if (!await this.stage(leader ? 1400 : 450, () => {})) return false;
         if (scorch) {
           layer.dataset.stage = "burn";
           if (!this.fire) this.fire = new window.FrontiersFire("opponent-fire-effects");
@@ -71,7 +74,9 @@
             {offset: 1, opacity: 0, filter: "brightness(.1)", clipPath: this.fire.clip(burn, 1)},
           ], burn.duration, "linear");
           const burns = new Map([["played", burn]]);
+          let sounded = false;
           if (!await this.stage(burn.duration, (time, delta) => {
+            if (!sounded) { sounded = true; onBurn?.(burn.duration); }
             burn.elapsed = time; animation.currentTime = time; this.fire.draw(burns, delta);
           })) return false;
           this.fire.clear(); commit();

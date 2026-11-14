@@ -46,9 +46,9 @@ class APITests(unittest.TestCase):
     def test_health_static_and_catalog(self):
         self.assertEqual(self.client.get("/healthz").json()["status"], "ok")
         for path in ("/", "/static/app.js", "/static/local-profile.js", "/static/scorch.js", "/static/opponent-play.js", "/static/presentation.css", "/static/shiron.css", "/static/styles.css", "/static/match.css",
-                     "/static/cards.css", "/static/lobby.css", "/static/artwork.css", "/static/card-art.webp", "/static/wood.svg",
-                     "/static/decoy.webp", "/static/rain.webp", "/static/scorch.webp",
-                     "/static/horn.webp", "/static/mushroom.webp"):
+                     "/static/cards.css", "/static/lobby.css", "/static/artwork.css", "/static/images/common/card-art.webp", "/static/images/common/wood.svg",
+                     "/static/images/common/decoy.webp", "/static/images/common/rain.webp", "/static/images/common/scorch.webp",
+                     "/static/images/common/horn.webp", "/static/images/skone/mushroom.webp"):
             response = self.client.get(path)
             self.assertEqual(response.status_code, 200, path)
             self.assertIn("frame-ancestors 'none'", response.headers["content-security-policy"])
