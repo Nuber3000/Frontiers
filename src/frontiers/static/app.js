@@ -563,7 +563,7 @@
     if (card.rows?.length > 1) parts.push(t("Можно выбрать ближний или дальний бой при розыгрыше."));
     if (!parts.length) parts.push(t("Обычный отряд. Его сила добавляется к вашему счёту."));
     const text = parts.join(" ");
-    return faction === "skone" ? text.replaceAll(t("штандартов"), t("Командных рогов")).replaceAll(t("Штандарт"), t("Командный рог")) : text;
+    return ["skone", "ellifarn"].includes(faction) ? text.replaceAll(t("штандартов"), t("Командных рогов")).replaceAll(t("Штандарт"), t("Командный рог")) : text;
   }
   function glyph(card) {
     if (card.hero) return card.faction === "skone" ? "♛" : catalog.factions[card.faction]?.emblem || "♛";
@@ -600,7 +600,7 @@
     for (const ability of card.abilities || []) {
       const seal = node("span", "ability-seal");
       seal.dataset.ability = ability;
-      seal.title = ability === "horn" && faction === "skone" ? t("Командный рог") : catalog.ability_names[ability];
+      seal.title = ability === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : catalog.ability_names[ability];
       seal.setAttribute("role", "img"); seal.setAttribute("aria-label", seal.title);
       seal.append(icon(ABILITY_ICONS[ability] || "unknown")); seals.append(seal);
     }
@@ -615,7 +615,7 @@
       seals.append(rowIcon);
     }
     result.append(top, node("span", "card-name", cardName(card, faction)), seals,
-      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && faction === "skone" ? t("Командный рог") : catalog.ability_names[ability] || ability).join(" · ")),
+      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : catalog.ability_names[ability] || ability).join(" · ")),
       node("span", "card-row", (card.rows || []).map((row) => t(ROW_NAMES[row])).join(" / ")));
     return result;
   }

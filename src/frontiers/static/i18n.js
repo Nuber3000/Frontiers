@@ -56,7 +56,7 @@ window.FrontiersI18n = (() => {
   "Добровольцы Медного щита": "Copper Shield Volunteers",
   "Караванный эскорт Лангинса": "Langins Caravan Escort",
   "Всадники Миринорма": "Mirinorm Riders",
-  "Рысьи следопыты": "Lynx Trackers",
+  "Рысь следопыт": "Lynx Tracker",
   "Лучница Янтарной долины": "Ambervale Archer",
   "Бранн, капитан Эмбера": "Brann, Captain of Ember",
   "Варг, страж Великого Леса": "Varg, Warden of the Great Forest",

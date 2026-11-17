@@ -14,29 +14,29 @@ def unit(key, name, strength, rows, *, copies=1, ability=None, hero=False):
 
 
 ELLIFARN_UNITS = [
-    unit("healer", "Полевые лекари Лангинса", 0, Row.RANGED, copies=3, ability="medic"),
-    unit("scout", "Дозорный Миринорма", 1, Row.RANGED, ability="medic"),
-    unit("archers", "Стрелки Серебряной рощи", 2, (Row.RANGED, Row.MELEE), copies=3, ability="muster"),
+    unit("healer", "Полевые лекари Лангинса", 1, Row.RANGED, copies=3, ability="medic"),
+    unit("scout", "Дозорный Миринорма", 6, Row.RANGED, ability="medic"),
+    unit("archers", "Стрелки Серебряной рощи", 4, (Row.RANGED, Row.MELEE), copies=3, ability="muster"),
     unit("sappers", "Сапёры Эмбера", 3, Row.MELEE, copies=3, ability="muster"),
     unit("shield", "Добровольцы Медного щита", 5, Row.MELEE, copies=5, ability="muster"),
     unit("escort", "Караванный эскорт Лангинса", 5, Row.MELEE, copies=3, ability="muster"),
-    unit("riders", "Всадники Миринорма", 5, (Row.MELEE, Row.RANGED), copies=2),
-    unit("tracker", "Рысьи следопыты", 6, (Row.MELEE, Row.RANGED), copies=3),
-    unit("marksman", "Лучница Янтарной долины", 4, (Row.RANGED, Row.MELEE)),
-    unit("captain", "Бранн, капитан Эмбера", 6, Row.MELEE),
-    unit("warden", "Варг, страж Великого Леса", 6, (Row.MELEE, Row.RANGED)),
-    unit("engine", "Баллиста Эмбера", 6, Row.SIEGE, copies=2, ability="bond"),
-    unit("outrider", "Дозорная Лангинса", 4, (Row.MELEE, Row.RANGED)),
+    unit("riders", "Всадники Миринорма", 5, (Row.MELEE, Row.RANGED), copies=4, ability="muster"),
+    unit("tracker", "Рысь следопыт", 6, (Row.MELEE, Row.RANGED), copies=3, ability="bond"),
+    unit("marksman", "Лучница Янтарной долины", 4, (Row.RANGED, Row.MELEE), ability="morale"),
+    unit("captain", "Бранн, капитан Эмбера", 8, Row.MELEE, ability="scorch_melee"),
+    unit("warden", "Варг, страж Великого Леса", 6, (Row.MELEE, Row.RANGED), ability="horn"),
+    unit("engine", "Баллиста Эмбера", 10, Row.SIEGE, copies=2, ability="bond"),
+    unit("outrider", "Дозорная Лангинса", 4, (Row.MELEE, Row.RANGED), ability="morale"),
     unit("fire", "Кирен, огнемётчик Лангинса", 8, Row.SIEGE, ability="scorch_siege"),
     unit("hero_ember", "Дорин Медный Молот", 10, Row.MELEE, ability="morale", hero=True),
     unit("hero_grove", "Лиара, голос Великого Леса", 10, Row.RANGED, ability="medic", hero=True),
-    unit("hero_langins", "Марта, щит Лангинса", 10, Row.RANGED, hero=True),
-    unit("hero_mirinorm", "Элери, стрела Миринорма", 10, Row.RANGED, hero=True),
+    unit("hero_langins", "Марта, щит Лангинса", 10, Row.RANGED, ability="medic", hero=True),
+    unit("hero_mirinorm", "Элери, стрела Миринорма", 10, Row.RANGED, ability="scorch_ranged", hero=True),
 ]
 
 ELLIFARN_DECK = (
     ["ellifarn_healer"] * 2 + ["ellifarn_archers"] * 3 + ["ellifarn_sappers"] * 3
-    + ["ellifarn_shield"] * 3 + ["ellifarn_escort"] * 3 + ["ellifarn_riders"] * 2
+    + ["ellifarn_shield"] * 3 + ["ellifarn_escort"] * 3 + ["ellifarn_riders"] * 4
     + ["ellifarn_tracker"] * 2 + ["ellifarn_engine"] * 2
     + ["ellifarn_warden", "ellifarn_marksman", "ellifarn_fire", "ellifarn_hero_ember",
        "ellifarn_hero_grove", "ellifarn_hero_mirinorm", "ellifarn_hero_langins"]
