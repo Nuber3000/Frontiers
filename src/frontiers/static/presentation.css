@@ -117,6 +117,8 @@ dialog.mulligan-dialog, dialog.result-dialog {
 .scorch-burn { position: relative; flex: 0 0 auto; height: 100%; aspect-ratio: 3 / 4; pointer-events: none; isolation: isolate; }
 .in-match .scorch-burn > .card.small { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; will-change: clip-path, filter, opacity; }
 .scorch-effects { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 28; }
+#board-return { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 20; }
+#choice-view-board { margin-bottom: 12px; }
 dialog.leader-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 22px; border: 0; border-radius: 0; background: transparent; box-shadow: none; overflow: auto; }
 .leader-dialog::backdrop { background: #050604c9; backdrop-filter: none; animation: result-reveal .25s ease both; }
 .leader-dialog[open] { display: grid; place-items: center; }

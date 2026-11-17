@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from frontiers.bot import BOT, DIFFICULTIES, _knowledge_game, choose_bot_move
-from frontiers.catalog import CATALOG, DECKS
+from frontiers.catalog import CATALOG, DECKS, FACTIONS
 from frontiers.engine import Game, WeatherEffect
 from frontiers.cards import CombatRow as Row
 from frontiers.local_match import LocalMatch
@@ -144,6 +144,7 @@ class BotTests(unittest.TestCase):
 
     def test_mixed_faction_games_produce_only_legal_moves_and_finish(self):
         leaders = {"burgundy": "sun", "shiron": "shiron_hand", "skone": "skone_rage", "ellifarn": "ellifarn_trade"}
+        leaders.update({key: info["default_leader"] for key, info in FACTIONS.items() if key not in leaders})
         for index, preset in enumerate(DECKS.values()):
             for difficulty in DIFFICULTIES:
                 with self.subTest(preset=preset["name"], difficulty=difficulty):

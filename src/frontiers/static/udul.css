@@ -1,0 +1,44 @@
+body[data-faction='udul'] .faction-crest, .player-emblem[data-faction='udul'], .deck-pile[data-faction='udul'] {
+  background: repeating-linear-gradient(45deg,#edc38912 0 2px,transparent 2px 7px), #542b28;
+  color: #e3be81;
+}
+.card[data-faction='udul'] .card-ribbon {
+  background: repeating-linear-gradient(45deg,#e4b68324 0 1px,transparent 1px 4px),linear-gradient(90deg,#321b19,#7b3b30,#311b1a);
+  color: #e3be81; border-color: #b98e62;
+}
+.udul-mark {
+  display: inline-block; width: 1em; height: 1.4em; flex-shrink: 0;
+  background: currentColor;
+  mask: url('/static/images/udul/emblem.svg') center / contain no-repeat;
+}
+.faction-crest > .udul-mark, .player-emblem > .udul-mark {
+  width: 65%; height: auto; aspect-ratio: 100 / 140;
+}
+.deck-pile > .udul-mark { margin: 0; }
+.card .card-ribbon.udul-mark { height: auto; mask: none; }
+.card-ribbon.udul-mark::after {
+  content: ''; position: absolute; inset: auto 4% 12% 4%; aspect-ratio: 100 / 140;
+  background: currentColor;
+  mask: url('/static/images/udul/emblem.svg') center / contain no-repeat;
+}
+.soul-counter {
+  display: block; position: absolute; top: 4px; inset-inline: 4px; z-index: 1;
+  padding: 3px 1px; background: #102322e8; border: 1px solid #7ebeb099;
+  border-radius: 2px; color: #b5eee0; font: 10px/1.2 Georgia,serif;
+}
+@media (max-height: 540px) { .soul-counter { top: 1px; inset-inline: 1px; padding: 1px; font-size: 7px; } }
+[class*='art-udul_'] { background-size: cover; background-position: center top; }
+.art-udul_mauler { background-image: url('/static/images/udul/udul_mauler.webp'); }
+.art-udul_spears { background-image: url('/static/images/udul/udul_spears.webp'); }
+.art-udul_horde { background-image: url('/static/images/udul/udul_horde.webp'); }
+.art-udul_hunters { background-image: url('/static/images/udul/udul_hunters.webp'); }
+.art-udul_healer { background-image: url('/static/images/udul/udul_healer.webp'); }
+.art-udul_drummer { background-image: url('/static/images/udul/udul_drummer.webp'); }
+.art-udul_engine { background-image: url('/static/images/udul/udul_engine.webp'); }
+.art-udul_executioner { background-image: url('/static/images/udul/udul_executioner.webp'); }
+.art-udul_hero_warlord { background-image: url('/static/images/udul/udul_hero_warlord.webp'); }
+.art-udul_hero_huntress { background-image: url('/static/images/udul/udul_hero_huntress.webp'); }
+.art-udul_hero_shaman { background-image: url('/static/images/udul/udul_hero_shaman.webp'); }
+.art-udul_hero_scout { background-image: url('/static/images/udul/udul_hero_scout.webp'); }
+.art-udul_portal { background-image: url('/static/images/udul/udul_portal.webp'); }
+.art-udul_horn { background-image: url('/static/images/udul/udul_horn.webp'); }

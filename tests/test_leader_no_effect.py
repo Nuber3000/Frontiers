@@ -17,6 +17,8 @@ class LeaderNoEffectTests(unittest.TestCase):
                 continue
             with self.subTest(leader=leader):
                 game = fixture(["knight"], ["knight"], leader)
+                if leader == "udul_souls":
+                    game.players[0].souls = 3
                 move = {"type": "leader"}
                 if leader == "skone_horn":
                     move["row"] = "melee"

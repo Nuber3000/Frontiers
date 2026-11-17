@@ -1,0 +1,139 @@
+{
+  "generator": "Built-in image_gen",
+  "faction": "udul",
+  "images": [
+    {
+      "key": "leader_udul_rite",
+      "source": "C:/Users/nuber/.codex/generated_images/01a1726d-1904-70c1-b534-9e255e3cf0be/exec-64977757-e5d9-402b-ad25-7f98dc0edb17.png",
+      "archive": "assets/art-source/udul/leader_udul_rite.png",
+      "delivery": "src/frontiers/static/images/udul/leader_udul_rite.webp",
+      "prompt": "Gaur, fourth generation orc shaman, performing a weather rite; dark painterly fantasy portrait."
+    },
+    {
+      "key": "udul_mauler",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-317b7b15-988c-48cf-bbac-5446b23f4d3f.png",
+      "archive": "assets/art-source/udul/udul_mauler.png",
+      "delivery": "src/frontiers/static/images/udul/udul_mauler.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Massive battle-scarred male orc with ash-gray skin, black swept-back hair and tusks, wielding a heavy iron mace before a portal on a desolate battlefield. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_hunters",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-8abaebc5-a893-471b-839e-cd463bb217be.png",
+      "archive": "assets/art-source/udul/udul_hunters.png",
+      "delivery": "src/frontiers/static/images/udul/udul_hunters.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Strong female orc hunter, moss green skin, auburn dreadlocks tied with bone beads, poised with a long throwing spear amid ash-gray scrubland. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_spears",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-c5cd395c-3bc7-44ec-b59e-ec92b10142dc.png",
+      "archive": "assets/art-source/udul/udul_spears.png",
+      "delivery": "src/frontiers/static/images/udul/udul_spears.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Three disciplined green-skinned orc spearmen, forefront veteran with broken tusk, long pikes and scarred iron armor, dark volcanic path. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_horde",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-2cf11cca-9ec2-407f-b0e7-c98f75c274d1.png",
+      "archive": "assets/art-source/udul/udul_horde.png",
+      "delivery": "src/frontiers/static/images/udul/udul_horde.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Furious roaring olive-green orc axeman with red mohawk and spiked shoulder armor, a vast horde surging out of a portal behind him. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_healer",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-4d87d457-305f-4749-8db0-cc3e3f8e8bb8.png",
+      "archive": "assets/art-source/udul/udul_healer.png",
+      "delivery": "src/frontiers/static/images/udul/udul_healer.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Wise female orc shaman, dark olive skin, bone necklace, heavy fur cloak, braided black hair, kneeling beside a wounded orc with softly glowing healing runes. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_drummer",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-f1866b27-df54-48c2-a4cd-3c180686f4af.png",
+      "archive": "assets/art-source/udul/udul_drummer.png",
+      "delivery": "src/frontiers/static/images/udul/udul_drummer.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Stocky male orc beating an immense hide war drum, bone mallets, bronze earrings, red war paint and leather harness, marching horde. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_engine",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-c533cc18-73a9-4d04-9584-84b10b1956ce.png",
+      "archive": "assets/art-source/udul/udul_engine.png",
+      "delivery": "src/frontiers/static/images/udul/udul_engine.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. A huge orc siege catapult built of iron, black timber and gigantic monster ribs, operated by tusked orcs on an alien wasteland battlefield. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_hero_warlord",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-97c6c644-2979-46b2-865f-9ad14534bdd9.png",
+      "archive": "assets/art-source/udul/udul_hero_warlord.png",
+      "delivery": "src/frontiers/static/images/udul/udul_hero_warlord.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Gromar the world-conquering orc warlord, muscular gray-green skin, two heavy axes, black topknot, extravagant scarred iron armor and bone trophies, portals in a mountain pass. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_executioner",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-0dcd6c06-f230-4e88-8bf2-6b536c16c1e8.png",
+      "archive": "assets/art-source/udul/udul_executioner.png",
+      "delivery": "src/frontiers/static/images/udul/udul_executioner.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Urgat the orc executioner, gray skin, coal-black beard, grim battle scars, enormous cleaver, black iron breastplate, distant burning palisade. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_hero_huntress",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-88410a94-c3aa-4b1a-aaba-2a73ed0fcd15.png",
+      "archive": "assets/art-source/udul/udul_hero_huntress.png",
+      "delivery": "src/frontiers/static/images/udul/udul_hero_huntress.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Sharga, legendary female orc spear hunter, green skin, amber eyes, red dreadlocks, tusks and bone earrings, leather and spiked steel armor, ready to throw a spear through a storm of ashes. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_hero_scout",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-67fc61d4-2679-4e66-9c61-aedbf1957c34.png",
+      "archive": "assets/art-source/udul/udul_hero_scout.png",
+      "delivery": "src/frontiers/static/images/udul/udul_hero_scout.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Tarug, mysterious tusked orc portal scout, hooded charcoal leather armor and narrow iron dagger, bronze green skin, concealed beside a bright rift into another world. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_hero_shaman",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-75ce0504-c446-4032-9b90-1767d0e12a10.png",
+      "archive": "assets/art-source/udul/udul_hero_shaman.png",
+      "delivery": "src/frontiers/static/images/udul/udul_hero_shaman.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Morga, elder female orc spirit speaker, green skin, long silver hair, antler and bone crown, heavy fur mantle, teal robe over armored tunic, ghostly ancestral orcs in background. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_portal",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-3fefa832-cf5d-4fb5-9f6c-c288f3fcdfd8.png",
+      "archive": "assets/art-source/udul/udul_portal.png",
+      "delivery": "src/frontiers/static/images/udul/udul_portal.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. A monumental swirling teal and violet interdimensional portal, black jagged stone arch decorated with orc runes, two powerful orc warriors stepping out, sprawling alien sky beyond. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "udul_horn",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-887babf1-31ef-4323-a830-57cf94100d50.png",
+      "archive": "assets/art-source/udul/udul_horn.png",
+      "delivery": "src/frontiers/static/images/udul/udul_horn.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. A magnificent orc war horn made from a curved giant beast tusk, bound in dark iron with copper runes, hung on a carved totem, red war banners behind. No humans. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "leader_udul_necromancy",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-c65f87f8-796f-4fd5-8b73-2185f1facd2e.png",
+      "archive": "assets/art-source/udul/leader_udul_necromancy.png",
+      "delivery": "src/frontiers/static/images/udul/leader_udul_necromancy.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Gaur, the mature male gray olive orc shaman from the reference, long black hair, beard, tusks and ash face paint, wearing bone iron and fur regalia, skull staff. Calling two ancestral orc spirits up from an ancient burial ground, green-blue spectral wisps. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "leader_udul_spirit",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-0f83d652-bcd7-4b01-a2f7-e8f49ee5abad.png",
+      "archive": "assets/art-source/udul/leader_udul_spirit.png",
+      "delivery": "src/frontiers/static/images/udul/leader_udul_spirit.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Gaur, the mature male gray olive orc shaman from the reference, long black hair, beard, tusks and ash face paint, wearing bone iron and fur regalia, skull staff. Raising an enormous curved tusk war horn before the assembled orc horde at sunset. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "leader_udul_sacrifice",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-e59d73d1-dd0d-4824-baf6-677193bc8da6.png",
+      "archive": "assets/art-source/udul/leader_udul_sacrifice.png",
+      "delivery": "src/frontiers/static/images/udul/leader_udul_sacrifice.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Gaur, the mature male gray olive orc shaman from the reference, long black hair, beard, tusks and ash face paint, wearing bone iron and fur regalia, skull staff. Performing a solemn ritual sacrifice of two glowing symbolic card-shaped wooden talismans in an ember brazier, no bodies or gore. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    },
+    {
+      "key": "leader_udul_souls",
+      "source": "C:\\Users\\nuber\\.codex\\generated_images\\01a1726d-1904-70c1-b534-9e255e3cf0be\\exec-abab1b62-33d9-4c36-84fa-093a75a12059.png",
+      "archive": "assets/art-source/udul/leader_udul_souls.png",
+      "delivery": "src/frontiers/static/images/udul/leader_udul_souls.webp",
+      "prompt": "One finished vertical 3:4 dark painterly realistic fantasy card illustration, original Udul Sureg orc horde. Gaur, the mature male gray olive orc shaman from the reference, long black hair, beard, tusks and ash face paint, wearing bone iron and fur regalia, skull staff. Capturing three luminous teal soul orbs in a ritual bone lantern, night and portal mist. Rich detailed materials, dramatic atmospheric lighting, earthy red/black iron and jade portal magic. Entire head and weapon tips safely inside frame with generous headroom; subject centered with readable silhouette for a small card. No text, no border, no card interface, no logos, no watermark. Match handmade medieval fantasy game artwork."
+    }
+  ]
+}

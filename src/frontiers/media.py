@@ -12,7 +12,7 @@ def image_path(filename: str) -> str:
     name = PurePosixPath(filename).name
     stem = PurePosixPath(name).stem
     key = stem.removeprefix("leader_")
-    faction = next((group for group in ("shiron", "skone", "ellifarn") if key.startswith(group + "_")), None)
+    faction = next((group for group in ("shiron", "skone", "ellifarn", "udul") if key.startswith(group + "_")), None)
     if faction is None:
         faction = "common" if stem in _COMMON_ART else "skone" if stem in _SKONE_ART else "burgundy"
     return f"images/{faction}/{name}"

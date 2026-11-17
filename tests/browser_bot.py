@@ -12,7 +12,7 @@ import uvicorn
 from frontiers.app import create_app
 
 
-def run(channel, language, difficulty="normal"):
+def run(channel, language, difficulty="normal", faction="burgundy"):
     app = create_app()
     hold_rules, rules_requested = threading.Event(), threading.Event()
 
@@ -48,6 +48,7 @@ def run(channel, language, difficulty="normal"):
                 browser = playwright.chromium.launch(channel=channel)
                 context = browser.new_context(viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
                 page = context.new_page()
+                page.add_init_script("localStorage.setItem('frontiers.sound',JSON.stringify({enabled:false,volume:0,musicVolume:0}))")
                 errors, online_requests, web_sockets = [], [], []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.on("console", lambda message: errors.append(message.text) if message.type == "error"
@@ -92,6 +93,7 @@ def run(channel, language, difficulty="normal"):
                 assert page.evaluate("localStorage.getItem('frontiers.bot-difficulty')") == difficulty
                 expect(page.locator("#bot-setup-dialog")).to_be_hidden()
                 context.set_offline(True)
+                page.locator("#faction-select").select_option(faction)
                 page.locator("#ready-button").click()
                 page.locator("#mulligan-button").click()
                 for _ in range(3):
@@ -123,5 +125,6 @@ if __name__ == "__main__":
     parser.add_argument("--browser", default="msedge")
     parser.add_argument("--language", choices=("ru", "en"), default="ru")
     parser.add_argument("--difficulty", choices=("easy", "normal", "hard"), default="normal")
+    parser.add_argument("--faction", default="burgundy")
     args = parser.parse_args()
-    run(args.browser, args.language, args.difficulty)
+    run(args.browser, args.language, args.difficulty, args.faction)

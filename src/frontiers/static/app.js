@@ -12,6 +12,7 @@
   const EFFECT_TEXT = {
     spy: "Выходит на сторону соперника и даёт вам две карты из колоды.",
     medic: "Возвращает выбранный отряд из вашего сброса. Герои недоступны.",
+    revival: "Возвращает выбранный отряд из вашего сброса кроме героев и шпионов",
     bond: "Базовая сила умножается на число одинаковых отрядов в вашем ряду.",
     morale: "Добавляет 1 к силе других ваших отрядов в ряду, кроме героев.",
     muster: "Призывает связанные отряды из вашей руки и колоды.",
@@ -39,6 +40,7 @@
   let resultMinimized = false, resultTimer = null, resultReadyAt = 0;
   let noticeQueue = [], currentNotice = null, noticeAnimation = null, noticeSerial = 0;
   let leaderPreview = null, leaderPreviewAnimation = null;
+  let viewingBoardDuringChoice = false;
   const burningCards = new Map();
   const scorchFire = new window.FrontiersFire();
   const weatherEffects = new window.FrontiersWeather();
@@ -63,6 +65,7 @@
     banner: ["M5 22V3m0 1c5-5 9 5 15 0v11c-6 5-10-5-15 0"],
     spy: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z", "M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0Z"],
     medic: ["M9 3h6v6h6v6h-6v6H9v-6H3V9h6V3Z"],
+    revival: ["M7 9l5-5 5 5", "M12 4v12", "M7 14c-2.5.8-4 2-4 3.5C3 19.4 7 21 12 21s9-1.6 9-3.5c0-1.5-1.5-2.7-4-3.5"],
     bond: ["m9 8 3-3a4 4 0 0 1 6 6l-3 3M15 16l-3 3a4 4 0 0 1-6-6l3-3M8 16l8-8"],
     morale: ["M12 3 3 12h6v9h6v-9h6L12 3Z"],
     muster: ["M15 6a3 3 0 1 0-6 0 3 3 0 0 0 6 0ZM7 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0ZM21 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z", "M8 21v-5a4 4 0 0 1 8 0v5M3 19v-5a2 2 0 0 1 3-2M21 19v-5a2 2 0 0 0-3-2"],
@@ -76,6 +79,7 @@
     fog: ["M3 6h18M1 10h17M6 14h17M3 18h16"],
     rain: ["M4 12a3.5 3.5 0 0 1 0-7 5 5 0 0 1 9-1 4 4 0 0 1 5 8H4Z", "m6 16-2 4m8-4-2 4m8-4-2 4"],
     storm: ["M13 2 5 14h7l-1 8 8-13h-7l1-7Z"],
+    udul_portal: ["M12 2C2 2 2 22 12 22S22 2 12 2Z", "M12 6c-5 0-5 12 0 12s5-12 0-12", "M7 15 3 12l2 7 4 2m8-6 4-3-2 7-4 2"],
     stormborn: ["M4 10a3 3 0 0 1 0-6 4 4 0 0 1 7-1 3 3 0 0 1 4 3", "M17 3 11 12h5l-1 6 7-10h-5V3Z", "M2 16h8M2 20l3 2 3-2 3 2 3-2 3 2 4-2"],
     scorch: ["M8 20v-3c-7-4-5-15 4-15s11 11 4 15v3H8Z", "M7 9h3v3H7ZM14 9h3v3h-3ZM12 12l-1 3h2l-1-3ZM10 17v3m4-3v3"],
     mushroom: ["M2 12a10 10 0 0 1 20 0H2ZM9 12v8h6v-8M7 21h10", "M7 8h.1M14 5h.1M17 9h.1"],
@@ -119,18 +123,13 @@
     return svg;
   }
   function artClass(card, faction = renderingFaction()) {
-    return card.key === "horn" && ["shiron", "skone", "ellifarn"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
+    return card.key === "horn" && ["shiron", "skone", "ellifarn", "udul"].includes(faction) ? `art-${faction}_horn` : `art-${card.key}`;
   }
   function renderLandingBacks() {
     const factions = Object.entries(catalog.factions).filter(([, info]) => info.playable);
-    $("faction-backs").replaceChildren(...factions.map(([key], index) => {
-      const offset = factions.length === 1 ? 0 : (index / (factions.length - 1) * 2 - 1);
+    $("faction-backs").replaceChildren(...factions.map(([key]) => {
       const back = node("div", "hero-card deck-pile");
       back.dataset.faction = key;
-      back.style.setProperty("--fan-offset", String(offset));
-      back.style.setProperty("--fan-depth", String(Math.abs(offset)));
-      back.style.setProperty("--fan-angle", `${offset * 17}deg`);
-      back.style.zIndex = String(key === "ellifarn" ? 11 : 10 - Math.round(Math.abs(offset) * 3));
       back.append(factionMark(key, "pile-crest"));
       return back;
     }));
@@ -140,11 +139,15 @@
     if (faction === "skone") {
       mark.classList.add("valknut-mark");
       mark.setAttribute("role", "img"); mark.setAttribute("aria-label", t("Валькнут"));
-    } else mark.textContent = catalog.factions[faction]?.emblem || "⚜";
+    } else if (faction === "udul") {
+      mark.classList.add("udul-mark");
+      mark.setAttribute("role", "img"); mark.setAttribute("aria-label", t("Эмблема Удул Сурэг"));
+    }
+    else mark.textContent = catalog.factions[faction]?.emblem || "⚜";
     return mark;
   }
   function cardName(card, faction = renderingFaction()) {
-    return card.key === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : t(card.name);
+    return card.key === "horn" && ["skone", "ellifarn", "udul"].includes(faction) ? t("Командный рог") : t(card.name);
   }
   function factionInfo(key = leader) {
     return catalog.factions[catalog.leaders[key]?.faction || "burgundy"];
@@ -386,7 +389,7 @@
     const played = next.game?.played;
     const enemy = 1 - next.me;
     const leaderUsed = !freshRoom && state.game && next.game
-      && !state.game.players[enemy].leader_used && next.game.players[enemy].leader_used;
+      && (next.game.leader_played === enemy || (!state.game.players[enemy].leader_used && next.game.players[enemy].leader_used));
     if (!skipPresentation && !freshRoom && state.game?.phase === "playing" && next.game?.match_id === state.game.match_id
         && ((played?.actor !== next.me && played?.card) || leaderUsed)
         && next.game.version === state.game.version + 1 && lastPresentedPlay !== `${next.code}:${next.game.version}`
@@ -555,22 +558,30 @@
     return usableMoves().filter((move) => move.type === "play" && move.card_id === selected);
   }
 
+  function abilityName(ability, faction) {
+    if (ability === "medic" && faction === "udul") return t("Возрождение");
+    if (ability === "horn" && ["skone", "ellifarn", "udul"].includes(faction)) return t("Командный рог");
+    return catalog.ability_names[ability] || ability;
+  }
   function description(card, faction = renderingFaction()) {
     const parts = [];
     if (card.hero) parts.push(t("Герой: иммунитет к погоде, усилению, Казни, Чучелу и возвращению Лекарем."));
     if (card.description) parts.push(t(card.description));
-    for (const ability of card.abilities || []) if (EFFECT_TEXT[ability]) parts.push(t(EFFECT_TEXT[ability]));
+    for (const ability of card.abilities || []) {
+      const effect = ability === "medic" && faction === "udul" ? "revival" : ability;
+      if (EFFECT_TEXT[effect]) parts.push(t(EFFECT_TEXT[effect]));
+    }
     if (card.rows?.length > 1) parts.push(t("Можно выбрать ближний или дальний бой при розыгрыше."));
     if (!parts.length) parts.push(t("Обычный отряд. Его сила добавляется к вашему счёту."));
     const text = parts.join(" ");
-    return ["skone", "ellifarn"].includes(faction) ? text.replaceAll(t("штандартов"), t("Командных рогов")).replaceAll(t("Штандарт"), t("Командный рог")) : text;
+    return ["skone", "ellifarn", "udul"].includes(faction) ? text.replaceAll(t("штандартов"), t("Командных рогов")).replaceAll(t("Штандарт"), t("Командный рог")) : text;
   }
-  function glyph(card) {
+  function glyph(card, faction = renderingFaction()) {
     if (card.hero) return card.faction === "skone" ? "♛" : catalog.factions[card.faction]?.emblem || "♛";
     if (card.kind === "weather") return {frost: "❄", fog: "≋", rain: "☂", storm: "ϟ", clear: "☀"}[card.key] || "☁";
     if (card.kind === "special") return {horn: "⚑", decoy: "♟", scorch: "♨", mushroom: "♧", ting: "+2"}[card.key] || "◇";
     if (card.abilities?.includes("spy")) return "◈";
-    if (card.abilities?.includes("medic")) return "✚";
+    if (card.abilities?.includes("medic")) return faction === "udul" ? "↑" : "✚";
     if (card.abilities?.includes("berserker")) return "♞";
     return ROW_GLYPHS[card.rows?.[0]] || "⚔";
   }
@@ -600,9 +611,9 @@
     for (const ability of card.abilities || []) {
       const seal = node("span", "ability-seal");
       seal.dataset.ability = ability;
-      seal.title = ability === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : catalog.ability_names[ability];
+      seal.title = abilityName(ability, faction);
       seal.setAttribute("role", "img"); seal.setAttribute("aria-label", seal.title);
-      seal.append(icon(ABILITY_ICONS[ability] || "unknown")); seals.append(seal);
+      seal.append(icon(ability === "medic" && faction === "udul" ? "revival" : ABILITY_ICONS[ability] || "unknown")); seals.append(seal);
     }
     if (card.kind === "unit") {
       const rowIcon = icon(card.rows?.length > 1 ? "agile" : card.rows?.[0], "combat-seal");
@@ -615,7 +626,7 @@
       seals.append(rowIcon);
     }
     result.append(top, node("span", "card-name", cardName(card, faction)), seals,
-      node("span", "card-abilities", (card.abilities || []).map((ability) => ability === "horn" && ["skone", "ellifarn"].includes(faction) ? t("Командный рог") : catalog.ability_names[ability] || ability).join(" · ")),
+      node("span", "card-abilities", (card.abilities || []).map((ability) => abilityName(ability, faction)).join(" · ")),
       node("span", "card-row", (card.rows || []).map((row) => t(ROW_NAMES[row])).join(" / ")));
     return result;
   }
@@ -767,7 +778,8 @@
     for (const [id, category, inDeck] of [["collection", filter, false], ["deck-cards", deckFilter, true]]) {
       const list = $(id), position = list.scrollTop;
       const cards = catalog.cards.filter((card) => card.collectible && card.available !== false && [faction, "neutral"].includes(card.faction) && matchesFilter(card, category)
-        && (inDeck ? counts.has(card.key) : (counts.get(card.key) || 0) < card.copies));
+        && (inDeck || !info.forbidden_abilities?.some(ability => card.abilities.includes(ability)))
+        && (inDeck ? counts.has(card.key) : (counts.get(card.key) || 0) < (info.card_limits?.[card.key] ?? card.copies)));
       cards.sort((a, b) => cardOrder(a) - cardOrder(b) || b.base_strength - a.base_strength);
       list.replaceChildren(...cards.map((card) => {
         const item = node("div", "collection-item");
@@ -779,7 +791,7 @@
         });
         adjust.disabled = locked || (!inDeck && deck.length >= 60);
         adjust.setAttribute("aria-label", `${inDeck ? t("Убрать") : t("Добавить")}: ${cardName(card)}`);
-        controls.append(node("span", "", `×${inDeck ? count : card.copies - count}`), adjust);
+        controls.append(node("span", "", `×${inDeck ? count : (info.card_limits?.[card.key] ?? card.copies) - count}`), adjust);
         item.append(cardNode(card), controls); return item;
       }));
       if (!cards.length) list.append(node("p", "empty-collection", inDeck ? t("В этой категории пока нет карт. Добавьте их из коллекции слева.") : t("Все карты этой категории уже в вашей колоде.")));
@@ -841,7 +853,7 @@
     let banner;
     if (game.phase === "finished") banner = t("Матч завершён");
     else if (game.phase === "mulligan") banner = mine.mulligan_done ? t("Ждём подтверждения руки соперника") : t("Выберите карты для замены");
-    else if (game.pending) banner = game.pending.actor === me ? (game.pending.kind === "levy" ? t("Выберите отряд из отбоя соперника") : t("Лекарь: выберите отряд из сброса")) : t("Соперник выбирает цель способности");
+    else if (game.pending) banner = game.pending.actor === me ? (game.pending.cards ? t(game.pending.source) : game.pending.kind === "levy" ? t("Выберите отряд из отбоя соперника") : t(factionKey(mine.leader) === "udul" ? "Возрождение: выберите отряд из сброса" : "Лекарь: выберите отряд из сброса")) : t("Соперник выбирает цель способности");
     else banner = game.turn === me ? (game.players[1 - me].passed ? t("Соперник спасовал. Вы можете продолжать ходить") : t("Ваш ход")) : t("Ход соперника");
     if (pendingVersion !== null) banner = t("Сервер проверяет ход…");
     $("turn-banner").textContent = banner;
@@ -856,6 +868,7 @@
       text.append(node("strong", "", factionInfo(player.leader).leader), node("small", "", catalog.leaders[player.leader].name));
       $(id).replaceChildren(leaderPortrait(player.leader), text, node("span", "leader-availability", player.leader_blocked ? t("Заблокирован") : catalog.leaders[player.leader].passive ? t("Пассивная способность") : player.leader_used ? t("Использован") : id === "leader-button" ? t("Использовать лидера") : t("Лидер соперника")));
       $(id).classList.toggle("used", player.leader_used || player.leader_blocked);
+      if (player.leader === "udul_souls") $(id).append(node("span", "soul-counter", t("Души: {0} / 3", player.souls || 0)));
       $(id).title = catalog.leaders[player.leader].description;
     }
     $("my-score").classList.toggle("active-player", game.turn === me && game.phase === "playing");
@@ -865,7 +878,7 @@
       $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", t("Колода")));
       const discarded = player.discard.at(-1);
       const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
-      preview.append(discarded?.key === "frost" ? icon("frost") : node("span", "", discarded ? glyph(discarded) : "∅"));
+      preview.append(discarded?.key === "frost" ? icon("frost") : node("span", "", discarded ? glyph(discarded, factionKey(player.leader)) : "∅"));
       $(prefix + "-discard").replaceChildren(preview, node("small", "", t("Сброс · {0}", player.discard.length)));
     }
     $("leader-button").title = catalog.leaders[mine.leader].description;
@@ -923,21 +936,30 @@
         if (!source) continue;
         const bounds = source.getBoundingClientRect();
         if (!bounds.width || !bounds.height) continue;
-        const image = source.cloneNode(true), element = node("div", "scorch-burn");
-        image.removeAttribute("data-card-id"); image.removeAttribute("title");
-        image.classList.remove("selected", "targetable"); image.tabIndex = -1;
-        element.dataset.burnId = card.id; element.setAttribute("aria-hidden", "true"); element.inert = true;
-        element.append(image);
         const order = board.filter(item => item.row === card.row).map(item => item.id);
-        const burn = {element, image, side, row: card.row, elapsed: 0, match: game.match_id, version: game.version,
-          following: order.slice(order.indexOf(card.id) + 1), animations: [], started: false};
-        scorchFire.prepare(burn, key); burningCards.set(key, burn);
+        queueScorchBurn(game, card.id, side, card.row, source.cloneNode(true), order.slice(order.indexOf(card.id) + 1));
       }
+    }
+    for (const {card, side, row} of game.executed_on_arrival || []) {
+      const image = cardNode(card, {small: true, faction: card.faction});
+      queueScorchBurn(game, card.id, side, row, image, []);
     }
     if (burningCards.size && currentNotice?.type === "turn") {
       noticeAnimation?.cancel(); noticeAnimation = null; currentNotice = null;
       $("match-announcement").hidden = true;
     }
+  }
+  function queueScorchBurn(game, id, side, row, image, following) {
+    const key = `${game.version}:${id}`;
+    if (burningCards.has(key)) return;
+    const element = node("div", "scorch-burn");
+    image.removeAttribute("data-card-id"); image.removeAttribute("title");
+    image.classList.remove("selected", "targetable"); image.tabIndex = -1;
+    element.dataset.burnId = id; element.setAttribute("aria-hidden", "true"); element.inert = true;
+    element.append(image);
+    const burn = {element, image, side, row, elapsed: 0, match: game.match_id, version: game.version,
+      following, animations: [], started: false};
+    scorchFire.prepare(burn, key); burningCards.set(key, burn);
   }
   function clearScorchAnimations() {
     for (const burn of burningCards.values()) {
@@ -996,6 +1018,21 @@
     if (burningCards.size) scheduleScorchFrame();
     else { scorchTick = null; playAnnouncement(); }
   }
+  function viewBoard() {
+    const dialog = $("choice-dialog");
+    if (!dialog.open) return;
+    viewingBoardDuringChoice = true;
+    dialog.close();
+    document.querySelector("main").inert = true;
+    $("board-return").hidden = false;
+    $("board-return").focus();
+  }
+  function endBoardView() {
+    if (!viewingBoardDuringChoice) return;
+    viewingBoardDuringChoice = false;
+    document.querySelector("main").inert = false;
+    $("board-return").hidden = true;
+  }
   function closeLeaderPreview() {
     leaderPreviewAnimation?.cancel(); leaderPreviewAnimation = null; leaderPreview = null;
     if ($("leader-dialog").open) $("leader-dialog").close();
@@ -1025,8 +1062,10 @@
       : !own ? "Лидер соперника" : game.phase === "finished" ? "Матч завершён"
       : !connected ? "Соединение потеряно. Дождитесь восстановления связи или отмените выбор."
       : game.turn !== state.me ? "Ход соперника" : pendingVersion !== null || opponentPresentation ? "Сервер проверяет ход…"
+      : player.leader === "udul_souls" && player.souls < 3 ? "Нужно собрать три души."
+      : factionKey(player.leader) === "udul" ? "Один раз за раунд. Применение завершит ваш ход."
       : "Один раз за матч. Применение завершит ваш ход.";
-    $("leader-confirmation-status").textContent = t(status);
+    $("leader-confirmation-status").textContent = t(status) + (player.leader === "udul_souls" ? " · " + t("Души: {0} / 3", player.souls || 0) : "");
   }
   function openLeaderPreview(side = state?.me) {
     if (!state?.game || !state.game.players[side]) return;
@@ -1407,23 +1446,33 @@
     result.append(label, special, cards);
     return result;
   }
-  function closeChoice() { if ($("choice-dialog").open) $("choice-dialog").close(); }
+  function closeChoice() {
+    endBoardView();
+    if ($("choice-dialog").open) $("choice-dialog").close();
+  }
   function renderChoices() {
     const game = state.game;
-    if (!game.pending || game.pending.actor !== state.me) return closeChoice();
+    if (!game.pending || game.pending.actor !== state.me || game.phase !== "playing") return closeChoice();
+    if (viewingBoardDuringChoice) return;
     const moves = usableMoves().filter((move) => move.type === "choose");
     const levy = game.pending.kind === "levy";
-    const ownDiscard = game.players[levy ? 1 - state.me : state.me].discard;
-    document.querySelector("#choice-dialog .eyebrow").textContent = levy ? t("Посмертная повинность") : t("Способность Лекаря");
+    const custom = Array.isArray(game.pending.cards);
+    const ownDiscard = custom ? game.pending.cards : game.players[levy ? 1 - state.me : state.me].discard;
+    document.querySelector("#choice-dialog .eyebrow").textContent = levy ? t("Посмертная повинность") : t(factionKey(game.players[state.me].leader) === "udul" ? "Возрождение" : "Способность Лекаря");
     document.querySelector("#choice-dialog h2").textContent = levy ? t("Забрать отряд в руку") : t("Вернуть отряд на поле");
     document.querySelector("#choice-dialog .muted").textContent = levy ? t("Выберите обычный отряд из отбоя соперника.") : t("Выберите отряд из сброса. Для подвижного отряда также выберите линию.");
+    if (custom) {
+      document.querySelector("#choice-dialog .eyebrow").textContent = t(game.pending.source);
+      document.querySelector("#choice-dialog h2").textContent = t({weather: "Выберите погодную карту", sacrifice: "Выберите карту для сброса", necromancy: "Вернуть отряд в руку", horn: "Выберите линию для командного рога", draw: "Возьмите карту из колоды"}[game.pending.kind]);
+      document.querySelector("#choice-dialog .muted").textContent = t("Осталось выбрать: {0}", game.pending.remaining);
+    }
     const ids = [...new Set(moves.map((move) => move.card_id))];
     $("choice-cards").replaceChildren(...ids.map((id) => {
       const card = ownDiscard.find((item) => item.id === id), item = node("div", "choice-item");
       const choices = moves.filter((move) => move.card_id === id);
       item.append(cardNode(card, {onClick: () => { if (choices.length === 1) send(choices[0]); }}));
       for (const move of choices) {
-        const choose = button(levy ? t("Забрать в руку") : t("Вернуть: {0}", t(ROW_NAMES[move.row])), () => send(move), "primary");
+        const choose = button(custom ? (move.row ? t(ROW_NAMES[move.row]) : t("Выбрать")) : levy ? t("Забрать в руку") : t("Вернуть: {0}", t(ROW_NAMES[move.row])), () => send(move), "primary");
         choose.dataset.choiceId = id; choose.dataset.choiceRow = move.row; item.append(choose);
       }
       return item;
@@ -1668,6 +1717,12 @@
   $("leader-button").addEventListener("click", () => openLeaderPreview(state?.me));
   $("enemy-leader").addEventListener("click", () => openLeaderPreview(1 - state?.me));
   $("lobby-leader").addEventListener("click", () => showLeaderInfo(leader));
+  $("choice-view-board").addEventListener("click", viewBoard);
+  $("board-return").addEventListener("click", () => {
+    if (!viewingBoardDuringChoice) return;
+    endBoardView();
+    renderChoices();
+  });
   $("leader-cancel").addEventListener("click", closeLeaderPreview);
   $("leader-dialog").addEventListener("cancel", event => { event.preventDefault(); closeLeaderPreview(); });
   $("leader-apply").addEventListener("click", () => {

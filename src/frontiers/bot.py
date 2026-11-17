@@ -6,7 +6,7 @@ import math
 import random
 import time
 
-from frontiers.catalog import CATALOG, LEADERS
+from frontiers.catalog import CATALOG, LEADERS, FACTIONS
 from frontiers.engine import Game
 from frontiers.models import CardInstance
 
@@ -18,7 +18,7 @@ DIFFICULTIES = ("easy", "normal", "hard")
 def card_value(key: str) -> float:
     card = CATALOG[key]
     if card.kind != "unit":
-        return {"ting": 15, "scorch": 10, "horn": 9, "decoy": 8,
+        return {"ting": 15, "udul_portal": 20, "scorch": 10, "horn": 9, "decoy": 8,
                 "mushroom": 6, "clear": 5}.get(key, 4)
     bonuses = {"spy": 14, "medic": 9, "muster": 5, "bond": 2, "morale": 3,
                "horn": 6, "berserker": 3, "avenger": 7, "stormborn": 4}
@@ -41,7 +41,7 @@ def _knowledge_game(game: Game, rng: random.Random) -> Game:
     used.update(item.card.key for player in model.players for item in player.board + player.specials)
     pool = [key for key, card in CATALOG.items()
             if card.collectible and card.faction in ("neutral", faction)
-            for _ in range(max(0, card.copies - used[key]))]
+            for _ in range(max(0, FACTIONS[faction].get("card_limits", {}).get(key, card.copies) - used[key]))]
     rng.shuffle(pool)
     # Very large custom decks may exhaust the remaining collection in a model.
     fallback = [key for key, card in CATALOG.items()
@@ -132,7 +132,7 @@ def _evaluate(game: Game) -> float:
 def _moves(game: Game, side: int) -> list[dict]:
     """Equivalent copies do not need separate search branches."""
     cards = {card.id: card.key for player in game.players
-             for card in player.hand + player.discard + [item.card for item in player.board]}
+             for card in player.hand + player.discard + player.deck + [item.card for item in player.board]}
     targets = {item.card.id: (item.card.key, item.row.value) for player in game.players for item in player.board}
     seen, result = set(), []
     for move in game.legal_moves(side):
@@ -171,7 +171,7 @@ class _Search:
     def resolve(self, game: Game) -> Game:
         # A medic's choice is part of the same turn, not the opponent's reply.
         for _ in range(4):
-            if not (game.pending or game.pending_levy) or not self.available:
+            if not (game.pending or game.pending_levy or game.selection) or not self.available:
                 break
             ranked = self.rank(game, game.turn)
             if not ranked:
@@ -188,7 +188,7 @@ def choose_bot_move(game: Game, difficulty: str = "normal") -> dict | None:
         return None
     if game.phase == "mulligan":
         return _mulligan(game, difficulty)
-    choosing = bool(game.pending or game.pending_levy)
+    choosing = bool(game.pending or game.pending_levy or game.selection)
     if not choosing and game.players[0].passed and _round_winner(game) == BOT:
         return {"type": "pass"}
 
