@@ -20,7 +20,8 @@ window.FrontiersProfile = function (catalog) {
       const card = cards.get(key);
       counts.set(key, (counts.get(key) || 0) + 1);
       return card?.collectible && card.available !== false && [item.faction, "neutral"].includes(card.faction)
-        && counts.get(key) <= card.copies;
+        && !catalog.factions[item.faction].forbidden_abilities?.some(ability => card.abilities.includes(ability))
+        && counts.get(key) <= (catalog.factions[item.faction].card_limits?.[key] ?? card.copies);
     });
   }
   function decks() {

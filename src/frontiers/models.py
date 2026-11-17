@@ -51,3 +51,4 @@ class MatchPlayer:
     leader_horn: set[CombatRow] = field(default_factory=set)
     leader_blocked: bool = False
     revealed: list[CardInstance] = field(default_factory=list)
+    souls: int = 0

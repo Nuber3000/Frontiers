@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/static/shiron.css">
   <link rel="stylesheet" href="/static/skone.css">
   <link rel="stylesheet" href="/static/ellifarn.css">
+  <link rel="stylesheet" href="/static/udul.css">
   <link rel="stylesheet" href="/static/landing.css">
   <script src="/static/i18n.js" defer></script>
   <script src="/static/scorch.js" defer></script>
@@ -72,7 +73,7 @@
         </section>
         <aside class="commander-panel">
           <p class="eyebrow">Лидер фракции</p>
-          <button id="lobby-leader" class="leader-portrait" type="button"><span class="card-art art-king"></span><span class="portrait-crown" aria-hidden="true">♛</span><div>Франциск II<span>Мудрый</span></div></button>
+          <button id="lobby-leader" class="leader-portrait" type="button"><span class="card-art art-king"></span><div>Франциск II<span>Мудрый</span></div></button>
           <label class="sr-only" for="leader-select">Способность лидера</label><select id="leader-select"></select>
           <p id="leader-description" class="leader-description"></p>
           <dl id="deck-stats" class="deck-stats"></dl><span id="deck-count" class="count-badge sr-only"></span>
@@ -140,7 +141,8 @@
   <dialog id="leader-dialog" class="leader-dialog" aria-labelledby="leader-title" aria-describedby="leader-rule">
     <div class="leader-confirmation"><div id="leader-preview" class="leader-preview"></div><section class="leader-confirmation-copy"><p class="eyebrow">Лидер фракции</p><h2 id="leader-title"></h2><p id="leader-rule"></p><div id="leader-rows" class="leader-row-choices" role="group" aria-label="Линия для Командного рога" hidden></div><p id="leader-confirmation-status" class="muted small" aria-live="polite"></p><div class="leader-confirmation-actions"><button id="leader-cancel" type="button" autofocus>Отмена</button><button id="leader-apply" class="primary" type="button">Применить</button></div></section></div>
   </dialog>
-  <dialog id="choice-dialog"><div class="dialog-heading"><p class="eyebrow">Способность Лекаря</p><h2>Вернуть отряд на поле</h2><p class="muted">Выберите отряд из сброса. Для подвижного отряда также выберите линию.</p></div><div id="choice-cards" class="choice-cards"></div></dialog>
+  <dialog id="choice-dialog"><div class="dialog-heading"><p class="eyebrow">Способность Лекаря</p><h2>Вернуть отряд на поле</h2><p class="muted">Выберите отряд из сброса. Для подвижного отряда также выберите линию.</p></div><button id="choice-view-board" type="button">Посмотреть стол</button><div id="choice-cards" class="choice-cards"></div></dialog>
+  <button id="board-return" class="primary" type="button" hidden>Вернуться к выбору</button>
   <dialog id="info-dialog"><button id="close-info" class="dialog-close" type="button" aria-label="Закрыть">×</button><div id="info-content"></div></dialog>
 </body>
 </html>

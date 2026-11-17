@@ -30,10 +30,10 @@ body:not(.in-room) > footer, body:not(.in-room) #connection, body:not(.in-room) 
 #landing .entry-panel .small { margin: 16px 0 10px; }
 .entry-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px; }
 .entry-actions button { padding: 8px 6px; font-size: 13px; }
-#landing .hero-cards { display: flex; --fan-height: clamp(135px, 24dvh, 220px); height: calc(var(--fan-height) + 40px); width: 100%; margin: 22px 0 10px; }
-#landing .hero-card { position: absolute; pointer-events: none; width: calc(var(--fan-height) * .64); height: var(--fan-height); left: 50%; top: 50%; border-radius: 4px; box-shadow: none; transform: translate(-50%, -50%) translate(calc(var(--fan-height) * var(--fan-offset) * .52), calc(var(--fan-height) * (var(--fan-depth) * .13 - .05))) rotate(var(--fan-angle)); }
+#landing .hero-cards { display: flex; align-items: center; justify-content: center; gap: clamp(6px, .8vw, 12px); --fan-height: clamp(135px, 24dvh, 220px); height: calc(var(--fan-height) + 40px); width: 100%; max-width: none; margin: 22px 0 10px; }
+#landing .hero-card { position: relative; pointer-events: none; flex: 0 1 calc(var(--fan-height) * .64); min-width: 0; width: calc(var(--fan-height) * .64); height: auto; aspect-ratio: .64; left: auto; top: auto; border-radius: 4px; box-shadow: none; transform: none; }
 #landing .hero-card .pile-crest { font: clamp(36px, 6dvh, 60px) Georgia,serif; margin: 0; letter-spacing: 0; }
-#landing .feature-line { padding: 12px 0 0; margin: 16px 0 0; font-size: 10px; gap: 20px; justify-content: center; text-align: center; }
+#landing .feature-line { padding: 12px 0 0; margin: 16px auto 0; font-size: 10px; gap: 20px; justify-content: center; text-align: center; }
 #info-dialog:has(.support-copy), #info-dialog:has(.rules-copy) { width: min(760px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: clamp(18px, 3vw, 30px); }
 .support-copy h2, .rules-copy h2 { padding-right: 30px; }
 .support-copy > p { color: var(--muted); }

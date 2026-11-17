@@ -55,7 +55,6 @@ body.in-lobby { height: 100dvh; min-height: 0; overflow: hidden; }
 .leader-portrait .card-art { position: absolute; inset: 0; }
 .leader-portrait > div { position: absolute; bottom: 0; inset-inline: 0; padding: 8px 3px; background: #ddd1b1; color: #332c22; font: 700 12px/1.15 Georgia,serif; border-top: 2px solid #ac8947; }
 .leader-portrait > div span { display: block; font-weight: 400; margin-top: 3px; }
-.portrait-crown { position: absolute; top: 7px; left: 7px; color: #efcb77; font-size: 18px; text-shadow: 0 1px 4px black; }
 .in-lobby #leader-select { width: 100%; max-width: 240px; margin-top: 16px; padding: 7px 5px; border: 1px solid #675131; border-radius: 0; background: #1b1a12; color: #cfaf70; font: 13px Georgia,serif; }
 .in-lobby .leader-description { flex-shrink: 0; min-height: 0; height: 3.9em; overflow-y: auto; margin: 9px 0 14px; font: 11px/1.3 'Segoe UI',sans-serif; color: #9f9279; }
 .deck-stats { width: 100%; margin: 0 0 14px; display: grid; gap: 7px; }

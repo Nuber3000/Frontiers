@@ -9,6 +9,7 @@ from frontiers.media import image_path
 from frontiers.models import CardDefinition
 from frontiers.shiron import SHIRON_CARDS, SHIRON_DECK
 from frontiers.skone import SKONE_UNITS, SKONE_DECK
+from frontiers.udul import UDUL_CARDS, UDUL_DECK, UDUL_LEADERS, UDUL_FACTION
 
 
 ROWS = tuple(Row)
@@ -108,6 +109,7 @@ for key, name, description in [
 _CARDS.extend(SHIRON_CARDS)
 _CARDS.extend(SKONE_UNITS)
 _CARDS.extend(ELLIFARN_UNITS)
+_CARDS.extend(UDUL_CARDS)
 
 # Ключи ранее отложенных карт сохраняются для существующих коллекций.
 SKONE_CARDS = frozenset({
@@ -179,6 +181,8 @@ STARTER_DECK = (
     + ["horn"] * 2 + ["decoy"] * 2 + ["clear", "scorch"]
 )
 LEADERS.update(ELLIFARN_LEADERS)
+LEADERS.update(UDUL_LEADERS)
+FACTIONS["udul"] = UDUL_FACTION
 
 for _key, _leader in LEADERS.items():
     _leader["portrait"] = image_path(f"leader_{_key}.webp")
@@ -187,7 +191,13 @@ DECKS = {
     "imperial": {"name": "Императорский легион", "cards": SHIRON_DECK, "faction": "shiron"},
     "clans": {"name": "Союз северных кланов", "cards": SKONE_DECK, "faction": "skone"},
     "four_realms": {"name": "Договор четырёх земель", "cards": ELLIFARN_DECK, "faction": "ellifarn"},
+    "world_horde": {"name": "Орда сквозь миры", "cards": UDUL_DECK, "faction": "udul"},
 }
+
+
+def faction_allows_card(faction: str, card: CardDefinition) -> bool:
+    return not any(ability in card.abilities
+                   for ability in FACTIONS[faction].get("forbidden_abilities", ()))
 
 
 def validate_deck(keys: list[str], leader: str) -> None:
@@ -200,9 +210,9 @@ def validate_deck(keys: list[str], leader: str) -> None:
         card = CATALOG.get(key)
         if card is None or not card.collectible:
             raise ValueError("Колода содержит недоступную карту.")
-        if card.faction not in {"neutral", LEADERS[leader]["faction"]}:
+        if card.faction not in {"neutral", LEADERS[leader]["faction"]} or not faction_allows_card(LEADERS[leader]["faction"], card):
             raise ValueError(f"Карта «{card.name}» недоступна выбранной фракции.")
-        if count > card.copies:
+        if count > FACTIONS[LEADERS[leader]["faction"]].get("card_limits", {}).get(key, card.copies):
             raise ValueError(f"Слишком много копий карты «{card.name}».")
     units = sum(CATALOG[key].kind == "unit" for key in keys)
     if units < 22:

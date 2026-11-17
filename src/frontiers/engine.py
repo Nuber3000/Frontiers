@@ -7,7 +7,8 @@ import secrets
 import uuid
 
 from frontiers.cards import CombatRow as Row
-from frontiers.catalog import CATALOG, LEADERS, ROWS, card_definition_view, validate_deck
+from frontiers.catalog import CATALOG, LEADERS, ROWS, card_definition_view, faction_allows_card, validate_deck
+from frontiers.udul import SOUL_LIMIT
 from frontiers.models import CardInstance, MatchPlayer, PlacedCard
 
 
@@ -46,11 +47,14 @@ class Game:
     pending: list[str] = field(default_factory=list)
     pending_actors: list[int] = field(default_factory=list)
     pending_levy: bool = False
+    selection: dict | None = None
     round_resume_turn: int | None = None
     history: list[dict] = field(default_factory=list)
     event_messages: list[dict] = field(default_factory=list)
     scorched: list[str] = field(default_factory=list)
+    executed_on_arrival: list[dict] = field(default_factory=list)
     played: dict | None = None
+    leader_played: int | None = None
     winner: int | None = None
     match_id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
@@ -99,9 +103,13 @@ class Game:
         return [event["template"].format(*event["args"]) for event in self.event_messages]
 
     @staticmethod
-    def _draw(player: MatchPlayer, amount: int) -> int:
-        drawn = player.deck[:amount]
-        del player.deck[:amount]
+    def _can_use_card(player: MatchPlayer, card: CardInstance) -> bool:
+        return faction_allows_card(LEADERS[player.leader]["faction"], CATALOG[card.key])
+
+    def _draw(self, player: MatchPlayer, amount: int) -> int:
+        drawn = [card for card in player.deck if self._can_use_card(player, card)][:amount]
+        drawn_ids = {card.id for card in drawn}
+        player.deck[:] = [card for card in player.deck if card.id not in drawn_ids]
         player.hand.extend(drawn)
         return len(drawn)
 
@@ -115,7 +123,9 @@ class Game:
             raise RuleError("Матч уже завершён.")
         candidate = deepcopy(self)
         candidate.scorched = []
+        candidate.executed_on_arrival = []
         candidate.played = None
+        candidate.leader_played = None
         candidate._act(actor, action)
         candidate.version += 1
         return candidate
@@ -127,6 +137,7 @@ class Game:
             self.pending.clear()
             self.pending_actors.clear()
             self.pending_levy = False
+            self.selection = None
             self.round_resume_turn = None
             self._log("{0} сдаётся.", self.players[actor].name)
             return
@@ -139,16 +150,22 @@ class Game:
             raise RuleError("Первый ход выбирают перед первым раундом.")
         if actor != self.turn or self.players[actor].passed:
             raise RuleError("Сейчас ход другого игрока.")
-        if self.pending_levy:
+        if self.selection:
+            if kind != "choose":
+                raise RuleError("Сначала завершите выбор карты для способности.")
+            self._choose_selection(actor, action)
+        elif self.pending_levy:
             if kind != "choose":
                 raise RuleError("Выберите отряд из отбоя соперника.")
-            card = self._find(self._medic_targets(1 - actor), action.get("card_id"))
+            card = self._find(self._discard_units(1 - actor), action.get("card_id"))
             self.players[1 - actor].discard.remove(card)
             self.players[actor].hand.append(card)
             self.pending_levy = False
             self._log("Посмертная повинность: {0} забирает «{1}» в руку.", self.players[actor].name, CATALOG[card.key].name, translate=(1,))
         elif self.pending:
             if kind != "choose":
+                if LEADERS[self.players[actor].leader]["faction"] == "udul":
+                    raise RuleError("Выберите отряд для «Возрождения».")
                 raise RuleError("Выберите отряд для способности Лекаря.")
             self._choose(actor, action)
         elif kind == "play":
@@ -260,15 +277,35 @@ class Game:
             index = player.board.index(target)
             player.board[index] = PlacedCard(card, target.row)
             player.hand.append(target.card)
+        elif card.key == "udul_portal":
+            player.discard.append(card)
+            targets = [item for item in player.deck if CATALOG[item.key].kind == "unit"
+                       and self._can_use_card(player, item)]
+            summoned = self.rng.sample(targets, min(2, len(targets)))
+            for item in summoned:
+                player.deck.remove(item)
+            for item in summoned:
+                self._place_unit(actor, item, self._best_row(actor, item))
+            self._log("Портал: {0} призывает отрядов: {1}.", player.name, len(summoned))
         else:
             raise RuleError("Эффект карты не поддерживается.")
 
     def _place_unit(self, actor: int, card: CardInstance, row: Row) -> None:
         definition = CATALOG[card.key]
-        side = 1 - actor if "spy" in definition.abilities else actor
-        self.players[side].board.append(PlacedCard(card, row))
+        if not self._can_use_card(self.players[actor], card):
+            raise RuleError("Эта карта недоступна выбранной фракции.")
+        spy = "spy" in definition.abilities
+        side = 1 - actor if spy else actor
+        recipient = self.players[side]
+        recipient.board.append(PlacedCard(card, row))
+        if spy and LEADERS[recipient.leader]["faction"] == "udul":
+            self.executed_on_arrival.append({
+                "card": {**self._card_view(card), "strength": definition.strength},
+                "side": side, "row": row.value,
+            })
+            self._execute_units({card.id})
         self._transform()
-        if "spy" in definition.abilities:
+        if spy:
             count = self._draw(self.players[actor], 2)
             self._log("Шпион: {0} добирает карт: {1}.", self.players[actor].name, count)
         if "muster" in definition.abilities:
@@ -287,7 +324,8 @@ class Game:
         summoned = []
         for zone in (player.hand, player.deck):
             matches = [card for card in zone if CATALOG[card.key].group == group
-                       and CATALOG[card.key].kind == "unit" and not CATALOG[card.key].hero]
+                       and CATALOG[card.key].kind == "unit" and not CATALOG[card.key].hero
+                       and self._can_use_card(player, card)]
             selected = {card.id for card in matches}
             zone[:] = [card for card in zone if card.id not in selected]
             summoned.extend(matches)
@@ -295,6 +333,20 @@ class Game:
             self._log("Призыв: «{0}» выходит на поле.", CATALOG[card.key].name, translate=(0,))
             allowed_rows = CATALOG[card.key].rows
             self._place_unit(actor, card, row if row in allowed_rows else allowed_rows[0])
+
+    def _best_row(self, actor: int, card: CardInstance) -> Row:
+        definition = CATALOG[card.key]
+        side = 1 - actor if "spy" in definition.abilities else actor
+        item = PlacedCard(card, definition.rows[0])
+        self.players[side].board.append(item)
+        try:
+            scores = []
+            for row in definition.rows:
+                item.row = row
+                scores.append((self.strengths(side)[card.id], row))
+            return max(scores, key=lambda pair: pair[0])[1]
+        finally:
+            self.players[side].board.remove(item)
 
     def _transform(self, instant_side: int | None = None, instant_row: Row | None = None) -> None:
         for side, player in enumerate(self.players):
@@ -371,7 +423,12 @@ class Game:
         if not candidates:
             return
         highest = max(value for value, _ in candidates)
-        victims = {card_id for value, card_id in candidates if value == highest}
+        self._execute_units({card_id for value, card_id in candidates if value == highest})
+
+    def _execute_units(self, victims: set[str]) -> None:
+        for player in self.players:
+            if player.leader == "udul_souls":
+                player.souls = min(SOUL_LIMIT, player.souls + len(victims))
         summons = []
         for index, player in enumerate(self.players):
             survivors = []
@@ -389,9 +446,13 @@ class Game:
         for index, key in summons:
             self._place_unit(index, self._new_card(key), CATALOG[key].rows[0])
 
-    def _medic_targets(self, actor: int) -> list[CardInstance]:
+    def _discard_units(self, actor: int) -> list[CardInstance]:
         return [card for card in self.players[actor].discard
                 if CATALOG[card.key].kind == "unit" and not CATALOG[card.key].hero]
+
+    def _medic_targets(self, actor: int) -> list[CardInstance]:
+        return [card for card in self._discard_units(actor)
+                if self._can_use_card(self.players[actor], card)]
 
     def _choose(self, actor: int, action: dict) -> None:
         card = self._find(self._medic_targets(actor), action.get("card_id"))
@@ -400,14 +461,26 @@ class Game:
         if self.pending_actors:
             self.pending_actors.pop(0)
         self.players[actor].discard.remove(card)
-        self._log("Лекарь возвращает «{0}».", CATALOG[card.key].name, translate=(0,))
+        message = ("Возрождение возвращает «{0}»." if LEADERS[self.players[actor].leader]["faction"] == "udul"
+                   else "Лекарь возвращает «{0}».")
+        self._log(message, CATALOG[card.key].name, translate=(0,))
         self._place_unit(actor, card, row)
 
     def _leader(self, actor: int, action: dict) -> None:
         player = self.players[actor]
         if player.leader_used or player.leader_blocked:
             raise RuleError("Способность лидера использована или заблокирована.")
-        if player.leader == "academy":
+        if player.leader.startswith("udul_"):
+            kind = {"udul_rite": "weather", "udul_sacrifice": "sacrifice",
+                    "udul_necromancy": "necromancy", "udul_spirit": "horn", "udul_souls": "draw"}[player.leader]
+            if player.leader == "udul_souls":
+                if player.souls < SOUL_LIMIT:
+                    raise RuleError("Для способности нужно собрать не менее трёх душ.")
+                player.souls = 0
+            if kind != "sacrifice" or sum(self._can_use_card(player, card) for card in player.hand) >= 2:
+                self.selection = {"kind": kind, "remaining": 2 if kind in {"sacrifice", "necromancy"} else 1,
+                                  "source": LEADERS[player.leader]["name"]}
+        elif player.leader == "academy":
             self._leader_boost(actor, Row.SIEGE)
         elif player.leader == "sun":
             self._clear_weather()
@@ -429,7 +502,7 @@ class Game:
             hand = self.players[1 - actor].hand
             player.revealed = self.rng.sample(hand, min(3, len(hand)))
         elif player.leader == "shiron_levy":
-            self.pending_levy = bool(self._medic_targets(1 - actor))
+            self.pending_levy = bool(self._discard_units(1 - actor))
         elif player.leader == "skone_storm":
             self.weather.append(WeatherEffect(actor, "storm"))
         elif player.leader == "skone_horn":
@@ -458,7 +531,60 @@ class Game:
         elif LEADERS[player.leader].get("passive"):
             raise RuleError("Эта способность лидера действует пассивно с начала матча.")
         player.leader_used = True
+        self.leader_played = actor
         self._log("{0}: {1}.", player.name, LEADERS[player.leader]['name'], translate=(1,))
+
+    def _selection_targets(self, actor: int) -> list[CardInstance]:
+        player = self.players[actor]
+        kind = self.selection["kind"]
+        if kind == "sacrifice":
+            return [card for card in player.hand if self._can_use_card(player, card)]
+        if kind == "necromancy":
+            return [card for card in self._discard_units(actor) if self._can_use_card(player, card)]
+        if kind == "weather":
+            return [card for card in player.deck if CATALOG[card.key].kind == "weather"]
+        if kind == "horn":
+            return [card for card in player.deck if card.key == "horn"] if any(
+                self._slot_free(actor, row) and row not in player.leader_horn for row in ROWS) else []
+        return [card for card in player.deck if self._can_use_card(player, card)]
+
+    def _choose_selection(self, actor: int, action: dict) -> None:
+        card = self._find(self._selection_targets(actor), action.get("card_id"))
+        player, kind = self.players[actor], self.selection["kind"]
+        if kind == "sacrifice":
+            player.hand.remove(card)
+            player.discard.append(card)
+        elif kind == "necromancy":
+            player.discard.remove(card)
+            player.hand.append(card)
+        elif kind == "draw":
+            player.deck.remove(card)
+            player.hand.append(card)
+        elif kind == "weather":
+            player.deck.remove(card)
+            self.played = {"actor": actor, "card": self._card_view(card), "row": None, "side": actor}
+            if card.key == "clear":
+                player.discard.append(card)
+                self._clear_weather()
+            else:
+                self.weather.append(WeatherEffect(actor, card.key, card))
+        elif kind == "horn":
+            row = self._row(action.get("row"))
+            if not self._slot_free(actor, row) or row in player.leader_horn:
+                raise RuleError("Место усиления этого ряда уже занято.")
+            player.deck.remove(card)
+            player.specials.append(PlacedCard(card, row))
+            self.played = {"actor": actor, "card": self._card_view(card), "row": row.value, "side": actor}
+        if kind == "draw":
+            self._log("{0}: {1} берёт одну карту из колоды.", self.selection["source"], player.name, translate=(0,))
+        else:
+            self._log("{0}: выбрана карта «{1}».", self.selection["source"], CATALOG[card.key].name, translate=(0, 1))
+        self.selection["remaining"] -= 1
+        if self.selection["remaining"] == 0:
+            if kind == "sacrifice":
+                self.selection.update(kind="draw", remaining=1)
+            else:
+                self.selection = None
 
     def _leader_boost(self, actor: int, row: Row) -> None:
         # An occupied slot makes the effect a no-op, but the leader is still spent.
@@ -485,6 +611,10 @@ class Game:
         self.turn = opponent if not self.players[opponent].passed else actor
 
     def _resolve_pending(self) -> bool:
+        if self.selection:
+            if self._selection_targets(self.turn):
+                return True
+            self.selection = None
         # В третьем раунде лекари обеих сторон могут ждать выбора одновременно.
         while self.pending and not self._medic_targets(self.pending_actors[0] if self.pending_actors else self.turn):
             self.pending.pop(0)
@@ -505,7 +635,8 @@ class Game:
 
     def _auto_pass_empty(self) -> None:
         for index, player in enumerate(self.players):
-            if not player.passed and (player.leader_used or player.leader_blocked) and not self._play_moves(index):
+            if not player.passed and (player.leader_used or player.leader_blocked or (
+                    player.leader == "udul_souls" and player.souls < SOUL_LIMIT)) and not self._play_moves(index):
                 player.passed = True
                 self._log("{0}: доступные карты закончились, автоматический пас.", player.name)
 
@@ -539,13 +670,20 @@ class Game:
         summons = []
         for index, player in enumerate(self.players):
             player.revealed.clear()
+            candidates = [item for item in player.board if CATALOG[item.card.key].kind == "unit"]
+            survivor = self.rng.choice(candidates) if candidates and LEADERS[player.leader]["faction"] == "udul" else None
             for item in player.board:
+                if item is survivor:
+                    self._log("Удул Сурэг: «{0}» остаётся на следующий раунд.", CATALOG[item.card.key].name, translate=(0,))
+                    continue
                 definition = CATALOG[item.card.key]
                 if definition.summon_to:
                     summons.append((index, definition.summon_to))
                 player.discard.append(item.card)
             player.discard.extend(item.card for item in player.specials)
             player.board.clear()
+            if survivor is not None:
+                player.board.append(survivor)
             player.specials.clear()
             player.leader_horn.clear()
         self._clear_weather()
@@ -553,6 +691,8 @@ class Game:
         self.turn = self.round_starter = winner if winner is not None else 1 - self.round_starter
         for player in self.players:
             player.passed = False
+            if LEADERS[player.leader]["faction"] == "udul":
+                player.leader_used = False
         for index, key in summons:
             self._place_unit(index, self._new_card(key), CATALOG[key].rows[0])
         self._log("Раунд {0}. Первый ход: {1}.", self.round_number, self.players[self.turn].name)
@@ -585,6 +725,8 @@ class Game:
         player = self.players[actor]
         moves = []
         for card in player.hand:
+            if not self._can_use_card(player, card):
+                continue
             definition = CATALOG[card.key]
             base = {"type": "play", "card_id": card.id}
             if definition.kind == "unit":
@@ -615,14 +757,25 @@ class Game:
             return [move, *concede]
         if actor != self.turn or player.passed:
             return concede
+        if self.selection:
+            choices = []
+            for card in self._selection_targets(actor):
+                base = {"type": "choose", "card_id": card.id}
+                if self.selection["kind"] == "horn":
+                    choices.extend({**base, "row": row.value} for row in ROWS
+                                   if self._slot_free(actor, row) and row not in player.leader_horn)
+                else:
+                    choices.append(base)
+            return choices + concede
         if self.pending_levy:
             return [{"type": "choose", "card_id": card.id}
-                    for card in self._medic_targets(1 - actor)] + concede
+                    for card in self._discard_units(1 - actor)] + concede
         if self.pending:
             return [{"type": "choose", "card_id": card.id, "row": row.value}
                     for card in self._medic_targets(actor) for row in CATALOG[card.key].rows] + concede
         moves = self._play_moves(actor)
-        if not player.leader_used and not player.leader_blocked and not LEADERS[player.leader].get("passive"):
+        if not player.leader_used and not player.leader_blocked and not LEADERS[player.leader].get("passive") and (
+                player.leader != "udul_souls" or player.souls >= SOUL_LIMIT):
             if player.leader == "skone_horn":
                 moves.extend({"type": "leader", "row": row.value} for row in ROWS)
             else:
@@ -641,6 +794,7 @@ class Game:
                 "name": player.name, "leader": player.leader,
                 "faction": LEADERS[player.leader]["faction"],
                 "leader_used": player.leader_used, "lives": player.lives,
+                "souls": min(SOUL_LIMIT, player.souls),
                 "leader_blocked": player.leader_blocked,
                 "passed": player.passed, "mulligan_done": player.mulligan_done,
                 "deck_count": len(player.deck), "hand_count": len(player.hand),
@@ -666,11 +820,15 @@ class Game:
             "round": self.round_number, "winner": self.winner, "players": players,
             "weather": [{"key": effect.key, "name": CATALOG[effect.key].name}
                         for effect in self.weather],
-            "pending": {"actor": self.turn, "source": "Посмертная повинность", "kind": "levy"} if self.pending_levy else (
+            "pending": {"actor": self.turn, **deepcopy(self.selection),
+                        "cards": [self._card_view(card) for card in self._selection_targets(viewer)] if viewer == self.turn else []}
+                       if self.selection else {"actor": self.turn, "source": "Посмертная повинность", "kind": "levy"} if self.pending_levy else (
                 {"actor": self.turn, "source": self.pending[0], "kind": "medic"} if self.pending else None),
             "history": deepcopy(self.history), "events": self.events,
             "event_messages": deepcopy(self.event_messages),
             "scorched": list(self.scorched),
+            "executed_on_arrival": deepcopy(self.executed_on_arrival),
             "played": deepcopy(self.played),
+            "leader_played": self.leader_played,
             "moves": self.legal_moves(viewer),
         }

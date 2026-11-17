@@ -244,8 +244,8 @@ window.FrontiersAudio = (() => {
       if (game.played?.card) {
         const card = game.played.card;
         play(card.key === "rain" ? "storm" : ["horn", "frost", "fog", "storm", "clear"].includes(card.key) ? card.key : card.abilities?.includes("horn") ? "horn" : "card");
-      } else if (game.players.some((player, side) => player.leader_used && !before.players[side].leader_used)) {
-        const leader = game.players.find((player, side) => player.leader_used && !before.players[side].leader_used).leader;
+      } else if (game.leader_played != null || game.players.some((player, side) => player.leader_used && !before.players[side].leader_used)) {
+        const leader = game.leader_played != null ? game.players[game.leader_played].leader : game.players.find((player, side) => player.leader_used && !before.players[side].leader_used).leader;
         const effect = {academy: "horn", skone_horn: "horn", ellifarn_aim: "horn", fog: "fog", skone_storm: "storm", shiron_rain: "storm", sun: "clear"};
         play(effect[leader] || "leader");
       }
