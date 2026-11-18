@@ -104,6 +104,10 @@ def run(channel, output):
                         if not reduced:
                             assert set(page.locator('.scorch-burn').evaluate_all('items => items.map(item => item.dataset.burnId)')) == expected
                             page.locator('#scorch-effects').wait_for(state='visible')
+                            assert page.locator('.scorch-burn .card-art-image').evaluate_all("""canvases =>
+                              canvases.length > 0 && canvases.every(canvas =>
+                                canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height)
+                                  .data.some((value,index) => index % 4 === 3 && value > 0))""")
                             page.wait_for_function('''() => {
                               const canvas = document.querySelector('#scorch-effects'), burn = document.querySelector('.scorch-burn');
                               if (!canvas || !burn) return false;

@@ -43,23 +43,27 @@
       this.target?.classList.remove("opponent-arrival"); this.target = null;
       this.layer?.remove(); this.layer = null; this.fire?.clear();
     }
-    async play(card, {scorch, leader = false, commit, destination, onBurn}) {
+    async play(card, {scorch, leader = false, commit, destination, onBurn, prepare, redraw}) {
       this.clear();
       const token = {}; this.token = token;
       const layer = document.createElement("section"), wrapper = document.createElement("div");
       layer.id = "opponent-play"; layer.className = "opponent-play";
       layer.dataset.kind = leader ? "leader" : "card";
       layer.setAttribute("aria-label", window.FrontiersI18n.t(leader ? "Лидер соперника" : "Карта соперника")); layer.setAttribute("aria-live", "polite");
-      wrapper.className = "opponent-play-card"; wrapper.append(card); layer.append(wrapper);
+      wrapper.className = "opponent-play-card"; wrapper.style.visibility = "hidden";
+      wrapper.append(card); layer.append(wrapper);
       const rule = leader ? card.querySelector(".opponent-leader-rule") : null;
       if (rule) wrapper.append(rule);
       card.disabled = true; card.tabIndex = -1;
       document.body.append(layer); this.layer = layer;
       try {
+        await prepare?.();
+        if (this.token !== token) return false;
+        wrapper.style.visibility = "";
         layer.dataset.stage = "reveal";
         const reveal = this.animate(wrapper, [
-          {opacity: 0, transform: "translate(28px,-50%) scale(.82)"},
-          {opacity: 1, transform: "translate(0,-50%) scale(1)"},
+          {transform: "translate(28px,-50%)"},
+          {transform: "translate(0,-50%)"},
         ], 250, "ease-out");
         if (!await this.stage(250, time => { reveal.currentTime = time; })) return false;
         if (!await this.stage(leader ? 1400 : 450, () => {})) return false;
@@ -88,14 +92,23 @@
           const from = wrapper.getBoundingClientRect(), to = target?.getBoundingClientRect();
           if (to?.width && to?.height) {
             this.target = target; target.classList.add("opponent-arrival");
-            const x = to.left + to.width / 2 - from.left - from.width / 2;
-            const y = to.top + to.height / 2 - from.top - from.height / 2;
             const scale = Math.min(to.width / from.width, to.height / from.height);
-            const flight = this.animate(wrapper, [
-              {transform: "translate(0,-50%) scale(1)", opacity: 1},
-              {transform: `translate(${x}px,calc(-50% + ${y}px)) scale(${scale})`, opacity: .7},
-            ], 420, "cubic-bezier(.4,0,.2,1)");
-            if (!await this.stage(420, time => { flight.currentTime = time; })) return false;
+            const width = from.width * scale, height = from.height * scale;
+            const left = to.left + (to.width - width) / 2;
+            const top = to.top + (to.height - height) / 2;
+            reveal.cancel();
+            wrapper.style.transform = "none";
+            wrapper.style.right = "auto";
+            const place = progress => {
+              const eased = 1 - Math.pow(1 - progress, 3);
+              wrapper.style.left = `${from.left + (left - from.left) * eased}px`;
+              wrapper.style.top = `${from.top + (top - from.top) * eased}px`;
+              wrapper.style.width = `${from.width + (width - from.width) * eased}px`;
+              wrapper.style.height = `${from.height + (height - from.height) * eased}px`;
+              redraw?.();
+            };
+            place(0);
+            if (!await this.stage(420, time => place(time / 420))) return false;
           } else {
             const fade = this.animate(wrapper, [{opacity: 1}, {opacity: 0}], 220);
             if (!await this.stage(220, time => { fade.currentTime = time; })) return false;

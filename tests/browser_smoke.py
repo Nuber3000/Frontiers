@@ -317,6 +317,8 @@ def save_artwork_gallery(browser, url, catalog, output):
           <link rel="stylesheet" href="{url}/static/artwork.css">
           <link rel="stylesheet" href="{url}/static/shiron.css">
           <link rel="stylesheet" href="{url}/static/skone.css">
+          <link rel="stylesheet" href="{url}/static/ellifarn.css">
+          <link rel="stylesheet" href="{url}/static/udul.css">
           <style>*{{box-sizing:border-box}}body{{margin:0;padding:20px;background:#15140f;color:#e8d8b6;font:14px Georgia}}
           header{{display:flex;align-items:center;gap:22px;margin-bottom:18px}}h1{{font-weight:400;margin:0}}
           main{{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px}}

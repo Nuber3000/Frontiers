@@ -78,6 +78,79 @@ def run(output):
                         expect(page.locator("#connection.online")).to_be_visible()
                         expect(page.locator("#leader-button")).to_be_visible()
 
+                game = fixture(["udul_mauler", "udul_engine", "udul_horde"], ["knight"], "udul_rite")
+                put(game, 0, "udul_hunters", Row.RANGED)
+                put(game, 1, "knight")
+                load(game)
+                first.wait_for_function("""() => [...document.querySelectorAll('#arena .card .card-art')]
+                  .every(art => art.querySelector('canvas.card-art-image'))""")
+                for selector in ('#hand [data-card-key="udul_horde"]', '#leader-button'):
+                    result = first.evaluate("""selector => new Promise(resolve => {
+                      document.querySelector(selector).click();
+                      requestAnimationFrame(() => resolve([...document.querySelectorAll('#arena .card .card-art')]
+                        .filter(art => !art.querySelector('canvas.card-art-image')).map(art => art.className)));
+                    })""", selector)
+                    assert not result, (selector, result)
+                first.locator("#leader-cancel").click()
+                print("Hand selection and leader preview retain smooth artwork in the first displayed frame.")
+
+                first.emulate_media(reduced_motion="no-preference")
+                game = fixture(["udul_mauler", "udul_engine", "udul_horde"], ["knight", "veteran"], "udul_rite", "sun")
+                game.turn = 1
+                put(game, 0, "udul_hunters", Row.RANGED)
+                put(game, 1, "knight")
+                load(game)
+                first.wait_for_function("""() => [...document.querySelectorAll('#arena .card .card-art')]
+                  .every(art => art.querySelector('canvas.card-art-image'))""")
+                first.evaluate("""() => {
+                  window.unsmoothedOpponentFrames = [];
+                  window.retainedTableCards = [...document.querySelectorAll('#arena .card[data-card-id]')]
+                    .map(card => ({card, id:card.dataset.cardId, canvas:card.querySelector('canvas.card-art-image')}));
+                  window.flightPixelSizes = [];
+                  Object.defineProperty(document, 'visibilityState', {configurable:true, value:'visible'});
+                  window.artObserver = new MutationObserver(() => {
+                    requestAnimationFrame(() => setTimeout(() => {
+                      const missing = [...document.querySelectorAll('#arena .card .card-art, #opponent-play .card .card-art')]
+                        .filter(art => getComputedStyle(art).visibility === 'visible'
+                          && !art.querySelector('canvas.card-art-image'));
+                      const flying = document.querySelector('#opponent-play[data-stage="flight"] canvas.card-art-image');
+                      if (flying) {
+                        const rect = flying.getBoundingClientRect();
+                        window.flightPixelSizes.push([flying.width, flying.height,
+                          rect.width * devicePixelRatio, rect.height * devicePixelRatio]);
+                      }
+                      if (missing.length) window.unsmoothedOpponentFrames.push(missing.map(art => ({
+                        art:art.className, parent:art.closest('#opponent-play') ? 'preview' : 'table',
+                        size:getComputedStyle(art).backgroundSize, stage:document.querySelector('#opponent-play')?.dataset.stage,
+                        width:art.clientWidth, children:art.innerHTML,
+                      })));
+                    }, 0));
+                  });
+                  window.artObserver.observe(document.body, {childList:true,subtree:true,attributes:true});
+                }""")
+                hand_art = first.locator('#hand [data-card-key="udul_mauler"] .card-art')
+                box = hand_art.bounding_box()
+                clip = {"x": box["x"] + 25, "y": box["y"] + 35, "width": 60, "height": 65}
+                before_pixels = first.screenshot(clip=clip)
+                second.locator('#hand [data-card-key="veteran"]').click()
+                second.locator('#selection-info .primary').click()
+                first.locator('#opponent-play[data-stage="reveal"]').wait_for()
+                assert first.screenshot(clip=clip) == before_pixels, "A stationary card changed during the opponent's move"
+                expect(first.locator('#hand [data-card-key="udul_mauler"]')).to_be_disabled()
+                first.wait_for_function("() => document.body.dataset.gameVersion === '1'")
+                expect(first.locator("#opponent-play")).to_have_count(0)
+                assert first.evaluate("""() => window.retainedTableCards.every(({card,id,canvas}) =>
+                  document.querySelector('#arena [data-card-id="' + id + '"]') === card
+                  && card.querySelector('canvas.card-art-image') === canvas)""")
+                sizes = first.evaluate("window.flightPixelSizes")
+                assert sizes and all(abs(width - shown_width) <= 1 and abs(height - shown_height) <= 1
+                                     for width, height, shown_width, shown_height in sizes), sizes
+                first.evaluate("window.artObserver.disconnect()")
+                failures = first.evaluate("window.unsmoothedOpponentFrames")
+                assert not failures, failures
+                print("Opponent reveal, flight and placement preserve smooth table artwork.")
+                first.emulate_media(reduced_motion="reduce")
+
                 def ability():
                     first.locator("#leader-button").click()
                     first.locator("#leader-apply").click()
@@ -126,6 +199,45 @@ def run(output):
                     expect(first.locator("#choice-dialog")).to_be_hidden()
                     self_state = first.request.get(base+f"/api/rooms/{code}").json()
                     assert self_state["game"]["turn"] == 1
+
+                game = fixture(["spy_scribe"], ["udul_healer", "udul_mauler"], "sun", "udul_souls")
+                game.players[1].discard = [game._new_card("udul_mauler")]
+                spy = game.players[0].hand[0]
+                load(game)
+                for page, pile in ((first, "enemy-discard"), (second, "own-discard")):
+                    page.evaluate("""({id, pile}) => {
+                      const discard = document.getElementById(pile);
+                      const burnSelector = `.scorch-burn[data-burn-id="${id}"]`;
+                      const spySelector = `#info-content [data-card-id="${id}"]`;
+                      Object.defineProperty(document, 'visibilityState', {configurable: true, value: 'visible'});
+                      window.spyDiscardBeforeBurn = null;
+                      const observer = new MutationObserver(() => {
+                        const burn = document.querySelector(burnSelector);
+                        if (!burn || !burn.firstElementChild.getAnimations().length) return;
+                        observer.disconnect();
+                        window.spyBurnVisibility = getComputedStyle(burn.firstElementChild).visibility;
+                        window.spyBurnRow = burn.closest(".combat-row").dataset.side;
+                        discard.click();
+                        window.spyDiscardBeforeBurn = [
+                          discard.querySelector('small').textContent,
+                          !!discard.querySelector('.art-spy_scribe'),
+                          !!document.querySelector(spySelector),
+                        ];
+                      });
+                      observer.observe(document.body, {childList: true, subtree: true, attributes: true});
+                    }""", {"id": spy.id, "pile": pile})
+                first.locator('#hand [data-card-key="spy_scribe"]').click()
+                first.locator('#selection-info .primary').click()
+                for page, pile in ((first, "enemy-discard"), (second, "own-discard")):
+                    page.wait_for_function("() => window.spyDiscardBeforeBurn !== null")
+                    assert page.evaluate("window.spyBurnVisibility") == "visible"
+                    assert page.evaluate("window.spyBurnRow") == ("own" if pile == "own-discard" else "enemy")
+                    assert page.evaluate("window.spyDiscardBeforeBurn") == ["Сброс · 1", False, False]
+                    expect(page.locator(f"#{pile} small")).to_have_text("Сброс · 2")
+                    expect(page.locator(f"#{pile} .art-spy_scribe")).to_have_count(1)
+                    expect(page.locator(f'#info-content [data-card-id="{spy.id}"]')).to_be_visible()
+                    expect(page.locator(f'.scorch-burn[data-burn-id="{spy.id}"]')).to_have_count(0)
+                    page.locator("#close-info").click()
 
                 game = fixture(["udul_portal", "scorch"], ["knight"], "udul_souls")
                 game.players[0].deck = [game._new_card(key) for key in ("udul_mauler", "udul_hero_huntress")]
