@@ -42,6 +42,10 @@
   let leaderPreview = null, leaderPreviewAnimation = null;
   let viewingBoardDuringChoice = false;
   const burningCards = new Map();
+  const artworkCache = new Map();
+  const animatedArtwork = new WeakMap();
+  let tableCardNodes = null;
+  const decodedArtwork = new Map();
   const scorchFire = new window.FrontiersFire();
   const weatherEffects = new window.FrontiersWeather();
   let scorchFrame = null, scorchTick = null;
@@ -358,8 +362,11 @@
     try {
       await opponentPlayer.play(card, {
         scorch: !leaderKey && played.card.key === "scorch", leader: !!leaderKey, commit,
+        prepare: leaderKey ? null : () => renderCardArtwork(card.querySelector(".card-art"), true),
+        redraw: leaderKey ? null : () => redrawAnimatedArtwork(card.querySelector(".card-art")),
         onBurn: duration => audio.burn(next.game.match_id, next.game.version, duration, "preview"),
-        destination: () => leaderKey ? $("enemy-leader") : document.querySelector(`#arena [data-card-id="${CSS.escape(played.card.id)}"]`)
+        destination: () => leaderKey ? $("enemy-leader") : document.querySelector(`#arena .scorch-burn[data-burn-id="${CSS.escape(played.card.id)}"]`)
+          || document.querySelector(`#arena [data-card-id="${CSS.escape(played.card.id)}"]`)
           || (played.row ? document.querySelector(`.combat-row[data-side="${played.side === next.me ? "own" : "enemy"}"][data-row="${played.row}"] ${played.card.key === "horn" ? ".row-special" : ".row-cards"}`) : null)
           || (played.card.kind === "weather" && next.game.weather.length ? $("weather-strip") : $("enemy-discard")),
       });
@@ -585,21 +592,62 @@
     if (card.abilities?.includes("berserker")) return "♞";
     return ROW_GLYPHS[card.rows?.[0]] || "⚔";
   }
-  function cardNode(card, options = {}) {
-    const result = button("", (event) => {
+  function updateCardNode(result, card, options) {
+    result.disabled = !!options.disabled;
+    result.classList.toggle("small", !!options.small);
+    result.classList.toggle("selected", !!options.selected);
+    result.classList.toggle("targetable", !!options.targetable);
+    result.classList.toggle("opponent-arrival", !!(options.small && card.id && opponentPresentation?.arrivingCard === card.id));
+    const power = card.strength ?? card.base_strength;
+    const badge = result.querySelector(".card-power");
+    badge.classList.toggle("changed", power !== card.base_strength);
+    const value = badge.querySelector(".power-value");
+    if (value && value.textContent !== String(power)) {
+      value.textContent = power;
+      value.style.setProperty("--power-digits", String(String(power).length));
+    }
+    result.onclick = event => {
       event.stopPropagation();
       audio.play("select");
       if (options.onClick) options.onClick(); else showCard(card, options.faction);
-    }, `card ${card.kind} ${card.hero ? "hero" : ""} ${options.small ? "small" : ""} ${options.selected ? "selected" : ""} ${options.targetable ? "targetable" : ""}`);
+    };
+    requestAnimationFrame(() => renderCardArtwork(result.querySelector(".card-art")));
+  }
+  function cardNode(card, options = {}) {
+    const retained = card.id && tableCardNodes?.get(card.id);
+    const faction = options.faction || renderingFaction();
+    const effectiveFaction = card.faction === "neutral" ? faction : card.faction || "burgundy";
+    if (retained) {
+      tableCardNodes.delete(card.id);
+      if (retained.dataset.cardKey !== card.key || retained.dataset.faction !== effectiveFaction || retained.dataset.renderFaction !== faction ||
+          retained.dataset.language !== document.documentElement.lang) {
+        const fresh = createCardNode(card, options);
+        for (const attribute of [...retained.attributes]) retained.removeAttribute(attribute.name);
+        for (const attribute of fresh.attributes) retained.setAttribute(attribute.name, attribute.value);
+        retained.replaceChildren(...fresh.childNodes);
+      }
+      updateCardNode(retained, card, options);
+      return retained;
+    }
+    const result = createCardNode(card, options);
+    updateCardNode(result, card, options);
+    return result;
+  }
+  function createCardNode(card, options) {
+    const result = node("button", `card ${card.kind} ${card.hero ? "hero" : ""}`);
+    result.type = "button";
+    result.dataset.language = document.documentElement.lang;
     if (card.id) result.dataset.cardId = card.id;
     result.disabled = !!options.disabled;
     result.dataset.cardKey = card.key;
     if (options.small && card.id && opponentPresentation?.arrivingCard === card.id) result.classList.add("opponent-arrival");
     const faction = options.faction || renderingFaction();
     result.dataset.faction = card.faction === "neutral" ? faction : card.faction || "burgundy";
+    result.dataset.renderFaction = faction;
     result.title = `${cardName(card, faction)}. ${description(card, faction)}`;
     result.setAttribute("aria-label", result.title);
-    result.append(node("span", `card-art ${artClass(card, faction)}`), factionMark(result.dataset.faction, "card-ribbon"));
+    const art = node("span", `card-art ${artClass(card, faction)}`);
+    result.append(art, factionMark(result.dataset.faction, "card-ribbon"));
     const power = card.strength ?? card.base_strength;
     const top = node("div", "card-top");
     const badge = node("span", `card-power numeric-badge ${power !== card.base_strength ? "changed" : ""}`);
@@ -635,25 +683,127 @@
     $("info-content").replaceChildren(content);
     if (!$("info-dialog").open) $("info-dialog").showModal();
   }
+  function sharpenCardArtwork(canvas, context) {
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    const original = pixels.data.slice(), stride = canvas.width * 4;
+    // Restore edge contrast lost during reduction, with a bounded correction.
+    for (let row = 1; row < canvas.height - 1; row++) {
+      for (let column = 1; column < canvas.width - 1; column++) {
+        const offset = row * stride + column * 4;
+        for (let channel = 0; channel < 3; channel++) {
+          const index = offset + channel, center = original[index];
+          const average = (original[index - 4] + original[index + 4] +
+            original[index - stride] + original[index + stride]) / 4;
+          const correction = Math.max(-14, Math.min(14, (center - average) * .72));
+          pixels.data[index] = center + correction;
+        }
+      }
+    }
+    context.putImageData(pixels, 0, 0);
+  }
+  function paintCardArtwork(canvas, artwork, width, height) {
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(height));
+    const context = canvas.getContext("2d", {willReadFrequently: true});
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    const {image, size, position} = artwork;
+    if (size === "cover") {
+      const scale = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
+      const imageWidth = image.naturalWidth * scale, imageHeight = image.naturalHeight * scale;
+      const x = (canvas.width - imageWidth) * position[0];
+      const y = (canvas.height - imageHeight) * position[1];
+      context.drawImage(image, x, y, imageWidth, imageHeight);
+    } else {
+      const [columns, rows] = size.split(" ").map(value => parseFloat(value) / 100);
+      const tileWidth = image.naturalWidth / columns, tileHeight = image.naturalHeight / rows;
+      context.drawImage(image, (image.naturalWidth - tileWidth) * position[0],
+        (image.naturalHeight - tileHeight) * position[1], tileWidth, tileHeight, 0, 0, canvas.width, canvas.height);
+    }
+    sharpenCardArtwork(canvas, context);
+  }
+  async function renderCardArtwork(art, forAnimation = false) {
+    if (!art?.isConnected) return;
+    const style = getComputedStyle(art), size = style.backgroundSize;
+    if (size !== "cover" && size !== "400% 300%") return;
+    const url = style.backgroundImage.match(/^url\(["']?(.*?)["']?\)$/)?.[1];
+    if (!url) return;
+    const ratio = devicePixelRatio || 1;
+    const bounds = () => ({width: art.clientWidth, height: art.clientHeight});
+    const initial = bounds(), current = art.querySelector("canvas.card-art-image");
+    if (!forAnimation && current && current.width === Math.round(initial.width * ratio) &&
+        current.height === Math.round(initial.height * ratio)) return;
+    const cacheKey = dimensions => JSON.stringify([url, dimensions.width, dimensions.height, ratio, size, style.backgroundPosition]);
+    const cached = artworkCache.get(cacheKey(initial));
+    if (cached && !forAnimation) {
+      const canvas = cached.cloneNode();
+      canvas.getContext("2d").drawImage(cached, 0, 0);
+      art.replaceChildren(canvas);
+      return;
+    }
+    let image = decodedArtwork.get(url);
+    try {
+      if (!image) {
+        image = new Image();
+        image.src = url;
+        await image.decode();
+        decodedArtwork.set(url, image);
+        if (decodedArtwork.size > 32) decodedArtwork.delete(decodedArtwork.keys().next().value);
+      }
+      if (!art.isConnected) return;
+      const dimensions = bounds();
+      if (!dimensions.width || !dimensions.height) return;
+      const artwork = {image, size, position: [
+        parseFloat(style.backgroundPositionX) / 100, parseFloat(style.backgroundPositionY) / 100]};
+      const canvas = document.createElement("canvas");
+      canvas.className = "card-art-image";
+      canvas.setAttribute("aria-hidden", "true");
+      paintCardArtwork(canvas, artwork, dimensions.width * ratio, dimensions.height * ratio);
+      if (forAnimation) {
+        animatedArtwork.set(art, artwork);
+      } else {
+        artworkCache.set(cacheKey(dimensions), canvas);
+        if (artworkCache.size > 128) artworkCache.delete(artworkCache.keys().next().value);
+      }
+      art.replaceChildren(canvas);
+    } catch {
+      // Keep the CSS artwork if decoding the image fails.
+    }
+  }
+  function redrawAnimatedArtwork(art) {
+    const artwork = animatedArtwork.get(art), canvas = art?.querySelector("canvas.card-art-image");
+    if (!artwork || !canvas) return;
+    const bounds = art.getBoundingClientRect(), ratio = devicePixelRatio || 1;
+    paintCardArtwork(canvas, artwork, bounds.width * ratio, bounds.height * ratio);
+  }
+  function cloneCardWithArtwork(source) {
+    const clone = source.cloneNode(true), copies = clone.querySelectorAll("canvas");
+    source.querySelectorAll("canvas").forEach((canvas, index) => {
+      copies[index].getContext("2d").drawImage(canvas, 0, 0);
+    });
+    return clone;
+  }
   function showCard(card, faction = renderingFaction()) {
-    const content = node("div", "card-details");
+    const content = node("div", "card-details"), copy = node("section", "card-detail-copy");
     const origin = catalog.factions[card.faction]?.name || t("Общие карты");
-    content.append(cardNode(card, {faction, onClick: () => {}}), node("p", "eyebrow", `${card.hero ? t("Герой") : t("Коллекция")} · ${origin}`),
+    copy.append(node("p", "eyebrow", `${card.hero ? t("Герой") : t("Коллекция")} · ${origin}`),
       node("h2", "", cardName(card, faction)), node("p", "", description(card, faction)));
-    if (card.transform_to) content.append(node("p", "muted", t("Вторая форма: {0}.", definitions.get(card.transform_to)?.name || card.transform_to)));
-    if (card.summon_to) content.append(node("p", "muted", t("Призывает: {0}.", definitions.get(card.summon_to)?.name || card.summon_to)));
+    if (card.transform_to) copy.append(node("p", "muted", t("Вторая форма: {0}.", definitions.get(card.transform_to)?.name || card.transform_to)));
+    if (card.summon_to) copy.append(node("p", "muted", t("Призывает: {0}.", definitions.get(card.summon_to)?.name || card.summon_to)));
+    content.append(cardNode(card, {faction, onClick: () => {}}), copy);
     showInfo(content);
   }
   function showLeaderInfo(key) {
     if (!catalog?.leaders[key]) return;
     const ability = catalog.leaders[key], faction = factionInfo(key);
-    const content = node("div", "card-details leader-details");
+    const content = node("div", "card-details leader-details"), copy = node("section", "card-detail-copy");
     const portrait = node("div", "card leader-detail-card"), art = node("span", "card-art");
     portrait.dataset.leader = key;
     portrait.dataset.faction = factionKey(key);
     art.append(leaderPortrait(key));
     portrait.append(art, factionMark(factionKey(key), "card-ribbon"), node("span", "card-name", faction.leader));
-    content.append(portrait, node("p", "eyebrow", faction.name), node("h2", "", ability.name), node("p", "", ability.description));
+    copy.append(node("p", "eyebrow", faction.name), node("h2", "", ability.name), node("p", "", ability.description));
+    content.append(portrait, copy);
     showInfo(content);
   }
   function dismissOutside(dialog, panel, close) {
@@ -844,6 +994,8 @@
     return parts;
   }
   function renderGame() {
+    tableCardNodes = new Map([...$("arena").querySelectorAll(".card[data-card-id]")]
+      .map(element => [element.dataset.cardId, element]));
     const scrollPositions = window.FrontiersCardScroll.remember();
     const game = state.game, me = state.me, mine = game.players[me];
     $("opponent-score").replaceChildren(...playerPanel(game.players[1 - me], 1 - me));
@@ -859,8 +1011,8 @@
     $("turn-banner").textContent = banner;
     $("turn-banner").title = banner;
     $("turn-banner").className = `turn-banner ${game.turn === me && game.phase === "playing" ? "your-turn" : ""}`;
-    $("enemy-rows").replaceChildren(...[...ROWS].reverse().map((row) => combatRow(1 - me, row)));
-    $("own-rows").replaceChildren(...ROWS.map((row) => combatRow(me, row)));
+    reconcileChildren($("enemy-rows"), [...ROWS].reverse().map(row => combatRow(1 - me, row)));
+    reconcileChildren($("own-rows"), ROWS.map(row => combatRow(me, row)));
     const activeWeather = new Map(game.weather.map(effect => [effect.key, effect]));
     $("weather-strip").replaceChildren(...[...activeWeather.values()].map(effect => node("span", "weather-chip", t(effect.name))));
     for (const [id, player] of [["leader-button", mine], ["enemy-leader", game.players[1 - me]]]) {
@@ -876,10 +1028,7 @@
     for (const [prefix, player] of [["own", mine], ["enemy", game.players[1 - me]]]) {
       $(prefix + "-deck").dataset.faction = factionKey(player.leader);
       $(prefix + "-deck").replaceChildren(factionMark(factionKey(player.leader), "pile-crest"), node("strong", "", String(player.deck_count)), node("small", "", t("Колода")));
-      const discarded = player.discard.at(-1);
-      const preview = node("span", `discard-preview ${discarded ? artClass(discarded, factionKey(player.leader)) : ""}`);
-      preview.append(discarded?.key === "frost" ? icon("frost") : node("span", "", discarded ? glyph(discarded, factionKey(player.leader)) : "∅"));
-      $(prefix + "-discard").replaceChildren(preview, node("small", "", t("Сброс · {0}", player.discard.length)));
+      renderDiscardPreview(prefix === "own" ? me : 1 - me);
     }
     $("leader-button").title = catalog.leaders[mine.leader].description;
     $("leader-button").disabled = false;
@@ -890,7 +1039,7 @@
     $("mulligan-button").disabled = !connected || pendingVersion !== null;
     $("mulligan-button").textContent = swaps.size ? t("Заменить карт: {0}", swaps.size) : t("Оставить руку");
     $("hand-count").textContent = t("В руке {0} · В колоде {1}", mine.hand.length, mine.deck_count);
-    $("hand").replaceChildren(...mine.hand.map((card) => cardNode(card, {
+    const handCards = mine.hand.map((card) => cardNode(card, {
       disabled: !!opponentPresentation,
       selected: canSwap ? swaps.has(card.id) : selected === card.id,
       onClick: () => {
@@ -901,7 +1050,9 @@
           selected = selected === card.id ? null : card.id; renderGame();
         } else showCard(card);
       },
-    })));
+    }));
+    reconcileChildren($("hand"), handCards);
+    tableCardNodes = null;
     if (!mine.hand.length) $("hand").append(node("div", "empty-hand", game.phase === "finished" ? t("Матч завершён.") : t("Рука пуста. Можно использовать доступную способность лидера или спасовать.")));
     const chosen = mine.hand.find((card) => card.id === selected);
     const moves = selectedMoves();
@@ -923,6 +1074,28 @@
     startScorchAnimations();
     weatherEffects.update();
   }
+  function presentedDiscard(side) {
+    const game = state.game;
+    const hidden = new Set();
+    for (const burn of burningCards.values()) {
+      if (burn.deferDiscard && burn.match === game.match_id && burn.side === side) hidden.add(burn.cardId);
+    }
+    return game.players[side].discard.filter(card => !hidden.has(card.id));
+  }
+  function renderDiscardPreview(side) {
+    const discard = presentedDiscard(side), card = discard.at(-1);
+    const faction = factionKey(state.game.players[side].leader);
+    const preview = node("span", `discard-preview ${card ? artClass(card, faction) : ""}`);
+    preview.append(card?.key === "frost" ? icon("frost") : node("span", "", card ? glyph(card, faction) : "∅"));
+    $(side === state.me ? "own-discard" : "enemy-discard").replaceChildren(
+      preview, node("small", "", t("Сброс · {0}", discard.length)));
+  }
+  function renderDiscardCards(list, side) {
+    const cards = presentedDiscard(side);
+    const faction = factionKey(state.game.players[side].leader);
+    list.replaceChildren(...cards.map(card => cardNode(card, {faction})));
+    if (!cards.length) list.append(node("p", "muted", t("В сбросе пока нет карт.")));
+  }
   function collectScorchedCards(previous, next) {
     const before = previous?.game, game = next.game;
     if (!before || !game || game.version <= before.version) return;
@@ -937,28 +1110,28 @@
         const bounds = source.getBoundingClientRect();
         if (!bounds.width || !bounds.height) continue;
         const order = board.filter(item => item.row === card.row).map(item => item.id);
-        queueScorchBurn(game, card.id, side, card.row, source.cloneNode(true), order.slice(order.indexOf(card.id) + 1));
+        queueScorchBurn(game, card.id, side, card.row, cloneCardWithArtwork(source), order.slice(order.indexOf(card.id) + 1));
       }
     }
     for (const {card, side, row} of game.executed_on_arrival || []) {
       const image = cardNode(card, {small: true, faction: card.faction});
-      queueScorchBurn(game, card.id, side, row, image, []);
+      queueScorchBurn(game, card.id, side, row, image, [], true);
     }
     if (burningCards.size && currentNotice?.type === "turn") {
       noticeAnimation?.cancel(); noticeAnimation = null; currentNotice = null;
       $("match-announcement").hidden = true;
     }
   }
-  function queueScorchBurn(game, id, side, row, image, following) {
+  function queueScorchBurn(game, id, side, row, image, following, deferDiscard = false) {
     const key = `${game.version}:${id}`;
     if (burningCards.has(key)) return;
     const element = node("div", "scorch-burn");
     image.removeAttribute("data-card-id"); image.removeAttribute("title");
-    image.classList.remove("selected", "targetable"); image.tabIndex = -1;
+    image.classList.remove("selected", "targetable", "opponent-arrival"); image.tabIndex = -1;
     element.dataset.burnId = id; element.setAttribute("aria-hidden", "true"); element.inert = true;
     element.append(image);
     const burn = {element, image, side, row, elapsed: 0, match: game.match_id, version: game.version,
-      following, animations: [], started: false};
+      cardId: id, following, deferDiscard, animations: [], started: false};
     scorchFire.prepare(burn, key); burningCards.set(key, burn);
   }
   function clearScorchAnimations() {
@@ -1001,6 +1174,7 @@
     // Считаем показанные кадры: фоновая вкладка не пропускает весь эффект за один скачок часов.
     const delta = scorchTick === null ? 16 : Math.max(0, Math.min(50, time - scorchTick));
     scorchTick = time;
+    const discardsToRefresh = new Set();
     for (const [id, burn] of burningCards) {
       if (!burn.started) continue;
       if (!burn.sounded) {
@@ -1012,7 +1186,13 @@
       if (burn.elapsed >= burn.duration) {
         burningCards.delete(id); burn.element.remove();
         for (const animation of burn.animations) animation.cancel();
+        if (burn.deferDiscard && burn.match === state?.game?.match_id) discardsToRefresh.add(burn.side);
       }
+    }
+    for (const side of discardsToRefresh) {
+      renderDiscardPreview(side);
+      const list = $("info-dialog").open && $("info-content").querySelector(`[data-discard-side="${side}"]`);
+      if (list) renderDiscardCards(list, side);
     }
     scorchFire.draw(burningCards, delta);
     if (burningCards.size) scheduleScorchFrame();
@@ -1367,6 +1547,15 @@
       document.body.style.setProperty(`--table-${key}`, `${(pixels / width * 100).toFixed(4)}cqw`);
     }
   }
+  function reconcileChildren(parent, elements) {
+    const wanted = new Set(elements);
+    for (const element of [...parent.children]) {
+      if (!wanted.has(element)) element.remove();
+    }
+    for (const [index, element] of elements.entries()) {
+      if (parent.children[index] !== element) parent.insertBefore(element, parent.children[index] || null);
+    }
+  }
   function combatRow(side, row) {
     const game = state.game, player = game.players[side];
     const faction = factionKey(player.leader);
@@ -1378,19 +1567,22 @@
     const droppable = side === targetSide && !!rowMove && chosen?.key !== "horn";
     const weather = [...new Set(game.weather.filter(effect => WEATHER[effect.key]?.includes(row)).map(effect => effect.key))];
     const weathered = weather.length > 0;
-    const result = node("div", `combat-row ${own ? "own" : "enemy"} ${droppable ? "droppable" : ""} ${weathered ? "weathered" : ""}`);
+    const result = document.querySelector(`.combat-row[data-side="${own ? "own" : "enemy"}"][data-row="${row}"]`) || node("div");
+    result.className = `combat-row ${own ? "own" : "enemy"} ${droppable ? "droppable" : ""} ${weathered ? "weathered" : ""}`;
+    result.onclick = null; result.onkeydown = null;
+    result.removeAttribute("tabindex"); result.removeAttribute("role"); result.removeAttribute("aria-label");
     result.dataset.side = own ? "own" : "enemy";
     result.dataset.row = row;
     result.dataset.weather = weather.join(" ");
     if (droppable) {
       result.tabIndex = 0; result.setAttribute("role", "button");
       result.setAttribute("aria-label", t("Разыграть карту: {0}", t(ROW_NAMES[row])));
-      result.addEventListener("click", () => send(rowMove));
-      result.addEventListener("keydown", (event) => {
+      result.onclick = () => send(rowMove);
+      result.onkeydown = event => {
         if (event.target === result && (event.key === "Enter" || event.key === " ")) {
           event.preventDefault(); send(rowMove);
         }
-      });
+      };
     }
     const label = node("div", "row-info");
     label.title = t(ROW_NAMES[row]);
@@ -1404,34 +1596,41 @@
       label.append(marker);
     }
     if (player.leader_horn.includes(row)) label.append(node("span", "mobile-row-effect", "×2"));
-    const cards = node("div", "row-cards"), liveCards = new Map();
+    const cards = result.querySelector(".row-cards") || node("div", "row-cards");
+    const liveCards = new Map(), rowContents = [];
     for (const card of player.board.filter((item) => item.row === row)) {
       const move = own ? selectedMoves().find((option) => option.target_id === card.id) : null;
       const element = cardNode(card, {small: true, faction, targetable: !!move,
         onClick: () => move ? send(move) : droppable ? send(rowMove) : showCard(card, faction)});
-      liveCards.set(card.id, element); cards.append(element);
+      liveCards.set(card.id, element); rowContents.push(element);
     }
     // Занимаем прежние места сгорающих карт, чтобы оставшиеся отряды не прыгали под огонь.
     for (const burn of burningCards.values()) {
       if (burn.side !== side || burn.row !== row) continue;
       const following = burn.following.find(id => liveCards.has(id));
-      cards.insertBefore(burn.element, following ? liveCards.get(following) : null);
+      const index = following ? rowContents.indexOf(liveCards.get(following)) : rowContents.length;
+      rowContents.splice(index, 0, burn.element);
     }
-    const medallion = node("span", "row-medallion");
-    medallion.append(icon(row, "row-watermark"));
-    cards.append(medallion);
-    if (cards.children.length === 1) cards.append(node("span", "empty-row", droppable ? t("Выложить сюда") : t(ROW_NAMES[row])));
-    const special = node("div", `row-special ${slotMove ? "slot-droppable" : ""}`);
+    const medallion = cards.querySelector(".row-medallion") || node("span", "row-medallion");
+    if (!medallion.children.length) medallion.append(icon(row, "row-watermark"));
+    rowContents.push(medallion);
+    if (rowContents.length === 1) rowContents.push(node("span", "empty-row", droppable ? t("Выложить сюда") : t(ROW_NAMES[row])));
+    reconcileChildren(cards, rowContents);
+    const special = result.querySelector(".row-special") || node("div");
+    special.className = `row-special ${slotMove ? "slot-droppable" : ""}`;
+    special.onclick = null; special.onkeydown = null;
+    special.removeAttribute("tabindex"); special.removeAttribute("role"); special.removeAttribute("aria-label");
+    const specials = [];
     if (slotMove) {
       special.tabIndex = 0; special.setAttribute("role", "button");
       special.setAttribute("aria-label", t("Установить штандарт: {0}", t(ROW_NAMES[row])));
-      special.addEventListener("click", event => { event.stopPropagation(); send(slotMove); });
-      special.addEventListener("keydown", event => {
+      special.onclick = event => { event.stopPropagation(); send(slotMove); };
+      special.onkeydown = event => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.stopPropagation(); send(slotMove); }
-      });
+      };
     }
-    for (const card of player.specials.filter((item) => item.row === row)) special.append(cardNode(card, {small: true, faction}));
-    if (player.leader_horn.includes(row) && !special.children.length) {
+    for (const card of player.specials.filter((item) => item.row === row)) specials.push(cardNode(card, {small: true, faction}));
+    if (player.leader_horn.includes(row) && !specials.length) {
       const standard = cardNode(definitions.get("horn"), {small: true, faction: factionKey(player.leader), onClick: () => {
         const content = node("div");
         content.append(node("p", "eyebrow", factionInfo(player.leader).leader), node("h2", "", catalog.leaders[player.leader].name), node("p", "", catalog.leaders[player.leader].description));
@@ -1440,10 +1639,11 @@
       standard.classList.add("leader-standard"); standard.dataset.source = "leader";
       standard.title = `${catalog.leaders[player.leader].name}: ${catalog.leaders[player.leader].description}`;
       standard.setAttribute("aria-label", standard.title);
-      special.append(standard);
+      specials.push(standard);
     }
-    if (!special.children.length) special.append(icon("banner", "empty-slot"));
-    result.append(label, special, cards);
+    if (!specials.length) specials.push(icon("banner", "empty-slot"));
+    reconcileChildren(special, specials);
+    reconcileChildren(result, [label, special, cards]);
     return result;
   }
   function closeChoice() {
@@ -1753,11 +1953,11 @@
   });
   for (const [id, own] of [["own-discard", true], ["enemy-discard", false]]) {
     $(id).addEventListener("click", () => {
-      const cards = state.game.players[own ? state.me : 1 - state.me].discard;
+      const side = own ? state.me : 1 - state.me;
       const content = node("div"); content.append(node("h2", "", own ? t("Ваш сброс") : t("Сброс соперника")));
       const list = node("div", "choice-cards");
-      list.append(...cards.map((card) => cardNode(card, {faction: factionKey(state.game.players[own ? state.me : 1 - state.me].leader)})));
-      if (!cards.length) list.append(node("p", "muted", t("В сбросе пока нет карт.")));
+      list.dataset.discardSide = side;
+      renderDiscardCards(list, side);
       content.append(list); showInfo(content);
     });
   }

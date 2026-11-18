@@ -39,7 +39,7 @@ body.in-lobby { height: 100dvh; min-height: 0; overflow: hidden; }
 .filter-tabs button.active { color: #ecddb5; border-bottom-color: #bd9a57; filter: drop-shadow(0 0 6px #e4c47b66); }
 .in-lobby .collection { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-content: start; flex: 1; min-height: 0; max-height: none; gap: 18px 14px; overflow-y: auto; padding: 4px 10px 12px 4px; scrollbar-width: thin; scrollbar-color: #625033 #141510; }
 .in-lobby .collection-item { position: relative; min-width: 0; }
-.in-lobby .collection-item .card { width: 100%; height: auto; aspect-ratio: .61; }
+.in-lobby .collection-item .card { width: 100%; height: auto; aspect-ratio: var(--deck-card-ratio); }
 .in-lobby .card-adjust { position: absolute; bottom: 5px; left: 21%; right: 5px; margin: 0; display: flex; align-items: center; justify-content: space-between; height: 24px; z-index: 4; pointer-events: none; }
 .in-lobby .card-adjust span { min-width: 0; font: 12px Georgia,serif; color: #645735; text-shadow: 0 1px #fff8; }
 .in-lobby .card-adjust button { display: grid; place-items: center; width: 23px; height: 23px; padding: 0; background: #332c20; color: #f1ddb0; border: 1px solid #a28a57; border-radius: 2px; font: 18px/1 Georgia,serif; pointer-events: auto; }
