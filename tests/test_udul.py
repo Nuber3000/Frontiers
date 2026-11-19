@@ -123,16 +123,54 @@ class UdulTests(unittest.TestCase):
         game = game.act(1, {"type": "leader"}, game.version)
         self.assertEqual(game.players[0].souls, 2)
 
-    def test_necromancy_returns_only_regular_units_and_does_not_play_them(self):
+    def test_necromancy_places_exactly_one_regular_unit_on_the_board(self):
         game = self.game("udul_necromancy")
-        game.players[0].discard = [game._new_card(key) for key in ("udul_healer", "udul_horde", "udul_hero_warlord", "scorch")]
+        player = game.players[0]
+        player.discard = [game._new_card(key) for key in
+                          ("udul_mauler", "udul_engine", "udul_hero_warlord", "spy_scribe", "scorch")]
+        hand_ids = [card.id for card in player.hand]
         game = self.leader(game)
-        game = self.choose(game, "udul_healer")
-        self.assertEqual([card["key"] for card in game.view(0)["pending"]["cards"]], ["udul_horde"])
-        game = self.choose(game, "udul_horde")
-        self.assertFalse(game.players[0].board)
+        self.assertEqual(game.selection["remaining"], 1)
+        self.assertEqual([card.key for card in game._selection_targets(0)], ["udul_mauler", "udul_engine"])
+        game = self.choose(game, "udul_engine", "siege")
+        self.assertEqual([item.card.key for item in game.players[0].board], ["udul_engine"])
+        self.assertEqual(game.players[0].board[0].row, Row.SIEGE)
+        self.assertEqual([card.id for card in game.players[0].hand], hand_ids)
+        self.assertIsNone(game.selection)
         self.assertFalse(game.pending)
-        self.assertEqual([card.key for card in game.players[0].discard], ["udul_hero_warlord", "scorch"])
+        self.assertTrue(game.players[0].leader_used)
+        self.assertEqual(game.turn, 1)
+        self.assertEqual([card.key for card in game.players[0].discard],
+                         ["udul_mauler", "udul_hero_warlord", "spy_scribe", "scorch"])
+
+    def test_necromancy_triggers_revived_unit_abilities(self):
+        game = self.game("udul_necromancy", deck=("udul_horde",))
+        game.players[0].discard = [game._new_card(key) for key in ("udul_healer", "udul_horde")]
+        horde = game.players[0].discard[1]
+        game = self.leader(game)
+        game = self.choose(game, "udul_healer", "ranged")
+        self.assertIsNone(game.selection)
+        self.assertTrue(game.pending)
+        self.assertEqual(game.turn, 0)
+        game = game.act(0, {"type": "choose", "card_id": horde.id, "row": "melee"}, game.version)
+        self.assertCountEqual([item.card.key for item in game.players[0].board],
+                              ["udul_healer", "udul_horde", "udul_horde"])
+        self.assertFalse(game.pending)
+        self.assertEqual(game.turn, 1)
+
+    def test_necromancy_validates_agile_unit_row_before_removing_it(self):
+        game = self.game("udul_necromancy")
+        card = game._new_card("herald")
+        game.players[0].discard.append(card)
+        game = self.leader(game)
+        moves = [move for move in game.legal_moves(0) if move["type"] == "choose"]
+        self.assertEqual({move["row"] for move in moves}, {"melee", "ranged"})
+        with self.assertRaises(RuleError):
+            game.act(0, {"type": "choose", "card_id": card.id, "row": "siege"}, game.version)
+        self.assertEqual([item.id for item in game.players[0].discard], [card.id])
+        self.assertFalse(game.players[0].board)
+        game = self.choose(game, "herald", "ranged")
+        self.assertEqual(game.players[0].board[0].row, Row.RANGED)
 
     def test_spirit_plays_an_actual_deck_horn_in_a_free_slot(self):
         game = self.game("udul_spirit", deck=("horn",))

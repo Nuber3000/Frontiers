@@ -478,7 +478,7 @@ class Game:
                     raise RuleError("Для способности нужно собрать не менее трёх душ.")
                 player.souls = 0
             if kind != "sacrifice" or sum(self._can_use_card(player, card) for card in player.hand) >= 2:
-                self.selection = {"kind": kind, "remaining": 2 if kind in {"sacrifice", "necromancy"} else 1,
+                self.selection = {"kind": kind, "remaining": 2 if kind == "sacrifice" else 1,
                                   "source": LEADERS[player.leader]["name"]}
         elif player.leader == "academy":
             self._leader_boost(actor, Row.SIEGE)
@@ -555,8 +555,9 @@ class Game:
             player.hand.remove(card)
             player.discard.append(card)
         elif kind == "necromancy":
+            row = self._row(action.get("row"), CATALOG[card.key].rows)
             player.discard.remove(card)
-            player.hand.append(card)
+            self._place_unit(actor, card, row)
         elif kind == "draw":
             player.deck.remove(card)
             player.hand.append(card)
@@ -764,6 +765,8 @@ class Game:
                 if self.selection["kind"] == "horn":
                     choices.extend({**base, "row": row.value} for row in ROWS
                                    if self._slot_free(actor, row) and row not in player.leader_horn)
+                elif self.selection["kind"] == "necromancy":
+                    choices.extend({**base, "row": row.value} for row in CATALOG[card.key].rows)
                 else:
                     choices.append(base)
             return choices + concede

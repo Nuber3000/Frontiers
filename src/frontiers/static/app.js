@@ -1663,7 +1663,7 @@
     document.querySelector("#choice-dialog .muted").textContent = levy ? t("Выберите обычный отряд из отбоя соперника.") : t("Выберите отряд из сброса. Для подвижного отряда также выберите линию.");
     if (custom) {
       document.querySelector("#choice-dialog .eyebrow").textContent = t(game.pending.source);
-      document.querySelector("#choice-dialog h2").textContent = t({weather: "Выберите погодную карту", sacrifice: "Выберите карту для сброса", necromancy: "Вернуть отряд в руку", horn: "Выберите линию для командного рога", draw: "Возьмите карту из колоды"}[game.pending.kind]);
+      document.querySelector("#choice-dialog h2").textContent = t({weather: "Выберите погодную карту", sacrifice: "Выберите карту для сброса", necromancy: "Вернуть отряд на поле", horn: "Выберите линию для командного рога", draw: "Возьмите карту из колоды"}[game.pending.kind]);
       document.querySelector("#choice-dialog .muted").textContent = t("Осталось выбрать: {0}", game.pending.remaining);
     }
     const ids = [...new Set(moves.map((move) => move.card_id))];

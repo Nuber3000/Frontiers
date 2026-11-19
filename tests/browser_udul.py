@@ -184,8 +184,11 @@ def run(output):
                         choose("udul_engine")
                         choose("udul_hero_warlord")
                     elif leader == "udul_necromancy":
-                        choose("udul_healer")
-                        choose("udul_mauler")
+                        expect(first.locator("#choice-dialog h2")).to_have_text("Вернуть отряд на поле")
+                        choose("udul_mauler", "melee")
+                        expect(first.locator('.combat-row[data-side="own"] .row-cards [data-card-key="udul_mauler"]')).to_have_count(1)
+                        expect(first.locator('#hand [data-card-key="udul_mauler"]')).to_have_count(1)
+                        assert [card.key for card in room.game.players[0].discard] == ["udul_healer"]
                     elif leader == "udul_spirit":
                         choose("horn", "ranged")
                         expect(first.locator('.combat-row[data-side="own"][data-row="ranged"] .row-special .art-udul_horn')).to_be_visible()
