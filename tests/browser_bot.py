@@ -46,7 +46,7 @@ def run(channel, language, difficulty="normal", faction="burgundy"):
 
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel=channel)
-                context = browser.new_context(viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
+                context = browser.new_context(locale="ru-RU", viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
                 page = context.new_page()
                 page.add_init_script("localStorage.setItem('frontiers.sound',JSON.stringify({enabled:false,volume:0,musicVolume:0}))")
                 errors, online_requests, web_sockets = [], [], []
@@ -62,11 +62,13 @@ def run(channel, language, difficulty="normal", faction="burgundy"):
                     expect(page.locator("#play-bot")).to_have_text("Play against bot")
                 page.locator("#player-name").fill("Тест")
                 page.locator("#play-bot").click()
+                page.locator("#tutorial-offer-later").click()
                 expect(page.locator("#bot-setup-dialog")).to_be_visible()
                 # Escape closes setup without starting a worker or server room.
                 page.keyboard.press("Escape")
                 expect(page.locator("#bot-setup-dialog")).to_be_hidden()
                 page.locator("#play-bot").click()
+                page.locator("#tutorial-offer-later").click()
                 # A cancelled download must not leave a worker or a busy button.
                 hold_rules.set()
                 page.locator("#bot-setup-start").click()
@@ -81,6 +83,7 @@ def run(channel, language, difficulty="normal", faction="burgundy"):
                 hold_rules.clear()
                 expect(page.locator("#room")).to_be_hidden()
                 page.locator("#play-bot").click()
+                page.locator("#tutorial-offer-later").click()
                 page.locator(f'input[name="bot-difficulty"][value="{difficulty}"]').check()
                 page.locator("#bot-setup-start").click()
                 expect(page.locator("#bot-loading")).to_be_visible()

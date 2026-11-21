@@ -140,6 +140,10 @@ class RoomStore:
         self.match_ttl = match_ttl
         self.disconnected_ttl = disconnected_ttl
 
+    @property
+    def online_count(self) -> int:
+        return sum(room.online for room in self.rooms.values())
+
     def can_host(self, session: str) -> bool:
         return sum(room.seats[0].session == session for room in self.rooms.values()) < 8
 

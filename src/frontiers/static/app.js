@@ -25,6 +25,7 @@
     scorch_ranged: "Казнит сильнейшие дальнобойные отряды соперника, если сила его ряда не меньше 10.",
     scorch_siege: "Казнит сильнейшие осадные отряды соперника, если сила его ряда не меньше 10.",
   };
+  let tutorial, pendingEntry = null;
   let catalogSource, catalog, definitions = new Map(), state = null, socket = null;
   let connectionText = "Карточная дуэль для двоих", connectionMode = "";
   let localWorker = null, localReply = null, localRequestId = 0;
@@ -200,7 +201,7 @@
   function currentDeck() { return {faction: factionKey(), leader, cards: [...deck]}; }
   function deckChanged() {
     dirtyDeck = true;
-    locally(() => profile.saveDraft(currentDeck()));
+    if (!state?.tutorial_deck) locally(() => profile.saveDraft(currentDeck()));
     renderLobby();
   }
   function loadSavedDeck(item) {
@@ -411,7 +412,7 @@
     }
     if (freshRoom) {
       activeSavedDeck = null;
-      if (!next.seats[next.me].ready && (!next.game || next.game.phase === "finished")) {
+      if (!next.tutorial_deck && !next.seats[next.me].ready && (!next.game || next.game.phase === "finished")) {
         const draft = profile.draft();
         if (draft) { leader = draft.leader; deck = [...draft.cards]; dirtyDeck = true; }
       }
@@ -434,12 +435,12 @@
     state = next;
     audio.observe(freshRoom ? null : previous, next);
     weatherEffects.observe(freshRoom ? null : previous, next);
-    locally(() => profile.record(next));
+    if (!next.tutorial) locally(() => profile.record(next));
     document.body.dataset.revision = String(next.revision);
     document.body.dataset.gameVersion = String(next.game?.version ?? -1);
     if (state.game && !state.game.players[state.me].hand.some((card) => card.id === selected)) selected = null;
     if (state.game?.players[state.me].mulligan_done) swaps.clear();
-    if (!localWorker) {
+    if (!localWorker && !state.tutorial_deck) {
       writeStorage("frontiers.room", state.code);
       history.replaceState(null, "", `/?room=${encodeURIComponent(state.code)}`);
     }
@@ -478,6 +479,7 @@
     worker.onmessage = ({data}) => {
       if (localWorker !== worker) return;
       if (data.type === "loading") {
+        tutorial?.loadingStage(data.stage);
         if (botLaunch && BOT_LOADING_STAGES[data.stage]) $("bot-loading-stage").textContent = t(BOT_LOADING_STAGES[data.stage]);
         return;
       }
@@ -485,7 +487,7 @@
         const reply = localReply;
         localReply = null;
         if (data.error) reply.reject(new Error(data.error));
-        else reply.resolve(data.state);
+        else reply.resolve(data.state ?? data.lessons);
       } else if (data.state) receive(data.state);
       else if (data.error) toast(data.error);
     };
@@ -835,6 +837,7 @@
   }
 
   function render() {
+    if (!state?.tutorial_deck) tutorial?.endDeck();
     const active = !!(state?.game && (state.game.phase !== "finished" || !resultDismissed));
     const wasActive = document.body.classList.contains("in-match");
     document.body.classList.toggle("in-match", active);
@@ -851,11 +854,12 @@
     $("room").hidden = !state;
     if (!state) {
       closePresentation();
+      tutorial?.render(null);
       return;
     }
-    $("room-label").textContent = localWorker ? t(state.code) : state.code;
-    $("copy-invite").hidden = active || !!localWorker;
-    $("match-history").hidden = active;
+    $("room-label").textContent = state.tutorial_deck ? t("Обучение") : localWorker ? t(state.code) : state.code;
+    $("copy-invite").hidden = active || !!localWorker || !!state.tutorial_deck;
+    $("match-history").hidden = active || !!state.tutorial_deck;
     $("lobby").hidden = !!active;
     $("arena").hidden = !active;
     if (active) renderGame(); else { closeChoice(); closeMulligan(); closeLeaderPreview(); renderLobby(); }
@@ -936,8 +940,12 @@
         const count = counts.get(card.key) || 0;
         const controls = node("div", "card-adjust");
         const adjust = button(inDeck ? "−" : "+", () => {
+          const kind = inDeck ? "remove" : "add";
+          if (state.tutorial_deck && !tutorial.allowDeckAction(kind, card.key)) return;
+          const before = deck.length;
           if (inDeck) deck.splice(deck.indexOf(card.key), 1); else deck.push(card.key);
           deckChanged();
+          if (state.tutorial_deck) tutorial.deckAction(kind, {before, after: deck.length, key: card.key});
         });
         adjust.disabled = locked || (!inDeck && deck.length >= 60);
         adjust.setAttribute("aria-label", `${inDeck ? t("Убрать") : t("Добавить")}: ${cardName(card)}`);
@@ -959,6 +967,12 @@
       : mine.ready ? t("Отменить готовность") : state.game ? t("Готов к реваншу") : t("Готов к матчу");
     $("ready-hint").textContent = localWorker ? `${t("Матч проходит в этом браузере.")} ${t("Сложность")} · ${t({easy: "Лёгкая", normal: "Обычная", hard: "Сложная"}[state.bot_difficulty] || "Обычная")}`
       : mine.ready ? t("Ждём готовности второго игрока.") : t("Матч начнётся, когда оба игрока будут готовы.");
+    if (state.tutorial_deck) {
+      $("ready-button").disabled = busy || tutorial.deckTour?.step !== 5;
+      $("ready-button").textContent = t("К сценариям на столе");
+      $("ready-hint").textContent = t("Выполните действия из подсказок. Учебная колода не меняет ваши сохранённые колоды.");
+      tutorial.renderDeck();
+    }
   }
 
   function matchesFilter(card, filter) {
@@ -1007,7 +1021,7 @@
     else if (game.phase === "mulligan") banner = mine.mulligan_done ? t("Ждём подтверждения руки соперника") : t("Выберите карты для замены");
     else if (game.pending) banner = game.pending.actor === me ? (game.pending.cards ? t(game.pending.source) : game.pending.kind === "levy" ? t("Выберите отряд из отбоя соперника") : t(factionKey(mine.leader) === "udul" ? "Возрождение: выберите отряд из сброса" : "Лекарь: выберите отряд из сброса")) : t("Соперник выбирает цель способности");
     else banner = game.turn === me ? (game.players[1 - me].passed ? t("Соперник спасовал. Вы можете продолжать ходить") : t("Ваш ход")) : t("Ход соперника");
-    if (pendingVersion !== null) banner = t("Сервер проверяет ход…");
+    if (pendingVersion !== null) banner = t(localWorker ? "Проверяем ход локально…" : "Сервер проверяет ход…");
     $("turn-banner").textContent = banner;
     $("turn-banner").title = banner;
     $("turn-banner").className = `turn-banner ${game.turn === me && game.phase === "playing" ? "your-turn" : ""}`;
@@ -1033,6 +1047,7 @@
     $("leader-button").title = catalog.leaders[mine.leader].description;
     $("leader-button").disabled = false;
     $("pass-button").disabled = !usableMoves().some((move) => move.type === "pass");
+    $("concede-button").hidden = !!state.tutorial;
     $("concede-button").disabled = !usableMoves().some((move) => move.type === "concede");
     const canSwap = game.phase === "mulligan" && !mine.mulligan_done;
     $("mulligan-button").hidden = !canSwap;
@@ -1073,6 +1088,7 @@
     renderLeaderPreview();
     startScorchAnimations();
     weatherEffects.update();
+    tutorial?.render(state.tutorial, game, busy || pendingVersion !== null || !!opponentPresentation, selected);
   }
   function presentedDiscard(side) {
     const game = state.game;
@@ -1481,7 +1497,7 @@
   }
   function renderResult() {
     const game = state?.game;
-    if (!game || game.phase !== "finished" || resultDismissed || resultMinimized || currentNotice || noticeQueue.length || burningCards.size || opponentPresentation) return;
+    if (state?.tutorial || !game || game.phase !== "finished" || resultDismissed || resultMinimized || currentNotice || noticeQueue.length || burningCards.size || opponentPresentation) return;
     const dialog = $("result-dialog"), me = state.me;
     const signature = `${state.code}:${game.version}:${me}`;
     if (resultSignature !== signature) {
@@ -1685,7 +1701,7 @@
   let matchSearch = null;
 
   function disableEntry(disabled) {
-    $("create-room").disabled = $("join-room").disabled = $("play-bot").disabled = disabled || !!matchSearch;
+    $("tutorial-offer-start").disabled = $("tutorial-button").disabled = $("create-room").disabled = $("join-room").disabled = $("play-bot").disabled = disabled || !!matchSearch;
     $("player-name").disabled = !!matchSearch;
     $("find-match").disabled = disabled || !!matchSearch?.cancelling;
   }
@@ -1760,6 +1776,58 @@
     }
   }
 
+  function beginDeckTutorial() {
+    if (busy || matchSearch || state) return;
+    $("rules-dialog").close(); $("tutorial-offer-dialog").close();
+    disconnect();
+    const info = catalog.factions.burgundy;
+    const preset = Object.values(catalog.decks).find(item => item.faction === "burgundy");
+    const seats = [t("Вы"), t("Соперник")].map(name => ({name, leader: info.default_leader,
+      faction: "burgundy", ready: false, online: true}));
+    tutorial.startDeck();
+    deckFilter = "all"; $("collection-filter").value = "all";
+    connected = true;
+    status("Локальное обучение", "online");
+    receive({code: "Обучение", me: 0, revision: 0, my_leader: info.default_leader,
+      my_deck: [...preset.cards], seats, game: null, tutorial_deck: true});
+  }
+  function prepareTutorial() {
+    if (busy || matchSearch || (state && !state.tutorial && !state.tutorial_deck)) return null;
+    busy = true; disableEntry(true);
+    return (async () => {
+      let timeout;
+      try {
+        if (!localWorker) { disconnect(); openLocalWorker(); }
+        const worker = localWorker;
+        timeout = setTimeout(() => {
+          if (localWorker === worker) disconnect();
+        }, 90000);
+        return await localRequest({type: "tutorial-list"});
+      } catch (error) {
+        if (!state?.tutorial) disconnect();
+        throw error;
+      } finally {
+        clearTimeout(timeout); busy = false; disableEntry(false);
+      }
+    })();
+  }
+  async function startTutorial(lesson) {
+    if (busy || !localWorker) return;
+    busy = true;
+    const worker = localWorker;
+    try {
+      const next = await localRequest({type: "tutorial-start", lesson, name: t("Вы"), opponent: t("Соперник")});
+      if (localWorker !== worker) return;
+      connected = true; pendingVersion = null;
+      closeChoice(); closeMulligan(); closeLeaderPreview();
+      history.replaceState(null, "", "/");
+      status("Локальное обучение", "online");
+      receive(next);
+    } finally {
+      busy = false; disableEntry(false); render();
+    }
+  }
+
   async function enterRoom(join, local = false) {
     if (busy || matchSearch || !$("entry-form").reportValidity()) return;
     const name = $("player-name").value.trim();
@@ -1809,9 +1877,18 @@
     }
   }
 
-  $("entry-form").addEventListener("submit", (event) => { event.preventDefault(); enterRoom(false); });
+  function requestEntry(action) {
+    if (!profile || busy || matchSearch || state) return;
+    if (!profile.history().length) {
+      if ($("tutorial-offer-dialog").open) return;
+      pendingEntry = action;
+      $("tutorial-offer-dialog").showModal();
+    } else action();
+  }
+  $("entry-form").addEventListener("submit", event => { event.preventDefault(); requestEntry(() => enterRoom(false)); });
   $("join-room").addEventListener("click", () => enterRoom(true));
-  $("play-bot").addEventListener("click", () => {
+  $("play-bot").addEventListener("click", () => requestEntry(openBotSetup));
+  function openBotSetup() {
     if (busy || matchSearch || !$("entry-form").reportValidity()) return;
     const saved = readStorage("frontiers.bot-difficulty");
     const difficulty = ["easy", "normal", "hard"].includes(saved) ? saved : "normal";
@@ -1820,7 +1897,7 @@
     $("bot-setup-start").hidden = false;
     $("bot-loading").hidden = true;
     $("bot-setup-dialog").showModal();
-  });
+  }
   function cancelBotSetup() {
     if (botLaunch) { botLaunch.cancelled = true; disconnect(); }
     $("bot-setup-dialog").close();
@@ -1830,20 +1907,25 @@
   $("bot-setup-start").addEventListener("click", () => enterRoom(false, true));
   $("find-match").addEventListener("click", () => {
     if (matchSearch) return cancelMatchSearch(matchSearch);
+    requestEntry(startMatchSearch);
+  });
+  function startMatchSearch() {
     if (busy || state || !$("entry-form").reportValidity()) return;
     const name = $("player-name").value.trim();
     matchSearch = {name, message: "Ищем соперника…"};
     disableEntry(false);
     renderMatchSearch();
     pollMatchSearch(matchSearch, {name});
-  });
+  }
   $("language-button").addEventListener("click", () => {
     i18n.toggle();
+    window.FrontiersRoomCounter.localize();
     audio.syncControls();
     status(connectionText, connectionMode);
     syncFullscreen();
     renderMatchSearch();
     if (catalogSource) localizeCatalog();
+    if (tutorial?.dialog.open) tutorial.renderLoading();
     resultSignature = "";
     clearAnnouncements();
     render();
@@ -1858,15 +1940,23 @@
     }
   });
   $("room-code").addEventListener("input", () => { $("room-code").value = $("room-code").value.toUpperCase().replace(/[^A-Z2-9]/g, ""); });
-  $("leader-select").addEventListener("change", () => { leader = $("leader-select").value; deckChanged(); });
+  $("leader-select").addEventListener("change", () => {
+    if (state?.tutorial_deck && !tutorial.allowDeckAction("leader")) return renderLobby();
+    const before = leader;
+    leader = $("leader-select").value; deckChanged();
+    if (state?.tutorial_deck) tutorial.deckAction("leader", {before, after: leader});
+  });
   $("faction-select").addEventListener("change", () => {
+    if (state?.tutorial_deck && !tutorial.allowDeckAction("faction")) return renderLobby();
+    const before = factionKey();
     const faction = $("faction-select").value;
     leader = catalog.factions[faction].default_leader;
     deck = [...Object.values(catalog.decks).find(item => item.faction === faction).cards];
     activeSavedDeck = null;
-    const draft = profile.draft(faction);
+    const draft = state?.tutorial_deck ? null : profile.draft(faction);
     if (draft) { leader = draft.leader; deck = [...draft.cards]; }
     deckChanged();
+    if (state?.tutorial_deck) tutorial.deckAction("faction", {before, after: factionKey()});
   });
   $("deck-preset").addEventListener("change", () => {
     const saved = profile.decks().find(item => `saved:${item.id}` === $("deck-preset").value);
@@ -1880,6 +1970,10 @@
   $("collection-filter").addEventListener("change", renderLobby);
   $("ready-button").addEventListener("click", async () => {
     if (busy || !state) return;
+    if (state.tutorial_deck) {
+      if (tutorial.deckTour?.step === 5) tutorial.deckContinue();
+      return;
+    }
     busy = true; renderLobby();
     locally(() => profile.saveDraft(currentDeck()));
     const worker = localWorker;
@@ -1966,9 +2060,16 @@
   dismissOutside($("leader-dialog"), document.querySelector(".leader-confirmation"), closeLeaderPreview);
   $("choice-dialog").addEventListener("cancel", (event) => event.preventDefault());
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && selected) { selected = null; if (state?.game) renderGame(); } });
+  $("rules-close").addEventListener("click", () => $("rules-dialog").close());
+  dismissOutside($("rules-dialog"), $("rules-dialog"), () => $("rules-dialog").close());
+  $("tutorial-offer-later").addEventListener("click", () => {
+    const action = pendingEntry; pendingEntry = null;
+    $("tutorial-offer-dialog").close(); action?.();
+  });
+  $("tutorial-offer-dialog").addEventListener("cancel", () => { pendingEntry = null; });
+  $("tutorial-offer-start").addEventListener("click", () => { pendingEntry = null; beginDeckTutorial(); });
   $("rules-button").addEventListener("click", () => {
-    const content = node("div", "rules-copy"), list = node("ol");
-    content.append(node("h2", "", t("Как играть")));
+    const list = $("rules-list"); list.replaceChildren();
     for (const text of [t("Выберите фракцию, способность лидера и соберите колоду. Нажмите «Готов к матчу»."),
       t("Начальная рука — 10 карт на весь матч. До первого хода можно заменить две карты. Способность фракции может изменить эти условия."),
       t("Игроки ходят по очереди: разыгрывают одну карту, используют лидера или пасуют."),
@@ -1977,7 +2078,7 @@
       t("Герои невосприимчивы к особым картам и умениям. Погода действует на обе стороны."),
       t("После конца раунда поле очищается.")])
       list.append(node("li", "", text));
-    content.append(list); showInfo(content);
+    $("rules-dialog").showModal();
   });
   $("support-button").addEventListener("click", () => {
     const content = node("div", "support-copy");
@@ -2040,6 +2141,9 @@
       catalogSource = await api("/api/catalog");
       profile = new window.FrontiersProfile(catalogSource);
       localizeCatalog();
+      tutorial = new window.FrontiersTutorial({begin: beginDeckTutorial, prepare: prepareTutorial, start: startTutorial,
+        cancel: () => { if (!state?.tutorial) disconnect(); if (state?.tutorial_deck) tutorial.renderDeck(); }, exit: () => $("leave-view").click()});
+      $("tutorial-button").disabled = false;
       disableEntry(false);
       const code = (invite || readStorage("frontiers.room") || "").toUpperCase();
       if (code) {

@@ -6,17 +6,29 @@ import random
 from frontiers.catalog import DECKS, LEADERS, validate_deck
 from frontiers.bot import BOT, DIFFICULTIES, choose_bot_move
 from frontiers.rooms import Room, RoomError, Seat
+from frontiers.tutorial import LocalTutorial, lesson_list
 
 
 class LocalMatch:
     def __init__(self):
         self.room: Room | None = None
         self.difficulty = "normal"
+        self.tutorial: LocalTutorial | None = None
 
     def dispatch(self, raw: str) -> str:
         request = json.loads(raw)
         try:
             operation = request["type"]
+            if operation == "tutorial-list":
+                return json.dumps({"lessons": lesson_list(), "bot_turn": False}, ensure_ascii=False)
+            if operation == "tutorial-start":
+                self.tutorial = LocalTutorial(request.get("lesson", ""),
+                                              (request.get("name", "Вы"), request.get("opponent", "Соперник")))
+                self.room = None
+                return json.dumps({"state": self.tutorial.view(), "bot_turn": False}, ensure_ascii=False)
+            if self.tutorial and operation == "action":
+                state = self.tutorial.act(request["action"], request["version"])
+                return json.dumps({"state": state, "bot_turn": False}, ensure_ascii=False)
             if operation == "create":
                 name = request["name"].strip()
                 if not name or len(name) > 32 or any(ord(char) < 32 for char in name):
@@ -24,6 +36,7 @@ class LocalMatch:
                 difficulty = request.get("difficulty", "normal")
                 if difficulty not in DIFFICULTIES:
                     raise ValueError("Неизвестная сложность бота.")
+                self.tutorial = None
                 self.difficulty = difficulty
                 self.room = Room("С ботом", [Seat("local", name), Seat("bot", "Bot", ready=True)])
             elif self.room is None:

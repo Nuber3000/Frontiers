@@ -86,7 +86,7 @@ def run():
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                page = browser.new_page(viewport={"width": 1280, "height": 720})
+                page = browser.new_page(locale="ru-RU", viewport={"width": 1280, "height": 720})
                 page.add_init_script(AUDIO_RENDERER)
                 errors, audio_requests = [], []
                 page.on("pageerror", lambda error: errors.append(str(error)))
@@ -208,7 +208,7 @@ def run():
                 # also hears the earlier burn of the played Scorch card.
                 created = page.request.post(url + "/api/rooms", data={"name": "Actor"}).json()
                 code = created["code"]
-                other = browser.new_page(viewport={"width": 1280, "height": 720})
+                other = browser.new_page(locale="ru-RU", viewport={"width": 1280, "height": 720})
                 other.add_init_script(AUDIO_RENDERER)
                 other.on("pageerror", lambda error: errors.append(str(error)))
                 other.request.post(url + f"/api/rooms/{code}/join", data={"name": "Opponent"})

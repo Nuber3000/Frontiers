@@ -2,6 +2,83 @@
 
 window.FrontiersI18n = (() => {
   const english = Object.freeze({
+  "Начать обучение": "Start tutorial",
+  "Добро пожаловать в Frontiers": "Welcome to Frontiers",
+  "Пройдите обучение: соберите первую колоду и познакомьтесь с основными механиками на игровом столе.": "Take the tutorial: build your first deck and learn the core mechanics on the game board.",
+  "Позже": "Later",
+  "Сценарий {0} из {1}": "Scenario {0} of {1}",
+  "Повторить": "Retry",
+  "Нажмите «Применить», чтобы использовать способность лидера.": "Press Apply to use your leader’s ability.",
+  "Нажмите «Сыграть», чтобы разыграть выбранную карту.": "Press Play to play the selected card.",
+  "Нажмите на подсвеченное место усиления в осадном ряду.": "Press the highlighted boost slot in the siege row.",
+  "Выбор колоды": "Deck selection",
+  "Это экран подготовки к матчу. Слева — доступные карты, справа — ваша колода, в центре — лидер и состав колоды. Сначала попробуем изменить их вместе.": "This is the match preparation screen. Available cards are on the left, your deck is on the right, and your leader and deck statistics are in the middle. Let's try changing them together.",
+  "Смените фракцию": "Change your faction",
+  "Откройте список фракций и выберите другую фракцию. У каждой — свои карты и особенность.": "Open the faction list and choose a different faction. Each has its own cards and perk.",
+  "Смените карту лидера": "Change your leader card",
+  "В списке под портретом выберите другой вариант карты лидера. Она меняет способность лидера; её описание показано ниже.": "Choose a different leader card from the list below the portrait. It changes the leader’s ability, described below.",
+  "Добавьте карту в колоду": "Add a card to your deck",
+  "Нажмите «+» на выделенной карте. Так вы добавите её в колоду, из которой будет собрана рука в начале матча.": "Press + on the highlighted card. This adds it to your deck, from which your opening hand will be drawn.",
+  "Уберите карту из колоды": "Remove a card from your deck",
+  "Теперь нажмите «−» на только что добавленной карте справа. Карта вернётся в коллекцию. Так вы можете менять состав колоды перед матчем.": "Now press − on the card you just added on the right. It returns to your collection. This is how you adjust your deck before a match.",
+  "Размер колоды и шанс добора": "Deck size and draw probability",
+  "В колоде должно быть не меньше 22 отрядов и не больше 10 особых и погодных карт вместе. При увеличении числа карт в колоде, шанс выпадения нужной карты снижается. Добавляйте карты, которые помогают вашей стратегии.": "A deck needs at least 22 units and no more than 10 special and weather cards combined. As the number of cards in your deck increases, your chance of drawing the card you need decreases. Add cards that support your strategy.",
+  "К сценариям на столе": "Continue to board scenarios",
+  "Начать знакомство": "Start the tour",
+  "Выполните действия из подсказок. Учебная колода не меняет ваши сохранённые колоды.": "Follow the guidance. The practice deck does not change your saved decks.",
+  "Комнат в сети: {0}": "Rooms online: {0}",
+  "Обучение": "Tutorial",
+  "Сценарии проходят локально на обычном игровом столе.": "Scenarios run locally on the regular game board.",
+  "Начать сценарий": "Start scenario",
+  "Подсказки обучения": "Tutorial guidance",
+  "Сценарии": "Scenarios",
+  "Выйти из обучения": "Exit tutorial",
+  "Локальное обучение": "Local tutorial",
+  "Загружаем локальный движок обучения…": "Loading the local tutorial engine…",
+  "Обучение готово к запуску.": "The tutorial is ready to start.",
+  "Проверяем ход локально…": "Checking your move locally…",
+  "Сценарий": "Scenario",
+  "Заново": "Restart",
+  "Шаг {0} из {1}": "Step {0} of {1}",
+  "Загрузка…": "Loading…",
+  "Не удалось загрузить обучение. Нажмите «Заново».": "Could not load the tutorial. Press Restart.",
+  "Следующий сценарий": "Next scenario",
+  "Завершить обучение": "Finish tutorial",
+  "Вы": "You",
+  "Сила: {0} · Жизни: {1}": "Strength: {0} · Lives: {1}",
+  "Выберите отряд из сброса.": "Choose a unit from your discard pile.",
+  "Поле соперника": "Opponent's board",
+  "Ваше поле": "Your board",
+  "Ваша рука": "Your hand",
+  "Сценарий уже завершён.": "This scenario is already complete.",
+  "Сценарий не найден.": "Scenario not found.",
+  "Ряды и сила": "Rows and strength",
+  "Сила ваших отрядов складывается. Каждый отряд занимает разрешённую боевую линию.": "Your units' strength adds up. Each unit belongs in one of its allowed combat rows.",
+  "Сыграйте Рыцаря в ближний бой.": "Play the Burgundian Knight in the melee row.",
+  "Теперь сыграйте Дозорного в дальний бой.": "Now play the Lookout in the ranged row.",
+  "Отряды в разных рядах дают общий счёт. Для победы в раунде нужно набрать больше силы, чем соперник.": "Units across all rows contribute to your total. To win a round, finish with more strength than your opponent.",
+  "Погода и лидер": "Weather and your leader",
+  "Погода влияет на соответствующий ряд обоих игроков. Герои защищены от неё.": "Weather affects the corresponding row on both sides. Heroes are immune.",
+  "Сыграйте Мороз и сравните силу обычных отрядов с силой героя.": "Play Frost and compare regular units' strength with the hero's strength.",
+  "Примените способность лидера «Солнцеликий», чтобы снять погоду.": "Use your Sun King's leader ability to clear the weather.",
+  "Мороз снизил силу обычных рукопашных отрядов до 1. Герой сохранил силу, а нулевой отряд остался нулевым. Этот лидер снимает погоду один раз за матч.": "Frost reduced regular melee units to 1. The hero kept its strength and the zero-strength unit stayed at zero. This leader clears weather once per match.",
+  "Сплочённость и штандарт": "Tight Bond and a banner",
+  "Связанные отряды усиливают друг друга в одном ряду. Штандарт удваивает силу обычных отрядов ряда.": "Bonded units strengthen each other in the same row. A banner doubles regular units' strength in that row.",
+  "Сыграйте первую Королевскую баллисту в осадный ряд.": "Play the first Royal Ballista in the siege row.",
+  "Добавьте вторую Королевскую баллисту и посмотрите на силу обеих карт.": "Add the second Royal Ballista and look at both cards' strength.",
+  "Поставьте Штандарт в осадный ряд.": "Place a Banner in the siege row.",
+  "Две Королевские баллисты со Сплочённостью удвоили силу друг друга. Штандарт затем удвоил силу ряда ещё раз.": "Two Royal Ballistas with Tight Bond doubled each other's strength. The banner then doubled the row's strength again.",
+  "Шпион и лекарь": "Spies and medics",
+  "Способности отрядов срабатывают при выходе на поле.": "Unit abilities trigger when the unit enters the board.",
+  "Сыграйте Королевского писаря: шпион выйдет к сопернику и даст вам две карты.": "Play the Royal Scribe: the spy goes to your opponent's board and draws you two cards.",
+  "Сыграйте Полкового хирурга в осадный ряд.": "Play the Regimental Surgeon in the siege row.",
+  "Выберите Лазурную стражу из отбоя для способности Лекаря.": "Choose the Azure Guard from your discard pile for the Medic ability.",
+  "Шпион усилил соперника, но дал вам две карты. Лекарь вернул обычный отряд из отбоя на поле. Герой в отбор целей не попал.": "The spy strengthened your opponent but drew you two cards. The medic returned a regular unit from the discard pile to the board. The hero was excluded from the available targets.",
+  "Пас и раунды": "Passing and rounds",
+  "Соперник уже спасовал с сильным героем. Сила двух ваших отрядов меньше его счёта. Карты в руке сохраняются между раундами.": "Your opponent has passed with a strong hero. Your two units cannot beat that score. Cards in hand carry over between rounds.",
+  "Спасуйте, чтобы уступить этот раунд и сохранить карты для следующего.": "Pass to concede this round and save your cards for the next one.",
+  "Вы потеряли одну жизнь, но сохранили руку. Матч продолжается: для победы нужно выиграть два раунда.": "You lost one life but kept your hand. The match continues: win two rounds to win the match.",
+
   "Удул Сурэг": "Udul Sureg",
   "Эмблема Удул Сурэг": "Udul Sureg emblem",
   "Гаур": "Gaur",
@@ -461,13 +538,13 @@ window.FrontiersI18n = (() => {
   "Последний дозорный": "Last Lookout",
   "Клятва дозора": "Oath of the Watch",
   "Мороз": "Frost",
-  "Сила рукопашных отрядов обоих игроков становится 1.": "Sets the strength of both players’ melee units to 1.",
+  "Снижает базовую силу обычных рукопашных отрядов обоих игроков до 1.": "Reduces the base strength of both players’ non-hero melee units to at most 1.",
   "Туман": "Fog",
-  "Сила дальнобойных отрядов обоих игроков становится 1.": "Sets the strength of both players’ ranged units to 1.",
+  "Снижает базовую силу обычных дальнобойных отрядов обоих игроков до 1.": "Reduces the base strength of both players’ non-hero ranged units to at most 1.",
   "Ливень": "Rain",
-  "Сила осадных отрядов обоих игроков становится 1.": "Sets the strength of both players’ siege units to 1.",
+  "Снижает базовую силу обычных осадных отрядов обоих игроков до 1.": "Reduces the base strength of both players’ non-hero siege units to at most 1.",
   "Шторм": "Storm",
-  "Сила дальнобойных и осадных отрядов обоих игроков становится 1.": "Sets the strength of both players’ ranged and siege units to 1.",
+  "Снижает базовую силу обычных дальнобойных и осадных отрядов обоих игроков до 1.": "Reduces the base strength of both players’ non-hero ranged and siege units to at most 1.",
   "Ясное небо": "Clear Skies",
   "Снимает все погодные эффекты.": "Clears all weather effects.",
   "Казнь": "Execution",
@@ -644,8 +721,20 @@ window.FrontiersI18n = (() => {
   "Сменить язык": "Switch language"
 });
   const preference = "frontiers.language";
-  let language = "ru";
-  try { if (localStorage.getItem(preference) === "en") language = "en"; } catch {}
+  function browserLanguage() {
+    const preferred = navigator.languages?.length ? navigator.languages : [navigator.language];
+    for (const locale of preferred) {
+      if (typeof locale !== "string") continue;
+      const code = locale.toLowerCase().split(/[-_]/)[0];
+      if (code === "ru" || code === "en") return code;
+    }
+    return "en";
+  }
+  let language = browserLanguage();
+  try {
+    const saved = localStorage.getItem(preference);
+    if (saved === "ru" || saved === "en") language = saved;
+  } catch {}
 
   function t(message, ...args) {
     const template = language === "en" && Object.hasOwn(english, message) ? english[message] : message;

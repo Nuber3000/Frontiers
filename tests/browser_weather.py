@@ -60,8 +60,8 @@ def run(output):
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                page = browser.new_page(viewport={"width": 1440, "height": 900})
-                other = browser.new_page(viewport={"width": 1366, "height": 768})
+                page = browser.new_page(locale="ru-RU", viewport={"width": 1440, "height": 900})
+                other = browser.new_page(locale="ru-RU", viewport={"width": 1366, "height": 768})
                 page.add_init_script("localStorage.setItem('frontiers.sound',JSON.stringify({enabled:false,volume:.25}))")
                 other.add_init_script("localStorage.setItem('frontiers.sound',JSON.stringify({enabled:false,volume:.25}))")
                 errors = []

@@ -44,7 +44,7 @@ def run(channel, output):
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True, channel=None if channel == 'chromium' else channel)
-            contexts = [browser.new_context(viewport={'width':1440, 'height':1000}) for _ in range(2)]
+            contexts = [browser.new_context(locale="ru-RU", viewport={'width':1440, 'height':1000}) for _ in range(2)]
             pages = [ctx.new_page() for ctx in contexts]
             for page in pages:
                 page.set_default_timeout(15000)
@@ -54,6 +54,7 @@ def run(channel, output):
                 first.goto(url)
                 first.locator('#player-name').fill('Конунг')
                 first.locator('#create-room').click()
+                first.locator("#tutorial-offer-later").click()
                 first.wait_for_selector('#connection.online')
                 code = first.locator('#room-label').inner_text()
                 first.locator('#faction-select').select_option('skone')

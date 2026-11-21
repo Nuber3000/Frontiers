@@ -37,7 +37,7 @@ def run():
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                pages = [browser.new_page(viewport={"width": 1366, "height": 768}, reduced_motion="reduce") for _ in range(2)]
+                pages = [browser.new_page(locale="ru-RU", viewport={"width": 1366, "height": 768}, reduced_motion="reduce") for _ in range(2)]
                 errors = []
                 for page in pages:
                     page.on("pageerror", lambda error: errors.append(str(error)))

@@ -35,7 +35,7 @@ def run():
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                page = browser.new_page(viewport={"width": 1280, "height": 720})
+                page = browser.new_page(locale="ru-RU", viewport={"width": 1280, "height": 720})
                 page.add_init_script("""(() => {
                   if (!localStorage.getItem('frontiers.sound'))
                     localStorage.setItem('frontiers.sound', JSON.stringify({enabled:false,volume:.25}));

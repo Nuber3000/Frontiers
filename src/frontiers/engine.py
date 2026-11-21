@@ -385,7 +385,7 @@ class Game:
             stormborn = "stormborn" in definition.abilities
             if not stormborn and any(item.row in WEATHER_ROWS[effect.key] for effect in self.weather):
                 resilient = player.leader == "skone_resilience" and not player.leader_blocked
-                value = (value + 1) // 2 if resilient else 1
+                value = (value + 1) // 2 if resilient else min(value, 1)
             allies = [other for other in player.board if other.row == item.row]
             if "bond" in definition.abilities:
                 value *= sum(CATALOG[other.card.key].group == definition.group and

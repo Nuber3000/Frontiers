@@ -1,0 +1,39 @@
+.landing-room-count { display: block; margin: -8px 0 14px; font-size: 12px; color: var(--muted); }
+dialog.tutorial-dialog { width: min(560px, calc(100dvw - 28px)); max-height: calc(100dvh - 28px); }
+.tutorial-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tutorial-heading h2 { margin: 0; }
+.tutorial-menu-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+#tutorial-menu-description, #tutorial-loading { margin-top: 14px; }
+#tutorial-menu-error { color: var(--red); }
+#tutorial-menu-error:empty { display: none; }
+.tutorial-guide { position: fixed; z-index: 10002; width: min(420px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; margin: 0; padding: 20px; border: 1px solid var(--gold); border-radius: 8px; background: #241c1d; color: var(--ink); box-shadow: 0 8px 40px #000b; }
+.tutorial-guide-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+#tutorial-scenario-title { font: 24px Georgia, serif; margin: 8px 0 12px; color: var(--ink); }
+#tutorial-progress { font-size: 12px; color: var(--muted); }
+#tutorial-description, #tutorial-task { font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+.tutorial-guide-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.tutorial-guide-actions button { padding: 8px 10px; font-size: 12px; }
+.in-tutorial .tutorial-target { outline: 2px solid #e9c46d; outline-offset: 2px; }
+@media (max-width: 600px) {
+  .tutorial-guide { padding: 14px; }
+  #tutorial-scenario-title { font-size: 21px; }
+  #tutorial-description, #tutorial-task { font-size: 13px; }
+}
+
+.deck-tutorial-mask { position: fixed; z-index: 10000; background: #050403bd; }
+#deck-tutorial-focus { position: fixed; z-index: 10001; border: 2px solid #e9c46d; border-radius: 6px; pointer-events: none; box-shadow: 0 0 14px #d7a94366; }
+#deck-tutorial-coach { position: fixed; z-index: 10002; width: min(420px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; background: #241c1d; border: 1px solid #d2ac65; border-radius: 8px; padding: 20px; box-shadow: 0 8px 40px #000b; }
+#deck-tutorial-coach h2 { font-size: 24px; margin: 8px 0 12px; }
+#deck-tutorial-text { font-size: 14px; line-height: 1.5; margin: 0; }
+.deck-tutorial-coach-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 18px; }
+.deck-tutorial-coach-actions button { font-size: 12px; padding: 8px 10px; }
+@media (max-width: 600px) {
+  #deck-tutorial-coach { padding: 14px; }
+  #deck-tutorial-coach h2 { font-size: 21px; }
+  #deck-tutorial-text { font-size: 13px; }
+}
+
+dialog.rules-dialog { width: min(680px, calc(100dvw - 28px)); max-height: calc(100dvh - 28px); }
+.rules-dialog .rules-copy { margin-top: 18px; }
+dialog.tutorial-offer-dialog { width: min(540px, calc(100dvw - 28px)); max-height: calc(100dvh - 28px); }
+.tutorial-offer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 22px; }

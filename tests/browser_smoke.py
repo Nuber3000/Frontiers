@@ -310,7 +310,7 @@ def save_artwork_gallery(browser, url, catalog, output):
     for key, leader in catalog['leaders'].items():
         tiles.append(f'<article><img src="{url}/static/{leader["portrait"]}">'
                      f'<p>{html.escape(catalog["factions"][leader["faction"]]["leader"])} · {html.escape(leader["name"])}</p></article>')
-    gallery = browser.new_page(viewport={'width': 1540, 'height': 1200})
+    gallery = browser.new_page(locale="ru-RU", viewport={'width': 1540, 'height': 1200})
     try:
         gallery.set_content(f'''<!doctype html><html lang="ru"><meta charset="utf-8">
           <link rel="stylesheet" href="{url}/static/cards.css">
@@ -353,7 +353,7 @@ def save_portrait_review(browser, page, url, output):
       const card = document.querySelector(`#collection [data-card-key="${key}"], #deck-cards [data-card-key="${key}"]`);
       return card.outerHTML;
     }).join('')''')
-    review = browser.new_page(viewport={'width': 810, 'height': 860})
+    review = browser.new_page(locale="ru-RU", viewport={'width': 810, 'height': 860})
     try:
         review.set_content(f'''<!doctype html><html lang="ru"><meta charset="utf-8">
           <link rel="stylesheet" href="{url}/static/styles.css">
@@ -387,7 +387,7 @@ def save_icon_review(browser, page, url, output):
                           f'<small>{size} px</small></div>' for size in (24, 32, 48, 96))
         blocks.append(f'<section><h2>{html.escape(item["name"])}</h2><div class="sizes">{samples}</div>'
                       f'<div class="card-preview">{item["card"]}</div></section>')
-    review = browser.new_page(viewport={'width': 1024, 'height': 640})
+    review = browser.new_page(locale="ru-RU", viewport={'width': 1024, 'height': 640})
     try:
         review.set_content(f'''<!doctype html><html lang="ru"><meta charset="utf-8">
           <link rel="stylesheet" href="{url}/static/styles.css">
@@ -442,7 +442,7 @@ def run(browser_channel, output):
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(
                     headless=True, channel=None if browser_channel == "chromium" else browser_channel)
-                contexts = [browser.new_context(viewport={"width": 1440, "height": 1100}) for _ in range(2)]
+                contexts = [browser.new_context(locale="ru-RU", viewport={"width": 1440, "height": 1100}) for _ in range(2)]
                 pages = [context.new_page() for context in contexts]
                 for page in pages:
                     page.on("pageerror", lambda error: errors.append(str(error)))
@@ -454,6 +454,7 @@ def run(browser_channel, output):
                     first.goto(url)
                     first.locator("#player-name").fill("Алиса")
                     first.locator("#create-room").click()
+                    first.locator("#tutorial-offer-later").click()
                     first.locator("#room-label").wait_for(state="visible")
                     code = first.locator("#room-label").inner_text()
                     first.wait_for_selector("#connection.online")
@@ -734,7 +735,7 @@ def run(browser_channel, output):
                         assert page.locator('#result-dialog').get_attribute('data-outcome') == ('defeat' if side == 0 else 'victory')
                         assert page.locator('#mulligan-dialog').is_hidden()
                     moves_used.add("pass")
-                    mobile = browser.new_context(viewport={"width": 390, "height": 844})
+                    mobile = browser.new_context(locale="ru-RU", viewport={"width": 390, "height": 844})
                     mobile_page = mobile.new_page()
                     mobile_page.goto(url)
                     mobile_page.screenshot(path=str(output / "mobile-landing.png"), full_page=True)

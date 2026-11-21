@@ -28,7 +28,7 @@ from frontiers.rooms import RoomError, RoomStore
 COOKIE = "frontiers_session"
 STATIC = Path(__file__).with_name("static")
 LOCAL_ENGINE_FILES = ("__init__.py", "cards.py", "models.py", "media.py", "shiron.py", "skone.py", "ellifarn.py",
-                      "udul.py", "catalog.py", "engine.py", "rooms.py", "bot.py", "local_match.py")
+                      "udul.py", "catalog.py", "engine.py", "rooms.py", "bot.py", "tutorial.py", "local_match.py")
 logger = logging.getLogger("frontiers")
 
 
@@ -116,7 +116,7 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
             f"default-src 'self'; script-src {scripts}; style-src 'self'; "
             "img-src 'self' data:; connect-src 'self'; base-uri 'none'; "
             "frame-ancestors 'none'; form-action 'self'")
-        response.headers["Cache-Control"] = "no-store" if request.url.path.startswith(("/api/rooms", "/api/matchmaking")) else "no-cache"
+        response.headers["Cache-Control"] = "no-store" if request.url.path.startswith(("/api/rooms", "/api/matchmaking", "/api/stats")) else "no-cache"
         if response.status_code in {200, 206, 304} and request.url.path.startswith("/static/pyodide-0.29.3/"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
@@ -160,13 +160,17 @@ def create_app(store: RoomStore | None = None, secure_cookies: bool | None = Non
         if not secrets.compare_digest(authorization.encode(), f"Bearer {metrics_token}".encode()):
             raise HTTPException(status_code=401, headers={"WWW-Authenticate": "Bearer"})
 
-        active_rooms = sum(room.online for room in room_store.rooms.values())
+        active_rooms = room_store.online_count
         return Response(
             "# HELP frontiers_active_rooms Online rooms with at least one connected player.\n"
             "# TYPE frontiers_active_rooms gauge\n"
             f"frontiers_active_rooms {active_rooms}\n",
             media_type="text/plain; version=0.0.4",
         )
+
+    @app.get("/api/stats")
+    async def public_stats():
+        return {"online_rooms": room_store.online_count}
 
     @app.get("/api/catalog")
     async def catalog():

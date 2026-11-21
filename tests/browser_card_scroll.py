@@ -37,7 +37,7 @@ def run():
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                page = browser.new_page(viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
+                page = browser.new_page(locale="ru-RU", viewport={"width": 1280, "height": 720}, reduced_motion="reduce")
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 base = f"http://127.0.0.1:{port}"

@@ -45,7 +45,7 @@ def run(channel, output):
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True, channel=None if channel == 'chromium' else channel)
-            contexts = [browser.new_context(viewport={'width': width, 'height': height})
+            contexts = [browser.new_context(locale="ru-RU", viewport={'width': width, 'height': height})
                         for width, height in [(1440, 1000), (1366, 768)]]
             pages = [context.new_page() for context in contexts]
             for page in pages:
@@ -56,6 +56,7 @@ def run(channel, output):
                 first.goto(url)
                 first.locator('#player-name').fill('Первый')
                 first.locator('#create-room').click()
+                first.locator("#tutorial-offer-later").click()
                 first.wait_for_selector('#connection.online')
                 code = first.locator('#room-label').inner_text()
                 second.goto(f'{url}/?room={code}')

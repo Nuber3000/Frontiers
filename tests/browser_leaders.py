@@ -39,8 +39,8 @@ def run(output):
                 time.sleep(.05)
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel="msedge")
-                first = browser.new_page(viewport={"width": 1440, "height": 900})
-                second = browser.new_page(viewport={"width": 1366, "height": 768})
+                first = browser.new_page(locale="ru-RU", viewport={"width": 1440, "height": 900})
+                second = browser.new_page(locale="ru-RU", viewport={"width": 1366, "height": 768})
                 errors = []
                 for page in (first, second):
                     page.on("pageerror", lambda error: errors.append(str(error)))

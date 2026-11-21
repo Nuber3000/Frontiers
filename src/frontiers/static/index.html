@@ -24,6 +24,9 @@
   <script src="/static/local-profile.js" defer></script>
   <script src="/static/card-scroll.js" defer></script>
   <script src="/static/sound.js" defer></script>
+  <link rel="stylesheet" href="/static/tutorial.css">
+  <script src="/static/tutorial.js" defer></script>
+  <script src="/static/landing-status.js" defer></script>
   <script src="/static/app.js" defer></script>
 </head>
 <body>
@@ -44,8 +47,9 @@
         <div id="faction-backs" class="hero-cards" aria-hidden="true"></div>
         <div class="feature-line"><span>2 игрока</span><span>3 боевые линии</span><span>До 3 раундов</span></div>
       </div>
-      <form id="entry-form" class="entry-panel panel">
+      <form id="entry-form" class="entry-panel panel" novalidate>
         <h2>Начать игру</h2>
+        <span id="online-rooms" class="landing-room-count" role="status">Комнат в сети: —</span>
         <label for="player-name">Ваше имя</label>
         <input id="player-name" name="name" maxlength="32" required autocomplete="nickname" placeholder="Имя">
         <button id="find-match" class="primary wide" type="button" disabled>Найти соперника</button>
@@ -58,7 +62,7 @@
         <label for="room-code">Код комнаты</label>
         <div class="join-fields"><input id="room-code" maxlength="8" autocomplete="off" placeholder="ABCD2345"><button id="join-room" type="button">Войти</button></div>
         <p class="muted small">Создайте комнату и отправьте другу приглашение.</p>
-        <div class="entry-actions"><button id="rules-button" class="text-button" type="button">Как играть</button><button id="landing-history" class="text-button" type="button">История матчей</button><button id="support-button" class="text-button" type="button">Поддержать проект</button></div>
+        <div class="entry-actions"><button id="rules-button" class="text-button" type="button">Обучение</button><button id="landing-history" class="text-button" type="button">История матчей</button><button id="support-button" class="text-button" type="button">Поддержать проект</button></div>
       </form>
     </section>
     <section id="room" hidden>
@@ -86,6 +90,11 @@
           <div id="deck-cards" class="collection"></div>
           <p class="library-footnote">Ваше войско на весь матч. <span>− убрать из колоды</span></p>
         </section>
+      </section>
+      <section id="tutorial-guide" class="tutorial-guide" role="dialog" aria-modal="false" aria-labelledby="tutorial-scenario-title" aria-describedby="tutorial-description tutorial-task" hidden>
+        <div class="tutorial-guide-heading"><span id="tutorial-scenario-progress" class="eyebrow"></span><span id="tutorial-progress"></span></div>
+        <h2 id="tutorial-scenario-title"></h2><p id="tutorial-description"></p><p id="tutorial-task" role="status"></p>
+        <div class="tutorial-guide-actions"><button id="tutorial-restart" type="button">Заново</button><button id="tutorial-next" class="primary" type="button" hidden>Следующий сценарий</button><button id="tutorial-exit" type="button">Выйти из обучения</button></div>
       </section>
       <section id="arena" hidden>
         <div class="match-layout">
@@ -143,6 +152,29 @@
   </dialog>
   <dialog id="choice-dialog"><div class="dialog-heading"><p class="eyebrow">Способность Лекаря</p><h2>Вернуть отряд на поле</h2><p class="muted">Выберите отряд из сброса. Для подвижного отряда также выберите линию.</p></div><button id="choice-view-board" type="button">Посмотреть стол</button><div id="choice-cards" class="choice-cards"></div></dialog>
   <button id="board-return" class="primary" type="button" hidden>Вернуться к выбору</button>
+  <dialog id="rules-dialog" class="rules-dialog" aria-labelledby="rules-title">
+    <div class="tutorial-heading"><h2 id="rules-title">Обучение</h2><button id="rules-close" type="button" aria-label="Закрыть">×</button></div>
+    <div class="rules-copy"><ol id="rules-list"></ol></div>
+    <div class="tutorial-menu-actions"><button id="tutorial-button" class="primary" type="button" disabled>Начать обучение</button></div>
+  </dialog>
+  <dialog id="tutorial-offer-dialog" class="tutorial-offer-dialog" aria-labelledby="tutorial-offer-title" aria-describedby="tutorial-offer-text">
+    <h2 id="tutorial-offer-title">Добро пожаловать в Frontiers</h2>
+    <p id="tutorial-offer-text">Пройдите обучение: соберите первую колоду и познакомьтесь с основными механиками на игровом столе.</p>
+    <div class="tutorial-offer-actions"><button id="tutorial-offer-later" type="button">Позже</button><button id="tutorial-offer-start" class="primary" type="button" disabled>Начать обучение</button></div>
+  </dialog>
+  <div id="deck-tutorial-overlay" hidden>
+    <div class="deck-tutorial-mask"></div><div class="deck-tutorial-mask"></div><div class="deck-tutorial-mask"></div><div class="deck-tutorial-mask"></div>
+    <div id="deck-tutorial-focus" aria-hidden="true" hidden></div>
+    <section id="deck-tutorial-coach" role="dialog" aria-modal="false" aria-labelledby="deck-tutorial-title" aria-describedby="deck-tutorial-text">
+      <span id="deck-tutorial-progress" class="eyebrow"></span><h2 id="deck-tutorial-title"></h2><p id="deck-tutorial-text" aria-live="polite"></p>
+      <div class="deck-tutorial-coach-actions"><button id="deck-tutorial-exit" type="button">Выйти из обучения</button><button id="deck-tutorial-next" class="primary" type="button">Начать знакомство</button></div>
+    </section>
+  </div>
+  <dialog id="tutorial-dialog" class="tutorial-dialog" aria-labelledby="tutorial-title">
+    <div class="tutorial-heading"><h2 id="tutorial-title">Обучение</h2><button id="tutorial-close" type="button" aria-label="Закрыть">×</button></div>
+    <p id="tutorial-loading" role="status">Загружаем локальный движок обучения…</p><p id="tutorial-menu-error" role="alert"></p>
+    <div class="tutorial-menu-actions"><button id="tutorial-retry" class="primary" type="button" hidden>Повторить</button></div>
+  </dialog>
   <dialog id="info-dialog"><button id="close-info" class="dialog-close" type="button" aria-label="Закрыть">×</button><div id="info-content"></div></dialog>
 </body>
 </html>

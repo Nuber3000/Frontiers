@@ -210,6 +210,35 @@ class EffectTests(unittest.TestCase):
         game = play(game, 0, "horn", Row.SIEGE)
         self.assertEqual(game.total(0), 14)
 
+    def test_weather_never_increases_zero_strength_units(self):
+        for weather in ("frost", "fog", "rain", "storm"):
+            with self.subTest(weather=weather):
+                game = fixture([weather], ["knight"])
+                zero_melee = put(game, 0, "watchman")
+                zero_siege = put(game, 1, "shiron_siege_medic")
+                positive_melee = put(game, 1, "knight")
+                positive_siege = put(game, 0, "catapult")
+                one_siege = put(game, 0, "spy_cartographer")
+                game = play(game, 0, weather)
+                self.assertEqual(game.strengths(0)[zero_melee.id], 0)
+                self.assertEqual(game.strengths(1)[zero_siege.id], 0)
+                self.assertEqual(game.strengths(0)[one_siege.id], 1)
+                self.assertEqual(game.strengths(1)[positive_melee.id], 1 if weather == "frost" else 5)
+                self.assertEqual(game.strengths(0)[positive_siege.id], 1 if weather in {"rain", "storm"} else CATALOG["catapult"].strength)
+                shown = {card["id"]: card["strength"]
+                         for player in game.view(0)["players"] for card in player["board"]}
+                self.assertEqual(shown[zero_melee.id], 0)
+                self.assertEqual(shown[zero_siege.id], 0)
+
+    def test_zero_strength_under_weather_still_receives_morale_and_horn(self):
+        game = fixture(["horn"], ["knight"])
+        zero = put(game, 0, "shiron_siege_medic")
+        game.weather.append(WeatherEffect(1, "rain"))
+        game = play(game, 0, "horn", Row.SIEGE)
+        self.assertEqual(game.strengths(0)[zero.id], 0)
+        put(game, 0, "siege_expert")
+        self.assertEqual(game.strengths(0)[zero.id], 2)
+
     def test_weather_and_horn_do_not_modify_hero(self):
         game = fixture(["horn"], [])
         hero = put(game, 0, "regent")
